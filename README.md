@@ -25,6 +25,8 @@ Website/
 │   └── cart.js                 # Cart logic (localStorage + WhatsApp checkout)
 ├── data/
 │   └── products.json           # Product data
+├── tools/
+│   └── csv-to-json.js          # CSV → products.json converter
 ├── images/
 │   ├── Kanto-Keepsakes-logo.webp
 │   └── products/               # Product images
@@ -72,6 +74,65 @@ Home
    ```
 3. No build step required — plain HTML/CSS/JS.
 
+## Managing Products
+
+Products are stored in `data/products.json`. There are two ways to update them:
+
+### Option 1: Edit JSON Directly
+
+Edit `data/products.json` by hand. Each product follows this schema:
+
+```json
+{
+  "id": "jp-sealed-001",
+  "name": "Pokemon 151 Booster Box",
+  "category": "japanese",
+  "type": "sealed",
+  "price": 65.00,
+  "image": "images/products/jp-sealed-001.jpg",
+  "description": "Japanese Pokemon 151 booster box, 20 packs.",
+  "inStock": true,
+  "preorder": false
+}
+```
+
+### Option 2: Spreadsheet Workflow
+
+1. Open the **[Kanto Keepsakes — Product Inventory](https://docs.google.com/spreadsheets/d/1MxO5JWSZbUlGbgBYGEXe22o2-MlcmRPereQnEQKK2zE)** Google Sheet.
+2. Add/edit product rows. Required columns: `name`, `category`, `type`, `price`. The `id` and `image` columns are auto-generated if left blank.
+3. Export as CSV: **File → Download → Comma Separated Values (.csv)**.
+4. Run the converter:
+   ```bash
+   node tools/csv-to-json.js path/to/downloaded.csv
+   ```
+5. This overwrites `data/products.json` with the spreadsheet data.
+
+**Valid values:**
+- `category`: `japanese`, `english`, `accessories`
+- `type`: `sealed`, `singles`, `graded`, `accessories`
+- `inStock`: `TRUE` or `FALSE` (defaults to `TRUE`)
+- `preorder`: `TRUE` or `FALSE` (defaults to `FALSE`)
+
+## Product Images
+
+Images go in `images/products/`. The naming convention matches the product `id`:
+
+```
+images/products/jp-sealed-001.jpg
+images/products/en-singles-002.jpg
+images/products/acc-001.jpg
+```
+
+**Recommended specs:** 800x800px minimum, square aspect ratio, JPG or WebP.
+
+If an image is missing, a styled placeholder is shown automatically.
+
+### Sourcing Images
+
+1. **Photograph your own inventory** — the safest approach. A smartphone with good lighting and a clean background is sufficient.
+2. **Contact your distributor** (Maxsoft for Southeast Asia) — ask for official marketing assets and product images for authorized retailers.
+3. Do **not** use images from the Pokemon press site (pokemon.gamespress.com) — those are for editorial use only, not retail.
+
 ## Design
 
 - **Color palette:** White and yellow
@@ -93,4 +154,6 @@ Home
 | 8 | TCG Accessories page | Done |
 | 9 | Preorder page | Done |
 | 10 | Shopping cart (localStorage + WhatsApp checkout) | Done |
+| A | WhatsApp number + image placeholders | Done |
+| B | Spreadsheet product workflow | Done |
 | 11 | Polish & final QA | Pending |
