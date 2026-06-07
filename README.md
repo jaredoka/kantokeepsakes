@@ -64,7 +64,7 @@ Home
 
 1. Clone the repository:
    ```bash
-   git clone git@github.com:<username>/kanto-keepsakes.git
+   git clone git@github.com:jaredoka/kantokeepsakes.git
    ```
 2. Open `index.html` in a browser, or serve with any static file server:
    ```bash
@@ -84,13 +84,13 @@ Home
 | Task | Description | Status |
 |------|-------------|--------|
 | 1 | README (living document) | Done |
-| 2 | Project scaffolding & base structure | Pending |
-| 3 | Navigation & header | Pending |
-| 4 | Home page layout | Pending |
-| 5 | Product data & rendering engine | Pending |
-| 6 | Category pages (Japanese & English) | Pending |
-| 7 | Sub-category pages (Sealed, Singles, Graded) | Pending |
-| 8 | TCG Accessories page | Pending |
-| 9 | Preorder page | Pending |
-| 10 | Shopping cart (localStorage + WhatsApp checkout) | Pending |
+| 2 | Project scaffolding & base structure | Done |
+| 3 | Navigation & header | Done |
+| 4 | Home page layout | Done |
+| 5 | Product data & rendering engine | Done |
+| 6 | Category pages (Japanese & English) | Done |
+| 7 | Sub-category pages (Sealed, Singles, Graded) | Done |
+| 8 | TCG Accessories page | Done |
+| 9 | Preorder page | Done |
+| 10 | Shopping cart (localStorage + WhatsApp checkout) | Done |
 | 11 | Polish & final QA | Pending |

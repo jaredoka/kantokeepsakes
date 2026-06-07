@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Browse all Japanese Pokemon TCG products — sealed, singles, and graded cards at Kanto Keepsakes.">
+  <title>Japanese Products — Kanto Keepsakes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-container">
+      <a href="../index.html" class="logo-link">
+        <img src="../images/Kanto-Keepsakes-logo.webp" alt="Kanto Keepsakes" class="logo">
+      </a>
+      <button class="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+    </div>
+    <div class="nav-backdrop"></div>
+    <nav class="nav-overlay" aria-label="Main navigation">
+      <ul class="nav-list">
+        <li><a href="../index.html" class="nav-link">Home</a></li>
+        <li><a href="accessories.html" class="nav-link">TCG Accessories</a></li>
+        <li><a href="preorder.html" class="nav-link">Preorder</a></li>
+        <li><a href="cart.html" class="nav-link nav-cart">Cart <span class="cart-count" aria-label="items in cart">0</span></a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="main-content container">
+    <div class="page-header">
+      <h1>Japanese Products</h1>
+      <p>Browse all Japanese Pokemon TCG products</p>
+    </div>
+
+    <div class="subnav" role="tablist" aria-label="Filter by type">
+      <button class="subnav-tab subnav-tab--active" data-category="japanese" data-type="" role="tab" aria-selected="true">All</button>
+      <button class="subnav-tab" data-category="japanese" data-type="sealed" role="tab" aria-selected="false">Sealed</button>
+      <button class="subnav-tab" data-category="japanese" data-type="singles" role="tab" aria-selected="false">Singles</button>
+      <button class="subnav-tab" data-category="japanese" data-type="graded" role="tab" aria-selected="false">Graded</button>
+    </div>
+
+    <div class="filter-bar">
+      <span class="filter-bar-label">Sort by</span>
+      <select class="sort-select" aria-label="Sort products by price">
+        <option value="default">Default</option>
+        <option value="price-asc">Price: Low to High</option>
+        <option value="price-desc">Price: High to Low</option>
+      </select>
+    </div>
+
+    <div class="product-grid"></div>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 Kanto Keepsakes. All rights reserved.</p>
+  </footer>
+
+  <script src="../js/app.js"></script>
+  <script src="../js/products.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initProductPage({ category: 'japanese' });
+      initSubNav();
+    });
+  </script>
+</body>
+</html>
