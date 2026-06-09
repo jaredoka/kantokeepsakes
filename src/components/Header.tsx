@@ -76,6 +76,11 @@ export default function Header() {
       >
         <ul className={styles.navList}>
           <li>
+            <Link href="/marketplace" className={`${styles.navLink} ${styles.navMarketplace}`} onClick={() => setMenuOpen(false)}>
+              Marketplace
+            </Link>
+          </li>
+          <li>
             <Link href="/" className={styles.navLink} onClick={() => setMenuOpen(false)}>
               Home
             </Link>

@@ -121,6 +121,11 @@
   border-radius: 4px;
 }
 
+.navMarketplace {
+  color: var(--color-yellow-dark);
+  font-weight: 700;
+}
+
 .navCart {
   display: flex;
   align-items: center;
