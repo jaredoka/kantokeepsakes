@@ -7,6 +7,10 @@ import { createClient } from "@/lib/supabase/client";
 import Turnstile from "@/components/Turnstile";
 import styles from "./page.module.css";
 
+interface ApiError {
+  error: string;
+}
+
 export default function SignupPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -46,32 +50,32 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const supabase = createClient();
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          username: username.trim(),
+          turnstileToken,
+        }),
+      });
 
-      const { data: existingUser } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("username", username.trim())
-        .single();
-
-      if (existingUser) {
-        setError("Username is already taken.");
+      if (!res.ok) {
+        const data: ApiError = await res.json();
+        setError(data.error || "Signup failed.");
         setLoading(false);
         return;
       }
 
-      const { error: signUpError } = await supabase.auth.signUp({
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
-        options: {
-          data: {
-            username: username.trim(),
-          },
-        },
       });
 
-      if (signUpError) {
-        setError(signUpError.message);
+      if (signInError) {
+        setError("Account created. Please log in.");
         setLoading(false);
         return;
       }
