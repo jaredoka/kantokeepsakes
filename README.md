@@ -1,147 +1,172 @@
 # Kanto Keepsakes
 
-A product website for **Kanto Keepsakes**, a Pokemon TCG retailer based in Brunei. The site serves as a dedicated e-commerce/product-browsing platform for Pokemon TCG products, including Japanese and English sealed products, singles, graded cards, and accessories.
+A full-stack web application for **Kanto Keepsakes**, a Pokemon TCG retailer based in Brunei. The site combines an e-commerce product catalog with a community-driven **Marketplace** — a WTB/WTS trade listing board for Pokemon TCG products, inspired by platforms like CSGOLounge.
+
+Built as a solo developer project using **Claude Code (Opus 4.6 by Anthropic)** as an AI-assisted development tool.
+
+---
 
 ## Tech Stack
 
-- **HTML5** — Semantic markup
-- **CSS3** — Vanilla CSS with CSS Grid, mobile-first responsive design
-- **JavaScript** — Vanilla JS, no frameworks
-- **Font** — [Inter](https://fonts.google.com/specimen/Inter) via Google Fonts
-- **Data** — Local JSON (`data/products.json`) loaded via `fetch()`
-- **Cart** — `localStorage`-based shopping cart with WhatsApp checkout
-- **Hosting** — GitHub + Cloudflare Pages (custom domain)
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| Framework | **Next.js 16** (App Router) | Server-side rendering, routing, API routes |
+| Language | **TypeScript** | Type safety across the full stack |
+| Styling | **Tailwind CSS 4** + CSS Modules | Utility-first styling with component-scoped overrides |
+| Database | **Supabase (PostgreSQL)** | Managed database with Row Level Security |
+| Auth | **Supabase Auth** | Email/password authentication, session management |
+| Storage | **Supabase Storage** | Image uploads for listings |
+| Anti-abuse | **Cloudflare Turnstile** | CAPTCHA on signup and listing creation |
+| Hosting | **Vercel** | Serverless deployment paired with Next.js |
+| UI Library | **React 19** | Component-based UI |
 
-## Folder Structure
+---
+
+## Features
+
+### Product Catalog (Shop)
+- Browse Pokemon TCG products by category: Japanese, English, Accessories, Preorder
+- Sub-category filtering: Sealed, Singles, Graded
+- Product cards with image placeholders, pricing, and stock status
+- Shopping cart with localStorage persistence and WhatsApp checkout
+- Mobile-first responsive design
+
+### Marketplace (In Progress)
+- User accounts with email/password signup (privacy-first, no email verification required)
+- Community reputation system: New Trader, Trader, Trusted Trader, Veteran Trader badges
+- WTB (Want to Buy) and WTS (Want to Sell) trade listings
+- Real-time messaging between traders
+- Trade confirmations with star ratings
+- Report and moderation system
+- CAPTCHA and rate limiting for anti-abuse
+
+---
+
+## Project Structure
 
 ```
-Website/
-├── index.html                  # Home page
-├── css/
-│   └── styles.css              # Global styles, variables, reset
-├── js/
-│   ├── app.js                  # Main entry point
-│   ├── products.js             # Product fetching, filtering, rendering
-│   └── cart.js                 # Cart logic (localStorage + WhatsApp checkout)
+kantokeepsakes/
+├── src/
+│   ├── app/                        # Next.js App Router pages
+│   │   ├── page.tsx                # Home page
+│   │   ├── layout.tsx              # Root layout
+│   │   ├── globals.css             # Global styles
+│   │   ├── marketplace/            # Marketplace page
+│   │   ├── signup/                 # Signup page + styles
+│   │   ├── login/                  # Login page + styles
+│   │   ├── cart/                   # Shopping cart
+│   │   ├── japanese/               # Japanese products
+│   │   ├── english/                # English products
+│   │   ├── accessories/            # Accessories
+│   │   ├── preorder/               # Preorder products
+│   │   └── api/
+│   │       └── signup/route.ts     # Signup API with rate limiting
+│   ├── components/
+│   │   ├── Header.tsx              # Auth-aware navigation
+│   │   ├── Footer.tsx              # Site footer
+│   │   ├── ProductCard.tsx         # Product display card
+│   │   ├── ProductGrid.tsx         # Product grid layout
+│   │   ├── CategoryPage.tsx        # Reusable category page
+│   │   ├── CartToast.tsx           # Add-to-cart notification
+│   │   └── Turnstile.tsx           # CAPTCHA component
+│   ├── lib/
+│   │   ├── supabase/
+│   │   │   ├── client.ts           # Browser Supabase client
+│   │   │   ├── server.ts           # Server Supabase client
+│   │   │   └── middleware.ts       # Auth session middleware
+│   │   ├── products.ts             # Product data utilities
+│   │   ├── cart.ts                 # Cart logic (localStorage)
+│   │   ├── turnstile.ts            # Server-side CAPTCHA verification
+│   │   └── rate-limit.ts           # IP-based rate limiting
+│   └── middleware.ts               # Next.js middleware (auth sessions)
+├── supabase/
+│   └── migrations/                 # SQL migrations for all tables
 ├── data/
-│   └── products.json           # Product data
-├── tools/
-│   └── csv-to-json.js          # CSV → products.json converter
-├── images/
-│   ├── Kanto-Keepsakes-logo.webp
-│   └── products/               # Product images
-├── pages/
-│   ├── japanese.html           # All Japanese products
-│   ├── japanese-sealed.html
-│   ├── japanese-singles.html
-│   ├── japanese-graded.html
-│   ├── english.html            # All English products
-│   ├── english-sealed.html
-│   ├── english-singles.html
-│   ├── english-graded.html
-│   ├── accessories.html        # TCG Accessories
-│   ├── preorder.html           # Preorder products
-│   └── cart.html               # Shopping cart
-└── README.md
+│   └── products.json               # Product catalog data
+├── public/                         # Static assets (images, logo)
+└── tools/
+    └── csv-to-json.js              # Spreadsheet-to-JSON converter
 ```
 
-## Site Map
-
-```
-Home
-├── Japanese Products (all Japanese products)
-│   ├── Sealed
-│   ├── Singles
-│   └── Graded
-├── English Products (all English products)
-│   ├── Sealed
-│   ├── Singles
-│   └── Graded
-├── TCG Accessories
-├── Preorder
-└── Cart
-```
+---
 
 ## Setup
 
-1. Clone the repository:
+1. **Clone the repository:**
    ```bash
    git clone git@github.com:jaredoka/kantokeepsakes.git
+   cd kantokeepsakes
    ```
-2. Open `index.html` in a browser, or serve with any static file server:
+
+2. **Install dependencies:**
    ```bash
-   npx serve .
+   npm install
    ```
-3. No build step required — plain HTML/CSS/JS.
 
-## Managing Products
+3. **Set up environment variables:** Create a `.env.local` file:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_turnstile_site_key
+   TURNSTILE_SECRET_KEY=your_turnstile_secret_key
+   ```
 
-Products are stored in `data/products.json`. There are two ways to update them:
-
-### Option 1: Edit JSON Directly
-
-Edit `data/products.json` by hand. Each product follows this schema:
-
-```json
-{
-  "id": "jp-sealed-001",
-  "name": "Pokemon 151 Booster Box",
-  "category": "japanese",
-  "type": "sealed",
-  "price": 65.00,
-  "image": "images/products/jp-sealed-001.jpg",
-  "description": "Japanese Pokemon 151 booster box, 20 packs.",
-  "inStock": true,
-  "preorder": false
-}
-```
-
-### Option 2: Spreadsheet Workflow
-
-1. Open the **[Kanto Keepsakes — Product Inventory](https://docs.google.com/spreadsheets/d/1MxO5JWSZbUlGbgBYGEXe22o2-MlcmRPereQnEQKK2zE)** Google Sheet.
-2. Add/edit product rows. Required columns: `name`, `category`, `type`, `price`. The `id` and `image` columns are auto-generated if left blank.
-3. Export as CSV: **File → Download → Comma Separated Values (.csv)**.
-4. Run the converter:
+4. **Run the development server:**
    ```bash
-   node tools/csv-to-json.js path/to/downloaded.csv
+   npm run dev
    ```
-5. This overwrites `data/products.json` with the spreadsheet data.
 
-**Valid values:**
-- `category`: `japanese`, `english`, `accessories`
-- `type`: `sealed`, `singles`, `graded`, `accessories`
-- `inStock`: `TRUE` or `FALSE` (defaults to `TRUE`)
-- `preorder`: `TRUE` or `FALSE` (defaults to `FALSE`)
+5. **Open** [http://localhost:3000](http://localhost:3000)
 
-## Product Images
+---
 
-Images go in `images/products/`. The naming convention matches the product `id`:
+## What I Learned
 
-```
-images/products/jp-sealed-001.jpg
-images/products/en-singles-002.jpg
-images/products/acc-001.jpg
-```
+This project started as a simple static HTML/CSS/JS website and evolved into a full-stack Next.js application. As a beginner web developer building this project with the help of **Claude Code (Opus 4.6 by Anthropic)**, here is what I learned along the way:
 
-**Recommended specs:** 800x800px minimum, square aspect ratio, JPG or WebP.
+### Fundamentals (Static Site Phase)
+- **HTML5 semantic markup** — structuring pages with meaningful elements (`<header>`, `<nav>`, `<main>`, `<section>`)
+- **CSS3 layout** — CSS Grid and Flexbox for responsive layouts, CSS custom properties (variables) for consistent theming
+- **Mobile-first responsive design** — designing for mobile screens first and scaling up with media queries
+- **Vanilla JavaScript** — DOM manipulation, event handling, `fetch()` for loading JSON data
+- **localStorage** — client-side data persistence for the shopping cart
+- **JSON data modeling** — designing a product schema and working with structured data
+- **Git version control** — committing changes, branching, pushing to GitHub
 
-If an image is missing, a styled placeholder is shown automatically.
+### Framework Migration (Next.js Phase)
+- **React component architecture** — breaking UI into reusable components (`ProductCard`, `CategoryPage`, `Header`)
+- **Next.js App Router** — file-based routing, layouts, server components vs. client components (`"use client"`)
+- **TypeScript** — type annotations, interfaces, type safety for props, API responses, and database entities
+- **Tailwind CSS** — utility-first CSS approach alongside CSS Modules for component-scoped styles
+- **Server-side rendering (SSR)** — understanding the difference between server and client rendering and when to use each
+- **API routes** — building backend endpoints within Next.js (`src/app/api/`)
+- **Middleware** — intercepting requests for auth session management
 
-### Sourcing Images
+### Backend & Database (Supabase Phase)
+- **PostgreSQL** — relational database design with foreign keys, enums, indexes, and constraints
+- **Row Level Security (RLS)** — database-level access control policies that restrict who can read/write data
+- **Database migrations** — writing SQL migration files to version-control schema changes
+- **Supabase Auth** — implementing email/password authentication, session management, and auth state
+- **Database triggers** — automatically creating a profile row when a new user signs up
+- **Server-side vs. client-side Supabase clients** — understanding when to use each for security
 
-1. **Photograph your own inventory** — the safest approach. A smartphone with good lighting and a clean background is sufficient.
-2. **Contact your distributor** (Maxsoft for Southeast Asia) — ask for official marketing assets and product images for authorized retailers.
-3. Do **not** use images from the Pokemon press site (pokemon.gamespress.com) — those are for editorial use only, not retail.
+### Security & Anti-Abuse
+- **CAPTCHA integration (Cloudflare Turnstile)** — adding bot protection to forms with both client-side widget and server-side token verification
+- **Rate limiting** — implementing IP-based request throttling to prevent abuse (e.g., max 3 signups per IP per 24h)
+- **Environment variables** — keeping API keys and secrets out of source code using `.env.local`
+- **Input validation** — validating user input on both client and server sides
 
-## Design
+### Developer Workflow
+- **AI-assisted development** — using Claude Code (Opus 4.6 by Anthropic) as a pair programming tool to plan architecture, write code, debug issues, and learn best practices in real time
+- **Project planning** — breaking a large feature (Marketplace) into phased milestones with clear task breakdowns
+- **Incremental migration** — converting a static site to a full-stack app without losing functionality
+- **Handoff documentation** — writing detailed session handoff docs to maintain context across development sessions
 
-- **Color palette:** White and yellow
-- **Typography:** Inter (sans-serif)
-- **Layout:** CSS Grid, mobile-first
-- **Breakpoints:** Mobile (default) → Tablet (~768px) → Desktop (~1024px+)
+---
 
-## Progress
+## Build Progress
 
+### Shop (Complete)
 | Task | Description | Status |
 |------|-------------|--------|
 | 1 | README (living document) | Done |
@@ -154,6 +179,23 @@ If an image is missing, a styled placeholder is shown automatically.
 | 8 | TCG Accessories page | Done |
 | 9 | Preorder page | Done |
 | 10 | Shopping cart (localStorage + WhatsApp checkout) | Done |
-| A | WhatsApp number + image placeholders | Done |
-| B | Spreadsheet product workflow | Done |
-| 11 | Polish & final QA | Pending |
+
+### Marketplace
+| Phase | Description | Status |
+|-------|-------------|--------|
+| M1 | Project setup — Next.js migration, Supabase, Turnstile, DB migrations | Done |
+| M2 | Auth flow — signup, login, logout, profiles, rate limiting | Done |
+| M3 | Listing CRUD — create, edit, delete listings with image upload | Upcoming |
+| M4 | Marketplace browse — listing feed with filters, sort, search | Upcoming |
+| M5 | Listing detail page — full view, seller card, messaging button | Upcoming |
+| M6 | Messaging & inbox — real-time chat, unread counts | Upcoming |
+| M7 | Trade confirmations & reputation — ratings, rep badges | Upcoming |
+| M8 | Reports & moderation — report system, admin dashboard, bans | Upcoming |
+| M9 | Listing lifecycle — auto-expiry, bumps, status transitions | Upcoming |
+| M10 | Polish & launch — responsive pass, SEO, error handling | Upcoming |
+
+---
+
+## License
+
+This project is proprietary. All rights reserved.

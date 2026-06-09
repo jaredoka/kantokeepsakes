@@ -1,15 +1,23 @@
-# Handoff: Kanto Keepsakes — Session 3
+# Handoff: Kanto Keepsakes — Session 3+
 
-**Date:** 2026-06-09
-**Workspace:** `C:\Users\User\Desktop\Kanto Keepsakes\Website`
+**Date:** 2026-06-10
+**Workspace:** `/home/jaredoka/Desktop/Projects/Kanto Keepsakes/kantokeepsakes`
 **Branch:** `main`
 **Remote:** `git@github.com:jaredoka/kantokeepsakes.git`
+**AI Tool:** Claude Code (Opus 4.6 by Anthropic)
 
 ---
 
 ## Session 3 Summary
 
-No code changes were made. This session was planning-only for a major new feature: a **Marketplace** — a community-driven WTB/WTS trade listing board for Pokémon TCG, inspired by CSGOLounge (trading only, no betting). The marketplace will be integrated into the existing Kanto Keepsakes site as a new top-level page.
+Planning-only session for a major new feature: a **Marketplace** — a community-driven WTB/WTS trade listing board for Pokémon TCG, inspired by CSGOLounge (trading only, no betting). The marketplace will be integrated into the existing Kanto Keepsakes site as a new top-level page.
+
+## Session 4 Summary
+
+Executed the first two phases of the marketplace build:
+
+- **M1 (Project Setup) — COMPLETE:** Migrated the entire site from static HTML/CSS/JS to Next.js 16 with TypeScript, Tailwind CSS 4, and App Router. Set up Supabase (PostgreSQL, auth, storage), created database migrations for all 6 core tables with Row Level Security policies, integrated Cloudflare Turnstile CAPTCHA, and added Marketplace to the nav.
+- **M2 (Auth Flow) — COMPLETE:** Built signup and login pages with form validation, Turnstile CAPTCHA verification, Supabase auth integration, logout functionality, automatic profile creation via database trigger, auth-aware navigation, and IP-based server-side rate limiting on signup.
 
 ---
 
@@ -240,43 +248,120 @@ These carry forward from Session 2:
 
 ## Session 4 — Task Breakdown
 
-### Phase M1: Project Setup (7 tasks)
+### Phase M1: Project Setup (7 tasks) — COMPLETE
+
+| # | Task | Description | Status |
+|---|------|-------------|--------|
+| M1-1 | Initialize Next.js project | `create-next-app` with TypeScript, App Router, Tailwind CSS 4 | Done |
+| M1-2 | Migrate existing static site to Next.js | Converted all HTML pages to Next.js routes, ported CSS and JS logic | Done |
+| M1-3 | Set up Supabase project & environment variables | Supabase project configured, env vars in `.env.local` | Done |
+| M1-4 | Create Supabase client utilities | Server-side and client-side Supabase client helpers (`src/lib/supabase/`) | Done |
+| M1-5 | Create database migrations — core tables | SQL migrations for all 6 tables with enums, indexes, and RLS policies | Done |
+| M1-6 | Configure Cloudflare Turnstile CAPTCHA | Reusable `<Turnstile>` component + server-side verification utility | Done |
+| M1-7 | Add Marketplace link to navigation | Marketplace is the first nav item in header | Done |
+
+### Phase M2: Auth Flow (6 tasks) — COMPLETE
+
+| # | Task | Description | Status |
+|---|------|-------------|--------|
+| M2-1 | Build signup page | Email + password + username form with Turnstile CAPTCHA, validation | Done |
+| M2-2 | Build login page | Email + password login form with Supabase auth | Done |
+| M2-3 | Build logout functionality | Logout button in nav when authenticated | Done |
+| M2-4 | Create profile on signup | Database trigger auto-creates profile row with username | Done |
+| M2-5 | Add auth state to navigation | Auth-aware nav: login/signup links vs. username + logout | Done |
+| M2-6 | Add rate limiting middleware | IP-based rate limiting on signup API route (3 per IP per 24h) | Done |
+
+### Phase M3: Listing CRUD (6 tasks)
 
 | # | Task | Description |
 |---|------|-------------|
-| M1-1 | Initialize Next.js project | `create-next-app` with TypeScript, App Router, Tailwind CSS. Set up project structure inside the existing repo |
-| M1-2 | Migrate existing static site to Next.js | Convert current HTML pages (home, japanese, english, accessories, preorder, cart) into Next.js routes. Port CSS and JS logic |
-| M1-3 | Set up Supabase project & environment variables | Create Supabase project, add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to `.env.local`, install `@supabase/supabase-js` and `@supabase/ssr` |
-| M1-4 | Create Supabase client utilities | Set up server-side and client-side Supabase client helpers (for App Router SSR + client components) |
-| M1-5 | Create database migrations — core tables | Write SQL migrations for `profiles`, `listings`, `conversations`, `messages`, `trade_confirmations`, `reports` tables with enums, indexes, and RLS policies |
-| M1-6 | Configure Cloudflare Turnstile CAPTCHA | Add Turnstile site key/secret to env, create a reusable `<Turnstile>` component, set up server-side verification utility |
-| M1-7 | Add Marketplace link to navigation | Update the shared nav/header component to include "Marketplace" as the first nav item |
+| M3-1 | Shared types & validation | `src/lib/marketplace/types.ts` (interfaces for all DB entities, enum constants) and `validation.ts` (shared form validation for client + server) |
+| M3-2 | Image upload API | `src/app/api/listings/upload/route.ts` — FormData, auth + file validation, Supabase Storage upload, rate limited |
+| M3-3 | Create Listing page | `src/app/marketplace/new/page.tsx` with full form + Turnstile. `ImageUploader.tsx` component for drag-and-drop with previews |
+| M3-4 | Create Listing API | `src/app/api/listings/route.ts` — POST validates auth, Turnstile, fields, ban check, inserts listing |
+| M3-5 | Edit Listing page + API | `src/app/marketplace/[id]/edit/page.tsx` + `src/app/api/listings/[id]/route.ts` with PATCH, GET, DELETE |
+| M3-6 | My Listings + ListingCard | `src/app/marketplace/my-listings/page.tsx` + reusable `ListingCard.tsx` component |
 
-### Phase M2: Auth Flow (6 tasks)
+### Phase M4: Marketplace Browse (4 tasks)
 
 | # | Task | Description |
 |---|------|-------------|
-| M2-1 | Build signup page | Email + password signup form with username field, Turnstile CAPTCHA, client-side validation, Supabase `auth.signUp()` |
-| M2-2 | Build login page | Email + password login form, Supabase `auth.signInWithPassword()`, redirect on success |
-| M2-3 | Build logout functionality | Logout button in nav (shown when authenticated), Supabase `auth.signOut()`, redirect to home |
-| M2-4 | Create profile on signup | Supabase database trigger or post-signup hook to insert a row into `profiles` table with chosen username, default values (0 rep, 0 trades, "New Trader") |
-| M2-5 | Add auth state to navigation | Show login/signup links when logged out, show username + logout when logged in, persist session across page loads via Supabase middleware |
-| M2-6 | Add rate limiting middleware | IP-based rate limiting on signup and listing creation endpoints (e.g. max 3 signups per IP per 24h) using Next.js middleware or API route guards |
+| M4-1 | Marketplace feed page | Replace placeholder with server component, ListingCard grid, "Create Listing" button |
+| M4-2 | Filter & sort controls | `FilterBar.tsx` — type toggle, category pills, language, price range, sort. URL search params |
+| M4-3 | Server-side filtered queries | Wire filters to Supabase queries. `src/lib/marketplace/queries.ts` for reusable query builders |
+| M4-4 | Pagination + empty states | `Pagination.tsx` + `EmptyState.tsx` components |
+
+### Phase M5: Listing Detail Page (4 tasks)
+
+| # | Task | Description |
+|---|------|-------------|
+| M5-1 | Detail page layout | `src/app/marketplace/[id]/page.tsx` — server component, two-column layout, dynamic SEO metadata |
+| M5-2 | Image gallery | `ImageGallery.tsx` — main image + thumbnails, click to switch |
+| M5-3 | Seller card + reputation | `SellerCard.tsx` + `src/lib/marketplace/reputation.ts` for tier logic |
+| M5-4 | Action bar | `ActionBar.tsx` — "Message Seller", "Report", "Share" buttons |
+
+### Phase M6: Messaging & Inbox (5 tasks)
+
+| # | Task | Description |
+|---|------|-------------|
+| M6-1 | Conversation API | `src/app/api/conversations/route.ts` — POST creates/finds, GET returns user's conversations |
+| M6-2 | Message API | `src/app/api/conversations/[id]/messages/route.ts` — GET paginated, POST rate limited |
+| M6-3 | Inbox page | `src/app/marketplace/inbox/page.tsx` — conversation list with last message preview, unread indicator |
+| M6-4 | Chat view + Realtime | `src/app/marketplace/inbox/[id]/page.tsx` — message bubbles, Supabase Realtime, `ChatInput.tsx` |
+| M6-5 | Unread count in nav | Modify `Header.tsx` — unread badge + "Inbox" link when authenticated |
+
+### Phase M7: Trade Confirmations & Reputation (4 tasks)
+
+| # | Task | Description |
+|---|------|-------------|
+| M7-1 | Confirmation API | `src/app/api/trade-confirmations/route.ts` — POST with rating + comment |
+| M7-2 | Confirmation UI | `TradeConfirmation.tsx` + `StarRating.tsx` on detail page |
+| M7-3 | User profile page | `src/app/marketplace/user/[username]/page.tsx` — reputation, reviews, listings |
+| M7-4 | Auto-mark sold trigger | `supabase/migrations/00010_auto_mark_sold.sql` — both parties confirm → listing sold |
+
+### Phase M8: Reports & Moderation (5 tasks)
+
+| # | Task | Description |
+|---|------|-------------|
+| M8-1 | Report API + modal | `src/app/api/reports/route.ts` + `ReportModal.tsx` |
+| M8-2 | Admin role setup | Migration adding `is_admin` to profiles + RLS policies + `admin.ts` helper |
+| M8-3 | Admin dashboard | `src/app/admin/page.tsx` — pending reports list, admin-only layout |
+| M8-4 | Report actions + ban | API routes for resolve/dismiss/ban + `ReportActions.tsx` |
+| M8-5 | Ban enforcement | `ban-check.ts` helper in all mutating routes, banned user page |
+
+### Phase M9: Listing Lifecycle (4 tasks)
+
+| # | Task | Description |
+|---|------|-------------|
+| M9-1 | Auto-expiry | `pg_cron` migration + Vercel cron API route fallback |
+| M9-2 | Bump mechanic | `src/app/api/listings/[id]/bump/route.ts` — 1 per 24h, resets expiry |
+| M9-3 | Status transitions | Status badges, detail page banners, relist endpoint for expired listings |
+| M9-4 | Expiry warnings | Warning badges for listings expiring within 3 days, `dates.ts` helpers |
+
+### Phase M10: Polish & Launch (5 tasks)
+
+| # | Task | Description |
+|---|------|-------------|
+| M10-1 | Responsive design pass | Audit all marketplace pages at mobile breakpoints |
+| M10-2 | Loading states | `loading.tsx` skeleton files for marketplace, detail, inbox |
+| M10-3 | Error handling | `error.tsx` + `not-found.tsx` boundaries, consistent API errors |
+| M10-4 | SEO & metadata | Dynamic OG tags, `sitemap.ts`, `robots.ts`, JSON-LD |
+| M10-5 | Final QA | Empty states, edge cases, toast notifications, accessibility |
 
 ---
 
 ## Reference Documents
 
-- **Session 2 handoff:** `C:\Users\User\Desktop\Kanto Keepsakes\Website\handoff-kanto-keepsakes-session2.md`
-- **Session 1 handoff:** `C:\Users\User\Desktop\Kanto Keepsakes\Website\handoff-kanto-keepsakes.md`
-- **README:** `C:\Users\User\Desktop\Kanto Keepsakes\Website\README.md`
+- **Session 2 handoff:** `handoff-kanto-keepsakes-session2.md`
+- **Session 1 handoff:** `handoff-kanto-keepsakes.md`
+- **README:** `README.md`
 
 ---
 
 ## Environment
 
-- **Platform:** Windows 11 Pro, bash shell
+- **Platform:** Linux (Ubuntu)
+- **AI Tool:** Claude Code (Opus 4.6 by Anthropic)
 - **Git:** SSH to GitHub (`jaredoka/kantokeepsakes`)
 - **Node.js:** Available
-- **Google Drive MCP:** Connected
 - **Paths:** Use forward slashes in code
