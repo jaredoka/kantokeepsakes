@@ -1,0 +1,16 @@
+.mainContent {
+  min-height: calc(100vh - var(--header-height) - 60px);
+}
+
+.pageHeader {
+  padding: var(--space-xl) 0 var(--space-md);
+}
+
+.pageHeader h1 {
+  margin-bottom: var(--space-xs);
+}
+
+.pageHeader p {
+  color: var(--color-gray-500);
+  font-size: var(--font-size-base);
+}

@@ -1,0 +1,120 @@
+.card {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  transition: box-shadow var(--transition-base), transform var(--transition-fast);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.imageWrapper {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background-color: var(--color-gray-100);
+}
+
+.image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background-color: var(--color-gray-100);
+}
+
+.placeholder {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  color: var(--color-gray-300);
+  background-color: var(--color-gray-100);
+}
+
+.placeholder span {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--color-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hasPlaceholder .image {
+  display: none;
+}
+
+.hasPlaceholder .placeholder {
+  display: flex;
+}
+
+.body {
+  padding: var(--space-md);
+}
+
+.name {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+}
+
+.desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+  margin-bottom: var(--space-sm);
+  line-height: 1.4;
+}
+
+.price {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-sm);
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  border-radius: 4px;
+  margin-bottom: var(--space-sm);
+}
+
+.badgePreorder {
+  background-color: var(--color-yellow-light);
+  color: var(--color-yellow-dark);
+}
+
+.badgeOos {
+  background-color: var(--color-gray-200);
+  color: var(--color-gray-500);
+}
+
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+  background-color: var(--color-yellow);
+  color: var(--color-black);
+}
+
+.addBtn:hover {
+  background-color: var(--color-yellow-dark);
+}
+
+.addBtn:active {
+  transform: scale(0.97);
+}
