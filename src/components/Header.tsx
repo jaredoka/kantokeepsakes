@@ -3,12 +3,17 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { getCart } from "@/lib/cart";
+import { createClient } from "@/lib/supabase/client";
 import styles from "./Header.module.css";
 
 export default function Header() {
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [username, setUsername] = useState<string | null>(null);
+  const [authLoaded, setAuthLoaded] = useState(false);
 
   const updateCount = useCallback(() => {
     const cart = getCart();
@@ -20,6 +25,44 @@ export default function Header() {
     window.addEventListener("cart-updated", updateCount);
     return () => window.removeEventListener("cart-updated", updateCount);
   }, [updateCount]);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    async function getSession() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", user.id)
+          .single();
+        setUsername(profile?.username ?? null);
+      } else {
+        setUsername(null);
+      }
+      setAuthLoaded(true);
+    }
+
+    getSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", session.user.id)
+            .single();
+          setUsername(profile?.username ?? null);
+        } else {
+          setUsername(null);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (menuOpen) {
@@ -39,6 +82,13 @@ export default function Header() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [menuOpen]);
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setMenuOpen(false);
+    router.push("/");
+  }
 
   return (
     <header className={styles.header}>
@@ -80,6 +130,30 @@ export default function Header() {
         aria-label="Main navigation"
       >
         <ul className={styles.navList}>
+          {authLoaded && (
+            <li className={styles.authSection}>
+              {username ? (
+                <div className={styles.authUser}>
+                  <span className={styles.username}>{username}</span>
+                  <button
+                    className={styles.logoutBtn}
+                    onClick={handleLogout}
+                  >
+                    Log out
+                  </button>
+                </div>
+              ) : (
+                <div className={styles.authLinks}>
+                  <Link href="/login" className={styles.authLink} onClick={() => setMenuOpen(false)}>
+                    Log in
+                  </Link>
+                  <Link href="/signup" className={styles.authLinkPrimary} onClick={() => setMenuOpen(false)}>
+                    Sign up
+                  </Link>
+                </div>
+              )}
+            </li>
+          )}
           <li>
             <Link href="/marketplace" className={`${styles.navLink} ${styles.navMarketplace}`} onClick={() => setMenuOpen(false)}>
               Marketplace
