@@ -53,16 +53,21 @@ export default function Header() {
             priority
           />
         </Link>
-        <button
-          className={`${styles.hamburger} ${menuOpen ? styles.hamburgerActive : ""}`}
-          aria-label="Open menu"
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          <span className={styles.hamburgerLine} />
-          <span className={styles.hamburgerLine} />
-          <span className={styles.hamburgerLine} />
-        </button>
+        <div className={styles.headerRight}>
+          <Link href="/marketplace" className={styles.headerMarketplace}>
+            Marketplace
+          </Link>
+          <button
+            className={`${styles.hamburger} ${menuOpen ? styles.hamburgerActive : ""}`}
+            aria-label="Open menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            <span className={styles.hamburgerLine} />
+            <span className={styles.hamburgerLine} />
+            <span className={styles.hamburgerLine} />
+          </button>
+        </div>
       </div>
 
       <div

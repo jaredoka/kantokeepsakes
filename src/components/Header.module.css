@@ -27,6 +27,23 @@
   width: auto;
 }
 
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.headerMarketplace {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-yellow-dark);
+  transition: color var(--transition-fast);
+}
+
+.headerMarketplace:hover {
+  color: var(--color-gray-900);
+}
+
 .hamburger {
   display: flex;
   flex-direction: column;
@@ -42,10 +59,13 @@
 .hamburgerLine {
   display: block;
   width: 24px;
+  min-width: 24px;
   height: 2px;
+  min-height: 2px;
   background-color: var(--color-gray-900);
   border-radius: 1px;
   transition: transform var(--transition-base), opacity var(--transition-base);
+  flex-shrink: 0;
 }
 
 .hamburgerActive .hamburgerLine:nth-child(1) {
