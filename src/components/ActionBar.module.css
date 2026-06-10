@@ -1,0 +1,71 @@
+.bar {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.messageBtn {
+  flex: 1;
+  padding: var(--space-sm) var(--space-lg);
+  background-color: var(--color-yellow);
+  color: var(--color-black);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.messageBtn:hover:not(:disabled) {
+  background-color: var(--color-yellow-dark);
+}
+
+.messageBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secondaryBtn {
+  padding: var(--space-sm) var(--space-lg);
+  border: 1px solid var(--color-gray-300);
+  background-color: var(--color-white);
+  color: var(--color-gray-700);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.secondaryBtn:hover {
+  border-color: var(--color-gray-500);
+  background-color: var(--color-gray-100);
+}
+
+.reportBtn {
+  padding: var(--space-sm) var(--space-lg);
+  border: 1px solid var(--color-gray-200);
+  background-color: var(--color-white);
+  color: var(--color-gray-500);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.reportBtn:hover:not(:disabled) {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.reportBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

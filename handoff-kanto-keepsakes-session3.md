@@ -19,6 +19,12 @@ Executed the first two phases of the marketplace build:
 - **M1 (Project Setup) — COMPLETE:** Migrated the entire site from static HTML/CSS/JS to Next.js 16 with TypeScript, Tailwind CSS 4, and App Router. Set up Supabase (PostgreSQL, auth, storage), created database migrations for all 6 core tables with Row Level Security policies, integrated Cloudflare Turnstile CAPTCHA, and added Marketplace to the nav.
 - **M2 (Auth Flow) — COMPLETE:** Built signup and login pages with form validation, Turnstile CAPTCHA verification, Supabase auth integration, logout functionality, automatic profile creation via database trigger, auth-aware navigation, and IP-based server-side rate limiting on signup.
 
+## Session 5 Summary
+
+Continuing from M3 (done in Session 4) into M4 (Marketplace Browse).
+
+**Workflow:** Stop after each task and ask whether to continue with the next task or commit and push.
+
 ---
 
 ## Marketplace — Feature Specification

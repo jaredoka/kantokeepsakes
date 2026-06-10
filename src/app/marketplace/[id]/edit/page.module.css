@@ -1,0 +1,203 @@
+.main {
+  min-height: calc(100vh - var(--header-height) - 60px);
+  display: flex;
+  justify-content: center;
+  padding: var(--space-xl) var(--space-md);
+}
+
+.loadingText {
+  color: var(--color-gray-500);
+  font-size: var(--font-size-sm);
+  margin-top: var(--space-3xl);
+}
+
+.card {
+  width: 100%;
+  max-width: 640px;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-2xl);
+  box-shadow: var(--shadow-sm);
+  align-self: flex-start;
+}
+
+.title {
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--space-xl);
+}
+
+.subtitle {
+  color: var(--color-gray-500);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.backLink {
+  display: inline-block;
+  padding: var(--space-sm) var(--space-lg);
+  background-color: var(--color-yellow);
+  color: var(--color-black);
+  font-weight: 600;
+  border-radius: var(--border-radius);
+  transition: background-color var(--transition-fast);
+}
+
+.backLink:hover {
+  background-color: var(--color-yellow-dark);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-gray-700);
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--color-gray-500);
+}
+
+.input,
+.select,
+.textarea {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-base);
+  color: var(--color-gray-900);
+  background-color: var(--color-white);
+  transition: border-color var(--transition-fast);
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--color-yellow);
+  box-shadow: 0 0 0 3px rgba(245, 197, 24, 0.2);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.select {
+  cursor: pointer;
+  appearance: auto;
+}
+
+.charCount {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+  text-align: right;
+}
+
+.toggleGroup {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.toggleBtn {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--color-gray-200);
+  border-radius: var(--border-radius);
+  background-color: var(--color-white);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-gray-700);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.toggleBtn:hover {
+  border-color: var(--color-gray-300);
+}
+
+.toggleBtnActive {
+  border-color: var(--color-yellow);
+  background-color: rgba(245, 197, 24, 0.08);
+  color: var(--color-black);
+}
+
+.priceRow {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+}
+
+.error {
+  padding: var(--space-sm) var(--space-md);
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--border-radius);
+  color: #dc2626;
+  font-size: var(--font-size-sm);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.submitBtn {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  background-color: var(--color-yellow);
+  color: var(--color-black);
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.submitBtn:hover:not(:disabled) {
+  background-color: var(--color-yellow-dark);
+}
+
+.submitBtn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.deleteBtn {
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  border: 1px solid #fecaca;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  background-color: var(--color-white);
+  color: #dc2626;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.deleteBtn:hover:not(:disabled) {
+  background-color: #fef2f2;
+  border-color: #dc2626;
+}
+
+.deleteBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

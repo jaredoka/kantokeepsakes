@@ -14,6 +14,7 @@ export default function Header() {
   const [cartCount, setCartCount] = useState(0);
   const [username, setUsername] = useState<string | null>(null);
   const [authLoaded, setAuthLoaded] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const updateCount = useCallback(() => {
     const cart = getCart();
@@ -29,6 +30,29 @@ export default function Header() {
   useEffect(() => {
     const supabase = createClient();
 
+    async function fetchUnread(userId: string) {
+      // Get all conversations this user is part of
+      const { data: convs } = await supabase
+        .from("conversations")
+        .select("id")
+        .or(`participant_1.eq.${userId},participant_2.eq.${userId}`);
+
+      if (!convs || convs.length === 0) {
+        setUnreadCount(0);
+        return;
+      }
+
+      const convIds = convs.map((c) => c.id);
+      const { count } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .in("conversation_id", convIds)
+        .eq("is_read", false)
+        .neq("sender_id", userId);
+
+      setUnreadCount(count || 0);
+    }
+
     async function getSession() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -38,8 +62,10 @@ export default function Header() {
           .eq("id", user.id)
           .single();
         setUsername(profile?.username ?? null);
+        fetchUnread(user.id);
       } else {
         setUsername(null);
+        setUnreadCount(0);
       }
       setAuthLoaded(true);
     }
@@ -55,8 +81,10 @@ export default function Header() {
             .eq("id", session.user.id)
             .single();
           setUsername(profile?.username ?? null);
+          fetchUnread(session.user.id);
         } else {
           setUsername(null);
+          setUnreadCount(0);
         }
       }
     );
@@ -159,6 +187,13 @@ export default function Header() {
               Marketplace
             </Link>
           </li>
+          {username && (
+            <li>
+              <Link href="/marketplace/inbox" className={`${styles.navLink} ${styles.navInbox}`} onClick={() => setMenuOpen(false)}>
+                Inbox {unreadCount > 0 && <span className={styles.unreadBadge}>{unreadCount}</span>}
+              </Link>
+            </li>
+          )}
           <li>
             <Link href="/" className={styles.navLink} onClick={() => setMenuOpen(false)}>
               Home

@@ -1,0 +1,36 @@
+.container {
+  text-align: center;
+  padding: var(--space-3xl) var(--space-md);
+}
+
+.icon {
+  color: var(--color-gray-300);
+  margin-bottom: var(--space-lg);
+}
+
+.heading {
+  font-size: var(--font-size-xl);
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-sm);
+}
+
+.text {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+  margin-bottom: var(--space-lg);
+}
+
+.btn {
+  display: inline-block;
+  padding: var(--space-sm) var(--space-lg);
+  background-color: var(--color-yellow);
+  color: var(--color-black);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  border-radius: var(--border-radius);
+  transition: background-color var(--transition-fast);
+}
+
+.btn:hover {
+  background-color: var(--color-yellow-dark);
+}
