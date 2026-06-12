@@ -3,18 +3,22 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { getCart } from "@/lib/cart";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./Header.module.css";
 
 export default function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [username, setUsername] = useState<string | null>(null);
   const [authLoaded, setAuthLoaded] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  const isMarketplace = pathname.startsWith("/marketplace");
+  const isInbox = pathname.startsWith("/marketplace/inbox");
 
   const updateCount = useCallback(() => {
     const cart = getCart();
@@ -31,7 +35,6 @@ export default function Header() {
     const supabase = createClient();
 
     async function fetchUnread(userId: string) {
-      // Get all conversations this user is part of
       const { data: convs } = await supabase
         .from("conversations")
         .select("id")
@@ -54,20 +57,26 @@ export default function Header() {
     }
 
     async function getSession() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("username")
-          .eq("id", user.id)
-          .single();
-        setUsername(profile?.username ?? null);
-        fetchUnread(user.id);
-      } else {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", user.id)
+            .single();
+          setUsername(profile?.username ?? null);
+          fetchUnread(user.id);
+        } else {
+          setUsername(null);
+          setUnreadCount(0);
+        }
+      } catch {
         setUsername(null);
         setUnreadCount(0);
+      } finally {
+        setAuthLoaded(true);
       }
-      setAuthLoaded(true);
     }
 
     getSession();
@@ -121,6 +130,7 @@ export default function Header() {
   return (
     <header className={styles.header}>
       <div className={styles.headerContainer}>
+        {/* Logo */}
         <Link href="/" className={styles.logoLink}>
           <Image
             src="/images/Kanto-Keepsakes-logo.webp"
@@ -131,7 +141,64 @@ export default function Header() {
             priority
           />
         </Link>
-        <div className={styles.headerRight}>
+
+        {/* Desktop inline nav */}
+        <nav className={styles.desktopNav}>
+          <Link
+            href="/marketplace"
+            className={`${styles.desktopNavLink} ${isMarketplace && !isInbox ? styles.desktopNavLinkActive : ""}`}
+          >
+            Marketplace
+          </Link>
+          {username && (
+            <Link
+              href="/marketplace/inbox"
+              className={`${styles.desktopNavLink} ${isInbox ? styles.desktopNavLinkActive : ""}`}
+            >
+              Inbox
+              {unreadCount > 0 && <span className={styles.unreadDot} />}
+            </Link>
+          )}
+        </nav>
+
+        {/* Desktop actions */}
+        <div className={styles.desktopActions}>
+          {authLoaded && (
+            <>
+              {username ? (
+                <>
+                  <Link href="/marketplace/user" className={styles.avatarLink}>
+                    <span className={styles.avatar}>
+                      {username.charAt(0).toUpperCase()}
+                    </span>
+                    <span className={styles.avatarName}>{username}</span>
+                  </Link>
+                  <Link href="/marketplace/new" className={styles.postBtn}>
+                    + Post Listing
+                  </Link>
+                  <button
+                    className={styles.logoutBtn}
+                    onClick={handleLogout}
+                  >
+                    Log out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" className={styles.secondaryBtn}>
+                    Log in
+                  </Link>
+                  <Link href="/signup" className={styles.primaryBtn}>
+                    Sign up
+                  </Link>
+                </>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Mobile: marketplace link + hamburger */}
+        <div className={styles.mobileRight}>
           <Link href="/marketplace" className={styles.headerMarketplace}>
             Marketplace
           </Link>
@@ -148,6 +215,7 @@ export default function Header() {
         </div>
       </div>
 
+      {/* Mobile backdrop + drawer */}
       <div
         className={`${styles.backdrop} ${menuOpen ? styles.backdropVisible : ""}`}
         onClick={() => setMenuOpen(false)}
@@ -164,7 +232,7 @@ export default function Header() {
                 <div className={styles.authUser}>
                   <span className={styles.username}>{username}</span>
                   <button
-                    className={styles.logoutBtn}
+                    className={styles.mobileLogoutBtn}
                     onClick={handleLogout}
                   >
                     Log out
@@ -180,6 +248,13 @@ export default function Header() {
                   </Link>
                 </div>
               )}
+            </li>
+          )}
+          {username && (
+            <li>
+              <Link href="/marketplace/new" className={`${styles.navLink} ${styles.navPostListing}`} onClick={() => setMenuOpen(false)}>
+                + Post Listing
+              </Link>
             </li>
           )}
           <li>

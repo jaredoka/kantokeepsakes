@@ -5,32 +5,193 @@
   background-color: var(--color-white);
   border-bottom: 1px solid var(--color-gray-200);
   height: var(--header-height);
+  display: flex;
+  align-items: center;
 }
 
 .headerContainer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   max-width: var(--max-width);
+  width: 100%;
   margin: 0 auto;
-  padding: 0 var(--space-md);
+  padding: 0 var(--space-lg);
   height: 100%;
+  gap: var(--space-lg);
 }
 
 .logoLink {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .logo {
-  height: 44px;
+  height: 32px;
   width: auto;
 }
 
-.headerRight {
+/* Desktop inline nav — centre-left */
+.desktopNav {
+  display: none;
+  align-items: center;
+  gap: var(--space-md);
+  margin-left: var(--space-sm);
+}
+
+.desktopNavLink {
+  position: relative;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-gray-500);
+  padding: 4px 0;
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition-fast);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.desktopNavLink:hover {
+  color: var(--color-black);
+}
+
+.desktopNavLinkActive {
+  color: var(--color-black);
+  border-bottom-color: var(--color-yellow);
+}
+
+.unreadDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-yellow);
+  flex-shrink: 0;
+}
+
+/* Desktop actions — right side */
+.desktopActions {
+  display: none;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-left: auto;
+}
+
+.avatarLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-gray-700);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.avatarLink:hover {
+  color: var(--color-black);
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--color-gray-900);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.avatarName {
+  display: inline;
+}
+
+.postBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  background-color: var(--color-yellow);
+  color: var(--color-black);
+  border: 1px solid var(--color-yellow);
+  border-radius: var(--border-radius);
+  white-space: nowrap;
+  transition: background-color var(--transition-fast);
+}
+
+.postBtn:hover {
+  background-color: var(--color-yellow-dark);
+}
+
+.logoutBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-gray-500);
+  background: none;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.logoutBtn:hover {
+  color: var(--color-danger-fg);
+  border-color: var(--color-danger-border);
+}
+
+.secondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-gray-700);
+  background-color: var(--color-white);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius);
+  transition: background-color var(--transition-fast);
+}
+
+.secondaryBtn:hover {
+  background-color: var(--color-gray-100);
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-black);
+  background-color: var(--color-yellow);
+  border: 1px solid var(--color-yellow);
+  border-radius: var(--border-radius);
+  transition: background-color var(--transition-fast);
+}
+
+.primaryBtn:hover {
+  background-color: var(--color-yellow-dark);
+}
+
+/* Mobile right — marketplace link + hamburger */
+.mobileRight {
   display: flex;
   align-items: center;
   gap: var(--space-md);
+  margin-left: auto;
 }
 
 .headerMarketplace {
@@ -80,6 +241,7 @@
   transform: translateY(-7px) rotate(-45deg);
 }
 
+/* Backdrop */
 .backdrop {
   position: fixed;
   inset: 0;
@@ -95,16 +257,17 @@
   visibility: visible;
 }
 
+/* Slide-out drawer (mobile) */
 .navOverlay {
   position: fixed;
   top: 0;
   right: 0;
-  width: 280px;
+  width: var(--sidebar-width);
   height: 100vh;
   background-color: var(--color-white);
-  box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-nav);
   transform: translateX(100%);
-  transition: transform var(--transition-slow) cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform var(--transition-slow) var(--ease-drawer);
   z-index: 105;
   padding-top: calc(var(--header-height) + var(--space-xl));
   overflow-y: auto;
@@ -146,6 +309,22 @@
   font-weight: 700;
 }
 
+.navPostListing {
+  color: var(--color-black);
+  font-weight: 700;
+  background-color: var(--color-yellow);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius);
+  text-align: center;
+  margin-bottom: var(--space-sm);
+  border-bottom: none;
+}
+
+.navPostListing:hover {
+  background-color: var(--color-yellow-dark);
+  color: var(--color-black);
+}
+
 .authSection {
   padding: var(--space-md) 0;
   border-bottom: 2px solid var(--color-gray-200);
@@ -165,7 +344,7 @@
   color: var(--color-gray-900);
 }
 
-.logoutBtn {
+.mobileLogoutBtn {
   padding: var(--space-xs) var(--space-md);
   font-size: var(--font-size-sm);
   font-weight: 600;
@@ -177,7 +356,7 @@
   transition: color var(--transition-fast), border-color var(--transition-fast);
 }
 
-.logoutBtn:hover {
+.mobileLogoutBtn:hover {
   color: #dc2626;
   border-color: #dc2626;
 }
@@ -263,4 +442,46 @@
   color: var(--color-white);
   background-color: #dc2626;
   border-radius: 11px;
+}
+
+/* Desktop: show inline nav + actions, hide mobile elements */
+@media (min-width: 769px) {
+  .desktopNav {
+    display: flex;
+  }
+
+  .desktopActions {
+    display: flex;
+  }
+
+  .mobileRight {
+    display: none;
+  }
+
+  .headerContainer {
+    padding: 0 var(--space-lg);
+  }
+}
+
+/* Mobile: show mobile elements, hide desktop */
+@media (max-width: 768px) {
+  .desktopNav {
+    display: none;
+  }
+
+  .desktopActions {
+    display: none;
+  }
+
+  .mobileRight {
+    display: flex;
+  }
+
+  .headerContainer {
+    padding: 0 var(--space-md);
+  }
+
+  .logo {
+    height: 26px;
+  }
 }

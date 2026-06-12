@@ -1,0 +1,207 @@
+.main {
+  min-height: calc(100vh - var(--header-height) - 60px);
+  padding: var(--space-xl) var(--space-md);
+}
+
+.container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2xl);
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--color-gray-900);
+}
+
+.backLink {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-gray-500);
+  transition: color var(--transition-fast);
+}
+
+.backLink:hover {
+  color: var(--color-black);
+}
+
+/* Sections */
+.section {
+  margin-bottom: var(--space-2xl);
+}
+
+.sectionHeading {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.emptyText {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+}
+
+/* Reports list */
+.reportsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.reportCard {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.reportResolved {
+  opacity: 0.7;
+}
+
+.reportMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.reasonBadge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-700);
+}
+
+.reason_scam {
+  background-color: #fef2f2;
+  color: #991b1b;
+}
+
+.reason_spam {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.reason_harassment {
+  background-color: #fef2f2;
+  color: #991b1b;
+}
+
+.reason_inappropriate {
+  background-color: #fff7ed;
+  color: #9a3412;
+}
+
+.reason_other {
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-700);
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.status_resolved {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status_dismissed {
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-500);
+}
+
+.status_reviewed {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.reportDate {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+}
+
+.reportParties {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.partyLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+}
+
+.partyValue {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-gray-900);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.bannedTag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  background-color: #dc2626;
+  color: var(--color-white);
+}
+
+.listingLink {
+  font-size: var(--font-size-sm);
+  color: var(--color-yellow-dark);
+  transition: color var(--transition-fast);
+}
+
+.listingLink:hover {
+  color: var(--color-black);
+}
+
+.reportDescription {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-700);
+  line-height: 1.5;
+  background-color: var(--color-gray-100);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius);
+}
+
+@media (max-width: 640px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .reportCard {
+    padding: var(--space-md);
+  }
+}

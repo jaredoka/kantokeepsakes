@@ -42,6 +42,9 @@ export const REPORT_STATUSES = [
 ] as const;
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
+export const OFFER_STATUSES = ["pending", "accepted", "declined"] as const;
+export type OfferStatus = (typeof OFFER_STATUSES)[number];
+
 // Display labels
 
 export const LISTING_TYPE_LABELS: Record<ListingType, string> = {
@@ -94,6 +97,9 @@ export interface Listing {
   price: number | null;
   currency: Currency;
   images: string[];
+  looking_for_description: string | null;
+  looking_for_images: string[];
+  wants_offers: boolean;
   status: ListingStatus;
   created_at: string;
   bumped_at: string;
@@ -143,6 +149,29 @@ export interface Report {
   created_at: string;
 }
 
+export interface Offer {
+  id: string;
+  listing_id: string;
+  offerer_id: string;
+  message: string | null;
+  front_image: string | null;
+  back_image: string | null;
+  status: OfferStatus;
+  created_at: string;
+}
+
+export interface OfferWithProfile extends Offer {
+  profiles: Pick<Profile, "username" | "avatar_url" | "reputation_score" | "completed_trades">;
+}
+
+// Grading
+
+export const GRADING_COMPANIES = ["RAW", "PSA"] as const;
+export type GradingCompany = (typeof GRADING_COMPANIES)[number];
+
+export const PSA_GRADES = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"] as const;
+export type PSAGrade = (typeof PSA_GRADES)[number];
+
 // Form data types (for create/edit forms)
 
 export interface ListingFormData {
@@ -154,6 +183,13 @@ export interface ListingFormData {
   price: string; // string for form input, parsed to number on submit
   currency: Currency;
   images: string[];
+  wantsCash: boolean;
+  wantsCards: boolean;
+  wantsOffers: boolean;
+  lookingForDescription: string;
+  lookingForImages: string[];
+  grader: GradingCompany;
+  psaGrade: PSAGrade;
 }
 
 // Image upload

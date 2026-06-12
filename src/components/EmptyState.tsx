@@ -3,9 +3,10 @@ import styles from "./EmptyState.module.css";
 
 interface EmptyStateProps {
   hasFilters: boolean;
+  basePath?: string;
 }
 
-export default function EmptyState({ hasFilters }: EmptyStateProps) {
+export default function EmptyState({ hasFilters, basePath = "/marketplace" }: EmptyStateProps) {
   return (
     <div className={styles.container}>
       <div className={styles.icon}>
@@ -29,7 +30,7 @@ export default function EmptyState({ hasFilters }: EmptyStateProps) {
           <p className={styles.text}>
             Try adjusting your filters or search terms.
           </p>
-          <Link href="/marketplace" className={styles.btn}>
+          <Link href={basePath} className={styles.btn}>
             Clear all filters
           </Link>
         </>

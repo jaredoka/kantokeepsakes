@@ -3,10 +3,8 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import {
-  LISTING_TYPES,
   LISTING_CATEGORIES,
   LISTING_LANGUAGES,
-  LISTING_TYPE_LABELS,
   CATEGORY_LABELS,
   LANGUAGE_LABELS,
 } from "@/lib/marketplace/types";
@@ -15,6 +13,7 @@ import styles from "./FilterBar.module.css";
 
 interface FilterBarProps {
   filters: ListingFilters;
+  basePath?: string;
 }
 
 const SORT_OPTIONS = [
@@ -24,9 +23,10 @@ const SORT_OPTIONS = [
   { value: "price_desc", label: "Price: High to Low" },
 ] as const;
 
-export default function FilterBar({ filters }: FilterBarProps) {
+export default function FilterBar({ filters, basePath }: FilterBarProps) {
   const router = useRouter();
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname = basePath || rawPathname;
   const searchParams = useSearchParams();
 
   const [searchInput, setSearchInput] = useState(filters.search || "");
@@ -71,7 +71,6 @@ export default function FilterBar({ filters }: FilterBarProps) {
   };
 
   const hasFilters = !!(
-    filters.type ||
     filters.category ||
     filters.language ||
     filters.priceMin !== undefined ||
@@ -94,22 +93,6 @@ export default function FilterBar({ filters }: FilterBarProps) {
           Search
         </button>
       </form>
-
-      {/* Type Toggle */}
-      <div className={styles.filterGroup}>
-        <span className={styles.filterLabel}>Type</span>
-        <div className={styles.pills}>
-          {LISTING_TYPES.map((t) => (
-            <button
-              key={t}
-              className={`${styles.pill} ${filters.type === t ? styles.pillActive : ""}`}
-              onClick={() => toggleParam("type", t)}
-            >
-              {LISTING_TYPE_LABELS[t]}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Category */}
       <div className={styles.filterGroup}>

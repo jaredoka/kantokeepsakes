@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getReputationTier, formatAccountAge } from "@/lib/marketplace/reputation";
 import type { Profile } from "@/lib/marketplace/types";
 import styles from "./SellerCard.module.css";
@@ -19,7 +20,9 @@ export default function SellerCard({ profile }: SellerCardProps) {
           {profile.username.charAt(0).toUpperCase()}
         </div>
         <div className={styles.info}>
-          <span className={styles.username}>{profile.username}</span>
+          <Link href={`/marketplace/user/${encodeURIComponent(profile.username)}`} className={styles.username}>
+            {profile.username}
+          </Link>
           <span className={`${styles.badge} ${styles[tier.className]}`}>
             {tier.label}
           </span>

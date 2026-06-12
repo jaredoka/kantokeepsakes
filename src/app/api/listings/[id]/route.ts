@@ -47,6 +47,20 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  // Check ban status
+  const { data: banProfile } = await supabase
+    .from("profiles")
+    .select("is_banned")
+    .eq("id", user.id)
+    .single();
+
+  if (banProfile?.is_banned) {
+    return NextResponse.json(
+      { error: "Your account has been banned." },
+      { status: 403 }
+    );
+  }
+
   // Verify ownership
   const { data: existing } = await supabase
     .from("listings")
@@ -84,6 +98,11 @@ export async function PATCH(
     price?: number | null;
     currency?: string;
     images?: string[];
+    wantsCash?: boolean;
+    wantsCards?: boolean;
+    wantsOffers?: boolean;
+    lookingForDescription?: string;
+    lookingForImages?: string[];
   };
 
   try {
@@ -92,7 +111,11 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
-  const { type, title, description, category, language, price, currency, images } = body;
+  const {
+    type, title, description, category, language, price, currency, images,
+    wantsCash, wantsCards, wantsOffers,
+    lookingForDescription, lookingForImages,
+  } = body;
 
   const validation = validateListing({
     type: type || "",
@@ -103,6 +126,11 @@ export async function PATCH(
     price: price === null || price === undefined ? "" : String(price),
     currency: currency || "",
     images: images || [],
+    wantsCash: !!wantsCash,
+    wantsCards: !!wantsCards,
+    wantsOffers: !!wantsOffers,
+    lookingForDescription: lookingForDescription || "",
+    lookingForImages: lookingForImages || [],
   });
 
   if (!validation.valid) {
@@ -117,9 +145,12 @@ export async function PATCH(
       description: (description as string).trim(),
       category: category as ListingCategory,
       language: language as ListingLanguage,
-      price: price ?? null,
+      price: wantsCash ? (price ?? null) : null,
       currency: (currency as Currency) || "BND",
       images: images || [],
+      looking_for_description: wantsCards ? (lookingForDescription?.trim() || null) : null,
+      looking_for_images: wantsCards ? (lookingForImages || []) : [],
+      wants_offers: !!wantsOffers,
     })
     .eq("id", id)
     .eq("user_id", user.id);
@@ -147,6 +178,20 @@ export async function DELETE(
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  // Check ban status
+  const { data: delBanProfile } = await supabase
+    .from("profiles")
+    .select("is_banned")
+    .eq("id", user.id)
+    .single();
+
+  if (delBanProfile?.is_banned) {
+    return NextResponse.json(
+      { error: "Your account has been banned." },
+      { status: 403 }
+    );
   }
 
   const { data: existing } = await supabase

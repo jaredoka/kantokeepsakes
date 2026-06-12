@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./page.module.css";
 
@@ -52,8 +53,17 @@ export default function LoginPage() {
   return (
     <main className={styles.main}>
       <div className={styles.card}>
-        <h1 className={styles.title}>Welcome Back</h1>
-        <p className={styles.subtitle}>Log in to your account</p>
+        <div className={styles.logoWrap}>
+          <Image
+            src="/images/Kanto-Keepsakes-logo.webp"
+            alt="Kanto Keepsakes"
+            width={140}
+            height={36}
+            className={styles.logo}
+          />
+        </div>
+        <h1 className={styles.title}>Welcome back</h1>
+        <p className={styles.subtitle}>Sign in to your account</p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           {error && <div className={styles.error}>{error}</div>}

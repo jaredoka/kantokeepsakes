@@ -151,10 +151,11 @@
 
 .convListing {
   font-size: var(--font-size-xs);
-  color: var(--color-gray-500);
+  color: var(--color-yellow-dark);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-top: 2px;
 }
 
 .convPreview {

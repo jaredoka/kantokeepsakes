@@ -60,6 +60,11 @@ export async function POST(request: NextRequest) {
     price?: number | null;
     currency?: string;
     images?: string[];
+    wantsCash?: boolean;
+    wantsCards?: boolean;
+    wantsOffers?: boolean;
+    lookingForDescription?: string;
+    lookingForImages?: string[];
     turnstileToken?: string;
   };
 
@@ -78,6 +83,11 @@ export async function POST(request: NextRequest) {
     price,
     currency,
     images,
+    wantsCash,
+    wantsCards,
+    wantsOffers,
+    lookingForDescription,
+    lookingForImages,
     turnstileToken,
   } = body;
 
@@ -107,6 +117,11 @@ export async function POST(request: NextRequest) {
     price: price === null || price === undefined ? "" : String(price),
     currency: currency || "",
     images: images || [],
+    wantsCash: !!wantsCash,
+    wantsCards: !!wantsCards,
+    wantsOffers: !!wantsOffers,
+    lookingForDescription: lookingForDescription || "",
+    lookingForImages: lookingForImages || [],
   });
 
   if (!validation.valid) {
@@ -127,9 +142,12 @@ export async function POST(request: NextRequest) {
       description: (description as string).trim(),
       category: category as ListingCategory,
       language: language as ListingLanguage,
-      price: price ?? null,
+      price: wantsCash ? (price ?? null) : null,
       currency: (currency as Currency) || "BND",
       images: images || [],
+      looking_for_description: wantsCards ? (lookingForDescription?.trim() || null) : null,
+      looking_for_images: wantsCards ? (lookingForImages || []) : [],
+      wants_offers: !!wantsOffers,
       status: "active",
       bumped_at: now,
       expires_at: expiresAt,

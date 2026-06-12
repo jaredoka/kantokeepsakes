@@ -1,0 +1,43 @@
+.wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.bumpBtn {
+  padding: var(--space-xs) var(--space-md);
+  background-color: var(--color-white);
+  color: var(--color-yellow-dark);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  border: 1px solid var(--color-yellow);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.bumpBtn:hover:not(:disabled) {
+  background-color: #fef3c7;
+}
+
+.bumpBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cooldown {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+}
+
+.bumpedText {
+  font-size: var(--font-size-sm);
+  color: #166534;
+  font-weight: 600;
+}
+
+.errorText {
+  font-size: var(--font-size-xs);
+  color: #dc2626;
+}

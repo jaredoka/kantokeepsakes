@@ -38,13 +38,18 @@
   font-size: var(--font-size-base);
   font-weight: 700;
   color: var(--color-gray-900);
+  transition: color var(--transition-fast);
+}
+
+.username:hover {
+  color: var(--color-yellow-dark);
 }
 
 .badge {
   display: inline-block;
   width: fit-content;
   padding: 1px 8px;
-  border-radius: 999px;
+  border-radius: var(--border-radius-pill);
   font-size: var(--font-size-xs);
   font-weight: 600;
 }
@@ -55,18 +60,18 @@
 }
 
 .tierTrader {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: var(--color-info-bg);
+  color: var(--color-info-fg);
 }
 
 .tierTrusted {
-  background-color: #dcfce7;
-  color: #166534;
+  background-color: var(--color-success-bg);
+  color: var(--color-success-fg);
 }
 
 .tierVeteran {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-fg);
 }
 
 .stats {

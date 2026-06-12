@@ -97,6 +97,38 @@ export function validateImageFile(file: File): ValidationResult {
   return { valid: true };
 }
 
+export function validateLookingForDescription(
+  description: string
+): ValidationResult {
+  if (!description.trim()) return { valid: true }; // optional
+  if (description.trim().length > 1000)
+    return {
+      valid: false,
+      error: "Looking-for description must be 1000 characters or fewer.",
+    };
+  return { valid: true };
+}
+
+export function validateLookingForImages(images: string[]): ValidationResult {
+  if (images.length > MAX_IMAGES)
+    return {
+      valid: false,
+      error: `Maximum ${MAX_IMAGES} looking-for images allowed.`,
+    };
+  return { valid: true };
+}
+
+export function validateOfferMessage(message: string): ValidationResult {
+  if (!message.trim())
+    return { valid: false, error: "Offer message is required." };
+  if (message.trim().length > 1000)
+    return {
+      valid: false,
+      error: "Offer message must be 1000 characters or fewer.",
+    };
+  return { valid: true };
+}
+
 export interface ListingInput {
   type: string;
   title: string;
@@ -106,6 +138,11 @@ export interface ListingInput {
   price: string;
   currency: string;
   images: string[];
+  wantsCash?: boolean;
+  wantsCards?: boolean;
+  wantsOffers?: boolean;
+  lookingForDescription?: string;
+  lookingForImages?: string[];
 }
 
 export function validateListing(data: ListingInput): ValidationResult {
@@ -118,10 +155,28 @@ export function validateListing(data: ListingInput): ValidationResult {
     validatePrice(data.price),
     validateCurrency(data.currency),
     validateImages(data.images),
+    validateLookingForDescription(data.lookingForDescription ?? ""),
+    validateLookingForImages(data.lookingForImages ?? []),
   ];
 
   for (const check of checks) {
     if (!check.valid) return check;
+  }
+
+  // At least one want type must be selected
+  if (!data.wantsCash && !data.wantsCards && !data.wantsOffers) {
+    return {
+      valid: false,
+      error: "You must select at least one want type (Cash, Cards, or Offers).",
+    };
+  }
+
+  // If wantsCash is selected, price must be provided
+  if (data.wantsCash && !data.price.trim()) {
+    return {
+      valid: false,
+      error: "Price is required when Cash is selected.",
+    };
   }
 
   return { valid: true };

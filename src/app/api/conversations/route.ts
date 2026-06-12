@@ -72,6 +72,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  // Check ban status
+  const { data: banProfile } = await supabase
+    .from("profiles")
+    .select("is_banned")
+    .eq("id", user.id)
+    .single();
+
+  if (banProfile?.is_banned) {
+    return NextResponse.json(
+      { error: "Your account has been banned." },
+      { status: 403 }
+    );
+  }
+
   let body: { listingId?: string };
   try {
     body = await request.json();

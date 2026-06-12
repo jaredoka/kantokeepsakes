@@ -2,21 +2,27 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
+import ReportModal from "./ReportModal";
+import OfferModal from "./OfferModal";
 import styles from "./ActionBar.module.css";
 
 interface ActionBarProps {
   listingId: string;
+  sellerId: string;
   isOwner: boolean;
   isAuthenticated: boolean;
 }
 
 export default function ActionBar({
   listingId,
+  sellerId,
   isOwner,
   isAuthenticated,
 }: ActionBarProps) {
   const router = useRouter();
   const [messaging, setMessaging] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [showOffer, setShowOffer] = useState(false);
 
   const handleMessage = useCallback(async () => {
     if (!isAuthenticated) {
@@ -65,6 +71,21 @@ export default function ActionBar({
       {!isOwner && (
         <button
           className={styles.messageBtn}
+          onClick={() => {
+            if (!isAuthenticated) {
+              router.push("/login");
+              return;
+            }
+            setShowOffer(true);
+          }}
+        >
+          Make Offer
+        </button>
+      )}
+
+      {!isOwner && (
+        <button
+          className={styles.secondaryBtn}
           onClick={handleMessage}
           disabled={messaging}
         >
@@ -77,9 +98,33 @@ export default function ActionBar({
       </button>
 
       {!isOwner && (
-        <button className={styles.reportBtn} disabled title="Coming soon">
+        <button
+          className={styles.reportBtn}
+          onClick={() => {
+            if (!isAuthenticated) {
+              router.push("/login");
+              return;
+            }
+            setShowReport(true);
+          }}
+        >
           Report
         </button>
+      )}
+
+      {showReport && (
+        <ReportModal
+          reportedUserId={sellerId}
+          listingId={listingId}
+          onClose={() => setShowReport(false)}
+        />
+      )}
+
+      {showOffer && (
+        <OfferModal
+          listingId={listingId}
+          onClose={() => setShowOffer(false)}
+        />
       )}
     </div>
   );

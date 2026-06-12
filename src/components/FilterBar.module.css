@@ -1,12 +1,11 @@
 .bar {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
-  padding: var(--space-md);
+  gap: var(--space-sm);
+  padding: var(--space-sm);
   background-color: var(--color-off-white);
   border: 1px solid var(--color-gray-200);
   border-radius: var(--border-radius-lg);
-  margin-bottom: var(--space-lg);
 }
 
 .searchForm {
@@ -16,10 +15,11 @@
 
 .searchInput {
   flex: 1;
-  padding: var(--space-sm) var(--space-md);
+  min-width: 0;
+  padding: var(--space-xs) var(--space-sm);
   border: 1px solid var(--color-gray-300);
   border-radius: var(--border-radius);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   background-color: var(--color-white);
   outline: none;
   transition: border-color var(--transition-fast);
@@ -30,11 +30,11 @@
 }
 
 .searchBtn {
-  padding: var(--space-sm) var(--space-lg);
+  padding: var(--space-xs) var(--space-sm);
   background-color: var(--color-yellow);
   color: var(--color-black);
   font-weight: 600;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   border: none;
   border-radius: var(--border-radius);
   cursor: pointer;

@@ -50,11 +50,11 @@
 }
 
 .backLink {
-  font-size: var(--font-size-xl);
+  display: flex;
+  align-items: center;
   color: var(--color-gray-500);
-  font-weight: 600;
   transition: color var(--transition-fast);
-  line-height: 1;
+  padding: 4px;
 }
 
 .backLink:hover {

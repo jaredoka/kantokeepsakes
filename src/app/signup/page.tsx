@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import Turnstile from "@/components/Turnstile";
 import styles from "./page.module.css";
@@ -91,9 +92,18 @@ export default function SignupPage() {
   return (
     <main className={styles.main}>
       <div className={styles.card}>
-        <h1 className={styles.title}>Create an Account</h1>
+        <div className={styles.logoWrap}>
+          <Image
+            src="/images/Kanto-Keepsakes-logo.webp"
+            alt="Kanto Keepsakes"
+            width={140}
+            height={36}
+            className={styles.logo}
+          />
+        </div>
+        <h1 className={styles.title}>Create account</h1>
         <p className={styles.subtitle}>
-          Join the Kanto Keepsakes marketplace
+          Join the Kanto Keepsakes community
         </p>
 
         <form onSubmit={handleSubmit} className={styles.form}>

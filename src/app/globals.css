@@ -1,11 +1,9 @@
 @import "tailwindcss";
 
 :root {
+  /* Base neutrals */
   --color-white: #ffffff;
   --color-off-white: #fafafa;
-  --color-yellow: #f5c518;
-  --color-yellow-light: #fde68a;
-  --color-yellow-dark: #d4a017;
   --color-black: #1a1a1a;
   --color-gray-100: #f3f4f6;
   --color-gray-200: #e5e7eb;
@@ -14,6 +12,46 @@
   --color-gray-700: #374151;
   --color-gray-900: #111827;
 
+  /* Brand */
+  --color-yellow: #f5c518;
+  --color-yellow-light: #fde68a;
+  --color-yellow-dark: #d4a017;
+
+  /* Semantic states */
+  --color-success-bg: #dcfce7;
+  --color-success-fg: #166534;
+  --color-info-bg: #dbeafe;
+  --color-info-fg: #1e40af;
+  --color-warning-bg: #fef3c7;
+  --color-warning-fg: #92400e;
+  --color-danger-bg: #fef2f2;
+  --color-danger-border: #fecaca;
+  --color-danger-fg: #dc2626;
+
+  /* Semantic aliases */
+  --surface-page: var(--color-white);
+  --surface-muted: var(--color-off-white);
+  --surface-card: var(--color-white);
+  --surface-inset: var(--color-gray-100);
+  --border-default: var(--color-gray-200);
+  --border-strong: var(--color-gray-300);
+  --border-focus: var(--color-yellow);
+  --text-primary: var(--color-gray-900);
+  --text-body: var(--color-gray-700);
+  --text-muted: var(--color-gray-500);
+  --text-faint: var(--color-gray-300);
+  --text-on-brand: var(--color-black);
+  --accent: var(--color-yellow);
+  --accent-hover: var(--color-yellow-dark);
+  --accent-link: var(--color-yellow-dark);
+  --focus-ring: 0 0 0 3px rgba(245, 197, 24, 0.2);
+
+  /* Font families */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: var(--font-sans);
+  --font-heading: var(--font-sans);
+
+  /* Typography */
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
@@ -22,7 +60,18 @@
   --font-size-2xl: 1.5rem;
   --font-size-3xl: 1.875rem;
   --font-size-4xl: 2.25rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --tracking-wide: 0.05em;
 
+  /* Line heights */
+  --line-tight: 1.2;
+  --line-snug: 1.3;
+  --line-base: 1.6;
+
+  /* Spacing */
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;
   --space-md: 1rem;
@@ -31,18 +80,28 @@
   --space-2xl: 3rem;
   --space-3xl: 4rem;
 
+  /* Layout */
   --max-width: 1200px;
   --header-height: 64px;
-  --border-radius: 8px;
-  --border-radius-lg: 12px;
+  --sidebar-width: 280px;
 
+  /* Radii */
+  --border-radius: 8px;
+  --border-radius-sm: 4px;
+  --border-radius-lg: 12px;
+  --border-radius-pill: 999px;
+
+  /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-nav: -4px 0 15px rgba(0, 0, 0, 0.1);
 
+  /* Motion */
   --transition-fast: 150ms ease;
   --transition-base: 250ms ease;
   --transition-slow: 350ms ease;
+  --ease-drawer: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 *,

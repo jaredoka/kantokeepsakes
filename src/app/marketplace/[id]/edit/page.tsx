@@ -14,8 +14,12 @@ import {
   LISTING_TYPE_LABELS,
   CATEGORY_LABELS,
   LANGUAGE_LABELS,
+  GRADING_COMPANIES,
+  PSA_GRADES,
   type ListingFormData,
   type Listing,
+  type GradingCompany,
+  type PSAGrade,
 } from "@/lib/marketplace/types";
 import styles from "./page.module.css";
 
@@ -42,6 +46,13 @@ export default function EditListingPage({
     price: "",
     currency: "BND",
     images: [],
+    wantsCash: false,
+    wantsCards: false,
+    wantsOffers: false,
+    lookingForDescription: "",
+    lookingForImages: [],
+    grader: "RAW",
+    psaGrade: "10",
   });
 
   useEffect(() => {
@@ -78,6 +89,10 @@ export default function EditListingPage({
         return;
       }
 
+      const hasLookingFor =
+        (listing.looking_for_description && listing.looking_for_description.trim()) ||
+        (listing.looking_for_images && listing.looking_for_images.length > 0);
+
       setForm({
         type: listing.type,
         title: listing.title,
@@ -87,6 +102,13 @@ export default function EditListingPage({
         price: listing.price !== null ? String(listing.price) : "",
         currency: listing.currency,
         images: listing.images,
+        wantsCash: listing.price !== null,
+        wantsCards: !!hasLookingFor,
+        wantsOffers: listing.wants_offers ?? false,
+        lookingForDescription: listing.looking_for_description || "",
+        lookingForImages: listing.looking_for_images || [],
+        grader: "RAW",
+        psaGrade: "10",
       });
       setLoading(false);
     }
@@ -306,54 +328,174 @@ export default function EditListingPage({
             </select>
           </div>
 
-          {/* Price + Currency */}
-          <div className={styles.priceRow}>
-            <div className={styles.field} style={{ flex: 1 }}>
-              <label htmlFor="price" className={styles.label}>
-                Price <span className={styles.optional}>(optional)</span>
-              </label>
-              <input
-                id="price"
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.price}
-                onChange={(e) => updateField("price", e.target.value)}
-                className={styles.input}
-              />
-            </div>
-            <div className={styles.field} style={{ width: 100 }}>
-              <label htmlFor="currency" className={styles.label}>
-                Currency
-              </label>
-              <select
-                id="currency"
-                value={form.currency}
-                onChange={(e) =>
-                  updateField(
-                    "currency",
-                    e.target.value as ListingFormData["currency"]
-                  )
-                }
-                className={styles.select}
-              >
-                {CURRENCIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
+          {/* Grading */}
+          <div className={styles.field}>
+            <label className={styles.label}>Grading</label>
+            <div className={styles.gradingRow}>
+              <div className={styles.gradingPills}>
+                {GRADING_COMPANIES.map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    className={`${styles.gradingPill} ${form.grader === g ? styles.gradingPillActive : ""}`}
+                    onClick={() => updateField("grader", g)}
+                  >
+                    {g}
+                  </button>
                 ))}
-              </select>
+              </div>
+              {form.grader === "PSA" && (
+                <div className={styles.gradePickerWrap}>
+                  <span className={styles.gradePickerLabel}>Grade</span>
+                  <div className={styles.gradePicker}>
+                    {PSA_GRADES.map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        className={`${styles.gradeBtn} ${form.psaGrade === g ? styles.gradeBtnActive : ""}`}
+                        onClick={() => updateField("psaGrade", g)}
+                      >
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+            {form.grader === "PSA" && (
+              <div className={styles.gradePreview}>
+                PSA {form.psaGrade}
+              </div>
+            )}
           </div>
 
-          {/* Images */}
+          {/* My Items — Images */}
           <div className={styles.field}>
-            <label className={styles.label}>Images</label>
+            <label className={styles.label}>My Items — Photos</label>
             <ImageUploader
               images={form.images}
               onImagesChange={(imgs) => updateField("images", imgs)}
             />
           </div>
+
+          {/* What do you want? Section */}
+          <div className={styles.sectionDivider}>
+            <h2 className={styles.sectionTitle}>What do you want?</h2>
+            <p className={styles.sectionSubtitle}>
+              Select at least one. You can combine multiple options.
+            </p>
+          </div>
+
+          <div className={styles.checkboxGroup}>
+            <label className={styles.checkboxRow}>
+              <input
+                type="checkbox"
+                checked={form.wantsCash}
+                onChange={(e) => updateField("wantsCash", e.target.checked)}
+              />
+              <span className={styles.checkboxLabel}>
+                Cash <span className={styles.checkboxHint}>— set your price</span>
+              </span>
+            </label>
+            <label className={styles.checkboxRow}>
+              <input
+                type="checkbox"
+                checked={form.wantsCards}
+                onChange={(e) => updateField("wantsCards", e.target.checked)}
+              />
+              <span className={styles.checkboxLabel}>
+                Cards <span className={styles.checkboxHint}>— trade for specific cards</span>
+              </span>
+            </label>
+            <label className={styles.checkboxRow}>
+              <input
+                type="checkbox"
+                checked={form.wantsOffers}
+                onChange={(e) => updateField("wantsOffers", e.target.checked)}
+              />
+              <span className={styles.checkboxLabel}>
+                Offers <span className={styles.checkboxHint}>— open to any offer</span>
+              </span>
+            </label>
+          </div>
+
+          {/* Cash fields */}
+          {form.wantsCash && (
+            <div className={styles.priceRow}>
+              <div className={styles.field} style={{ flex: 1 }}>
+                <label htmlFor="price" className={styles.label}>
+                  Price
+                </label>
+                <input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.price}
+                  onChange={(e) => updateField("price", e.target.value)}
+                  className={styles.input}
+                  placeholder="Enter amount"
+                />
+              </div>
+              <div className={styles.field} style={{ width: 100 }}>
+                <label htmlFor="currency" className={styles.label}>
+                  Currency
+                </label>
+                <select
+                  id="currency"
+                  value={form.currency}
+                  onChange={(e) =>
+                    updateField(
+                      "currency",
+                      e.target.value as ListingFormData["currency"]
+                    )
+                  }
+                  className={styles.select}
+                >
+                  {CURRENCIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Cards fields */}
+          {form.wantsCards && (
+            <>
+              <div className={styles.field}>
+                <label htmlFor="lookingForDescription" className={styles.label}>
+                  Cards you want
+                </label>
+                <textarea
+                  id="lookingForDescription"
+                  value={form.lookingForDescription}
+                  onChange={(e) =>
+                    updateField("lookingForDescription", e.target.value)
+                  }
+                  className={styles.textarea}
+                  placeholder="e.g. Pikachu VMAX Alt Art, any Charizard card..."
+                  rows={3}
+                  maxLength={1000}
+                />
+                <span className={styles.charCount}>
+                  {form.lookingForDescription.length}/1000
+                </span>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>
+                  Reference Photos <span className={styles.optional}>(optional)</span>
+                </label>
+                <ImageUploader
+                  images={form.lookingForImages}
+                  onImagesChange={(imgs) => updateField("lookingForImages", imgs)}
+                />
+              </div>
+            </>
+          )}
 
           <div className={styles.actions}>
             <button
