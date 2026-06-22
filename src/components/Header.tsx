@@ -14,13 +14,84 @@ export default function Header() {
   const [username, setUsername] = useState<string | null>(null);
   const [authLoaded, setAuthLoaded] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const isMarketplace = pathname.startsWith("/marketplace");
 
   useEffect(() => {
     const supabase = createClient();
+    let mounted = true;
 
-    async function fetchUnread(userId: string) {
+    async function fetchUnread(uid: string) {
+      const { data: convs } = await supabase
+        .from("conversations")
+        .select("id")
+        .or(`participant_1.eq.${uid},participant_2.eq.${uid}`);
+
+      if (!mounted) return;
+
+      if (!convs || convs.length === 0) {
+        setUnreadCount(0);
+        return;
+      }
+
+      const convIds = convs.map((c) => c.id);
+      const { count } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .in("conversation_id", convIds)
+        .eq("is_read", false)
+        .neq("sender_id", uid);
+
+      if (mounted) setUnreadCount(count || 0);
+    }
+
+    async function loadProfile(uid: string) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", uid)
+        .single();
+      if (mounted) {
+        setUsername(profile?.username ?? null);
+        setUserId(uid);
+        setAuthLoaded(true);
+      }
+      fetchUnread(uid);
+    }
+
+    // onAuthStateChange fires INITIAL_SESSION immediately on subscribe,
+    // providing the current session (including token refresh). This is
+    // more reliable than a separate getUser() call which can fail if
+    // the access token is momentarily expired.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        loadProfile(session.user.id);
+      } else {
+        if (mounted) {
+          setUsername(null);
+          setUserId(null);
+          setUnreadCount(0);
+          setAuthLoaded(true);
+        }
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Realtime: re-fetch unread count when a new message from someone else arrives
+  useEffect(() => {
+    if (!userId) return;
+
+    const supabase = createClient();
+
+    async function fetchUnread() {
       const { data: convs } = await supabase
         .from("conversations")
         .select("id")
@@ -42,52 +113,31 @@ export default function Header() {
       setUnreadCount(count || 0);
     }
 
-    async function getSession() {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("username")
-            .eq("id", user.id)
-            .single();
-          setUsername(profile?.username ?? null);
-          fetchUnread(user.id);
-        } else {
-          setUsername(null);
-          setUnreadCount(0);
+    const channel = supabase
+      .channel("header-unread")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          const msg = payload.new as { sender_id: string };
+          if (msg.sender_id !== userId) {
+            fetchUnread();
+          }
         }
-      } catch {
-        setUsername(null);
-        setUnreadCount(0);
-      } finally {
-        setAuthLoaded(true);
-      }
-    }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages" },
+        () => {
+          fetchUnread();
+        }
+      )
+      .subscribe();
 
-    getSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("username")
-          .eq("id", session.user.id)
-          .single();
-        setUsername(profile?.username ?? null);
-        fetchUnread(session.user.id);
-      } else {
-        setUsername(null);
-        setUnreadCount(0);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";

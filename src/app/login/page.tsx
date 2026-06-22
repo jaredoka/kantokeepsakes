@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -13,6 +13,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [signupHref, setSignupHref] = useState("/signup");
+
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search).get("next");
+    if (next && next.startsWith("/")) {
+      setSignupHref(`/signup?next=${encodeURIComponent(next)}`);
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,7 +50,8 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/marketplace");
+      const next = new URLSearchParams(window.location.search).get("next");
+      router.push(next && next.startsWith("/") ? next : "/marketplace");
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -109,7 +118,7 @@ export default function LoginPage() {
 
         <p className={styles.footer}>
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className={styles.link}>
+          <Link href={signupHref} className={styles.link}>
             Sign up
           </Link>
         </p>

@@ -266,6 +266,7 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
                 sellerId={listing.user_id}
                 isOwner={false}
                 isAuthenticated={!!user}
+                listingType={listing.type}
               />
             )}
 

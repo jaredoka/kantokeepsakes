@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ListingCard from "@/components/ListingCard";
 import StarRating from "@/components/StarRating";
+import ProfileEditForm from "@/components/ProfileEditForm";
 import {
   getReputationTier,
   formatAccountAge,
@@ -91,6 +92,12 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     notFound();
   }
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isOwnProfile = user?.id === profile.id;
+
   const [listings, reviews] = await Promise.all([
     getUserListings(profile.id),
     getUserReviews(profile.id),
@@ -152,6 +159,13 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
           </span>
 
           {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
+
+          {isOwnProfile && (
+            <ProfileEditForm
+              currentUsername={profile.username}
+              currentBio={profile.bio}
+            />
+          )}
         </div>
 
         {/* Active Listings */}

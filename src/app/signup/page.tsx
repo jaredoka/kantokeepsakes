@@ -81,7 +81,8 @@ export default function SignupPage() {
         return;
       }
 
-      router.push("/marketplace");
+      const next = new URLSearchParams(window.location.search).get("next");
+      router.push(next && next.startsWith("/") ? next : "/marketplace");
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

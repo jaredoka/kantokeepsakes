@@ -10,9 +10,11 @@ import styles from "./OfferModal.module.css";
 interface OfferModalProps {
   listingId: string;
   onClose: () => void;
+  listingType?: "WTS" | "WTB";
 }
 
-export default function OfferModal({ listingId, onClose }: OfferModalProps) {
+export default function OfferModal({ listingId, onClose, listingType = "WTS" }: OfferModalProps) {
+  const isWtb = listingType === "WTB";
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [frontImage, setFrontImage] = useState<string | null>(null);
@@ -120,7 +122,9 @@ export default function OfferModal({ listingId, onClose }: OfferModalProps) {
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <h2 className={styles.heading}>Make an Offer</h2>
+        <h2 className={styles.heading}>
+          {isWtb ? "Offer to Sell" : "Make an Offer"}
+        </h2>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           {error && <div className={styles.error}>{error}</div>}
@@ -134,7 +138,7 @@ export default function OfferModal({ listingId, onClose }: OfferModalProps) {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               className={styles.textarea}
-              placeholder="Describe your offer..."
+              placeholder={isWtb ? "Describe what you're selling, condition, asking price..." : "Describe your offer..."}
               rows={3}
               maxLength={1000}
             />

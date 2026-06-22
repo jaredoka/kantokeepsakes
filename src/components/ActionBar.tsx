@@ -11,6 +11,7 @@ interface ActionBarProps {
   sellerId: string;
   isOwner: boolean;
   isAuthenticated: boolean;
+  listingType?: "WTS" | "WTB";
 }
 
 export default function ActionBar({
@@ -18,7 +19,9 @@ export default function ActionBar({
   sellerId,
   isOwner,
   isAuthenticated,
+  listingType = "WTS",
 }: ActionBarProps) {
+  const isWtb = listingType === "WTB";
   const router = useRouter();
   const [messaging, setMessaging] = useState(false);
   const [showReport, setShowReport] = useState(false);
@@ -80,7 +83,7 @@ export default function ActionBar({
               setShowOffer(true);
             }}
           >
-            Make Offer
+            {isWtb ? "Offer to Sell" : "Make Offer"}
           </button>
         )}
 
@@ -90,7 +93,7 @@ export default function ActionBar({
             onClick={handleMessage}
             disabled={messaging}
           >
-            {messaging ? "Opening..." : "Message Seller"}
+            {messaging ? "Opening..." : isWtb ? "Message Buyer" : "Message Seller"}
           </button>
         )}
 
@@ -127,14 +130,14 @@ export default function ActionBar({
               setShowOffer(true);
             }}
           >
-            Make Offer
+            {isWtb ? "Offer to Sell" : "Make Offer"}
           </button>
           <button
             className={styles.stickyMessageBtn}
             onClick={handleMessage}
             disabled={messaging}
           >
-            {messaging ? "Opening..." : "Message Seller"}
+            {messaging ? "Opening..." : isWtb ? "Message Buyer" : "Message Seller"}
           </button>
         </div>
       )}
@@ -150,6 +153,7 @@ export default function ActionBar({
       {showOffer && (
         <OfferModal
           listingId={listingId}
+          listingType={listingType}
           onClose={() => setShowOffer(false)}
         />
       )}

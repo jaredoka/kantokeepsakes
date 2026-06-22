@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -12,7 +13,9 @@ export default async function MarketplaceLayout({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    const headersList = await headers();
+    const pathname = headersList.get("x-current-path") ?? "/marketplace";
+    redirect(`/login?next=${encodeURIComponent(pathname)}`);
   }
 
   return <>{children}</>;
