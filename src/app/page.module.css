@@ -140,3 +140,40 @@
   background-color: var(--color-yellow-light);
   border-color: var(--color-yellow);
 }
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .hero {
+    padding: 32px 16px;
+  }
+
+  .hero h1 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .hero p {
+    font-size: var(--font-size-base);
+  }
+
+  .categories {
+    padding: var(--space-xl) var(--space-md);
+    gap: var(--space-xl);
+  }
+
+  .categoryCardLarge {
+    min-height: 140px;
+    padding: var(--space-lg);
+  }
+
+  .categoryCardTitleLarge {
+    font-size: var(--font-size-2xl);
+  }
+
+  .subcategoryGrid {
+    gap: var(--space-xs);
+  }
+
+  .categoryCardSmall {
+    padding: 12px 4px;
+  }
+}

@@ -227,3 +227,36 @@
 .btnCheckout {
   margin-bottom: var(--space-sm);
 }
+
+/* Mobile: sticky bottom bar for total + checkout */
+@media (max-width: 640px) {
+  .cartItem {
+    grid-template-columns: 56px 1fr auto;
+  }
+
+  .cartItemImageWrapper {
+    width: 56px;
+    height: 56px;
+  }
+
+  .cartSummary {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 100%;
+    margin: 0;
+    padding: 16px;
+    background-color: var(--color-white);
+    border-top: 1px solid var(--color-gray-200);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+    z-index: 50;
+    border-radius: 0;
+    padding-top: var(--space-md);
+  }
+
+  /* Push cart list above the sticky bar */
+  .cartContainer {
+    padding-bottom: 140px;
+  }
+}

@@ -356,3 +356,49 @@
 .authLink:hover {
   border-color: var(--color-gray-500);
 }
+
+/* Category + Language inline row */
+.categoryLanguageRow {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+}
+
+.fieldFlex {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Mobile layout */
+@media (max-width: 640px) {
+  .main {
+    padding: var(--space-md) 0;
+    align-items: flex-start;
+  }
+
+  .card {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: var(--space-lg) var(--space-md);
+    max-width: 100%;
+  }
+
+  .categoryLanguageRow {
+    flex-direction: column;
+  }
+
+  .fieldFlex {
+    width: 100%;
+  }
+
+  .gradingPills {
+    flex-wrap: wrap;
+  }
+
+  .input,
+  .select,
+  .textarea {
+    min-height: 44px;
+  }
+}

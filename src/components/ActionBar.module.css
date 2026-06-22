@@ -69,3 +69,72 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Mobile sticky bottom bar */
+.stickyBar {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .stickyBar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background-color: var(--color-white);
+    border-top: 1px solid var(--color-gray-200);
+    padding: 12px 16px;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+    gap: var(--space-sm);
+  }
+
+  .stickyOfferBtn {
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    background-color: var(--color-yellow);
+    color: var(--color-black);
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .stickyOfferBtn:hover {
+    background-color: var(--color-yellow-dark);
+  }
+
+  .stickyOfferBtn:active {
+    transform: scale(0.97);
+  }
+
+  .stickyMessageBtn {
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-gray-300);
+    background-color: var(--color-white);
+    color: var(--color-gray-700);
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .stickyMessageBtn:hover {
+    border-color: var(--color-gray-500);
+    background-color: var(--color-gray-100);
+  }
+
+  .stickyMessageBtn:active {
+    transform: scale(0.97);
+  }
+
+  .stickyMessageBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}

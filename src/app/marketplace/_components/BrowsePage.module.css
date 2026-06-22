@@ -26,6 +26,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-md);
+  flex-wrap: wrap;
 }
 
 .headerActions {
@@ -98,6 +99,11 @@
   border-color: var(--color-gray-500);
 }
 
+/* Desktop: show text create button */
+.createBtnDesktop {
+  display: inline-block;
+}
+
 /* Sidebar + content layout */
 .layout {
   display: grid;
@@ -127,13 +133,37 @@
   gap: var(--space-lg);
 }
 
+/* Mobile FAB */
+.fab {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--color-yellow);
+  box-shadow: var(--shadow-lg);
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+  color: var(--color-black);
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.fab:hover {
+  background-color: var(--color-yellow-dark);
+  transform: scale(1.05);
+}
+
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
   }
 
+  /* Hide desktop sidebar — filter toggle is used instead */
   .sidebar {
-    position: static;
+    display: none;
   }
 
   .header {
@@ -141,21 +171,27 @@
     align-items: flex-start;
   }
 
+  .title {
+    font-size: var(--font-size-xl);
+  }
+
   .headerRight {
     width: 100%;
     justify-content: space-between;
   }
+
+  /* Hide desktop create button, show FAB */
+  .createBtnDesktop {
+    display: none;
+  }
+
+  .fab {
+    display: flex;
+  }
 }
 
 @media (max-width: 480px) {
-  .headerActions {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .primaryBtn,
-  .secondaryBtn {
-    width: 100%;
-    text-align: center;
+  .main {
+    padding: var(--space-md) var(--space-md);
   }
 }

@@ -67,49 +67,76 @@ export default function ActionBar({
   }, [listingId]);
 
   return (
-    <div className={styles.bar}>
-      {!isOwner && (
-        <button
-          className={styles.messageBtn}
-          onClick={() => {
-            if (!isAuthenticated) {
-              router.push("/login");
-              return;
-            }
-            setShowOffer(true);
-          }}
-        >
-          Make Offer
-        </button>
-      )}
+    <>
+      <div className={styles.bar}>
+        {!isOwner && (
+          <button
+            className={styles.messageBtn}
+            onClick={() => {
+              if (!isAuthenticated) {
+                router.push("/login");
+                return;
+              }
+              setShowOffer(true);
+            }}
+          >
+            Make Offer
+          </button>
+        )}
 
-      {!isOwner && (
-        <button
-          className={styles.secondaryBtn}
-          onClick={handleMessage}
-          disabled={messaging}
-        >
-          {messaging ? "Opening..." : "Message Seller"}
-        </button>
-      )}
+        {!isOwner && (
+          <button
+            className={styles.secondaryBtn}
+            onClick={handleMessage}
+            disabled={messaging}
+          >
+            {messaging ? "Opening..." : "Message Seller"}
+          </button>
+        )}
 
-      <button className={styles.secondaryBtn} onClick={handleShare}>
-        Share
-      </button>
-
-      {!isOwner && (
-        <button
-          className={styles.reportBtn}
-          onClick={() => {
-            if (!isAuthenticated) {
-              router.push("/login");
-              return;
-            }
-            setShowReport(true);
-          }}
-        >
-          Report
+        <button className={styles.secondaryBtn} onClick={handleShare}>
+          Share
         </button>
+
+        {!isOwner && (
+          <button
+            className={styles.reportBtn}
+            onClick={() => {
+              if (!isAuthenticated) {
+                router.push("/login");
+                return;
+              }
+              setShowReport(true);
+            }}
+          >
+            Report
+          </button>
+        )}
+      </div>
+
+      {/* Mobile sticky bottom bar */}
+      {!isOwner && (
+        <div className={styles.stickyBar}>
+          <button
+            className={styles.stickyOfferBtn}
+            onClick={() => {
+              if (!isAuthenticated) {
+                router.push("/login");
+                return;
+              }
+              setShowOffer(true);
+            }}
+          >
+            Make Offer
+          </button>
+          <button
+            className={styles.stickyMessageBtn}
+            onClick={handleMessage}
+            disabled={messaging}
+          >
+            {messaging ? "Opening..." : "Message Seller"}
+          </button>
+        </div>
       )}
 
       {showReport && (
@@ -126,6 +153,6 @@ export default function ActionBar({
           onClose={() => setShowOffer(false)}
         />
       )}
-    </div>
+    </>
   );
 }

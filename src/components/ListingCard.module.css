@@ -1,24 +1,26 @@
-/* ListingCard — two-column Haves/Wants layout with header bar */
+/* ListingCard — two-column Haves/Wants with header bar */
 
 .card {
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  transition: transform var(--transition-fast);
+  border-radius: var(--border-radius-lg);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .card:hover .headerBar,
-.card:hover .havesCard,
-.card:hover .wantsCard {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+.card:hover .body {
   border-color: var(--color-gray-300);
 }
 
 .cardLink {
   display: flex;
   flex-direction: column;
-  gap: 0;
 }
 
 /* --- Header bar --- */
@@ -31,37 +33,53 @@
   border: 1px solid var(--color-gray-200);
   border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
   font-size: var(--font-size-xs);
-  transition: box-shadow var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast);
+  flex-wrap: wrap;
+  transition: border-color 150ms ease;
 }
 
+/* WTS/WTB badge */
 .typeBadge {
   padding: 2px 8px;
   border-radius: var(--border-radius-sm);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: var(--tracking-wide);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
   flex-shrink: 0;
 }
 
 .typeBadgeWts {
-  background-color: var(--color-success-bg);
-  color: var(--color-success-fg);
+  background-color: #c49010;
+  color: white;
 }
 
 .typeBadgeWtb {
-  background-color: var(--color-info-bg);
-  color: var(--color-info-fg);
+  background-color: #1565a8;
+  color: white;
 }
 
-.headerUsername {
+/* Username pill */
+.usernamePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--color-gray-100);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius-pill);
+  padding: 2px 10px 2px 8px;
+}
+
+.pillUsername {
   font-weight: 700;
   color: var(--color-gray-900);
 }
 
-.headerTrades {
-  color: var(--text-muted);
+.pillTrades {
+  font-size: 10px;
+  color: var(--color-gray-500);
 }
 
+/* Time */
 .headerTime {
   display: flex;
   align-items: center;
@@ -73,6 +91,7 @@
   flex-shrink: 0;
 }
 
+/* Status */
 .headerStatus {
   margin-left: auto;
   display: flex;
@@ -110,42 +129,39 @@
   color: var(--color-warning-fg);
 }
 
-/* --- Two-column layout --- */
-.columns {
-  display: flex;
-  align-items: stretch;
-  gap: var(--space-md);
-}
-
-/* Haves card */
-.havesCard {
-  flex: 1;
-  min-width: 0;
-  background-color: var(--color-white);
+/* --- Body: two-column grid --- */
+.body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   border: 1px solid var(--color-gray-200);
   border-top: none;
   border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
-  padding: var(--space-sm) var(--space-md);
-  display: flex;
-  flex-direction: column;
-  transition: box-shadow var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast);
-}
-
-/* Wants card */
-.wantsCard {
-  flex: 1;
-  min-width: 0;
-  background-color: var(--color-white);
-  border: 1px solid var(--color-gray-200);
-  border-top: none;
-  border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
-  padding: var(--space-sm) var(--space-md);
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
-  transition: box-shadow var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast);
+  transition: border-color 150ms ease;
 }
 
+.bodyYellow {
+  background-color: rgba(245, 197, 24, 0.08);
+}
+
+.bodyBlue {
+  background-color: rgba(46, 155, 230, 0.08);
+}
+
+/* --- Haves panel --- */
+.havesPanel {
+  padding: 8px var(--space-md);
+  border-right: 1px solid var(--color-gray-200);
+  min-width: 0;
+}
+
+/* --- Wants panel --- */
+.wantsPanel {
+  padding: 8px var(--space-md);
+  min-width: 0;
+}
+
+/* Column label */
 .colLabel {
   display: block;
   font-size: 10px;
@@ -160,14 +176,15 @@
 .haveItem {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: var(--space-sm);
+  min-width: 0;
 }
 
 .thumbWrap {
-  width: 56px;
-  height: 56px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
-  background: var(--color-gray-100);
+  background: rgba(255, 255, 255, 0.6);
   border-radius: var(--border-radius);
   display: flex;
   align-items: center;
@@ -186,21 +203,14 @@
   flex-shrink: 0;
 }
 
-.haveInfo {
-  min-width: 0;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
 .haveTitle {
   font-size: var(--font-size-sm);
-  font-weight: 700;
   color: var(--color-gray-900);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+  flex: 1;
 }
 
 .conditionTag {
@@ -211,48 +221,24 @@
   margin-right: 4px;
 }
 
-.haveMeta {
-  font-size: var(--font-size-xs);
-  color: var(--color-gray-500);
-  display: flex;
-  gap: 5px;
-}
-
-.dot {
-  color: var(--color-gray-300);
-}
-
-/* --- Arrow --- */
-.arrowWrap {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-}
-
-.arrowSvg {
-  display: block;
-}
-
 /* --- Want rows --- */
 .wantRows {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .wantRow {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
 .wantLabel {
   font-size: 11px;
   color: var(--text-muted);
-  width: 52px;
+  width: 44px;
   flex-shrink: 0;
   font-weight: 500;
 }
@@ -318,32 +304,14 @@
   text-decoration: underline;
 }
 
-/* --- Mobile: stack vertically --- */
+/* --- Mobile: stack panels vertically --- */
 @media (max-width: 640px) {
-  .columns {
-    flex-direction: column;
-    gap: 0;
+  .body {
+    grid-template-columns: 1fr;
   }
 
-  .havesCard {
-    border-radius: 0;
-  }
-
-  .wantsCard {
-    border-top: 1px solid var(--color-gray-200);
-    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
-  }
-
-  .arrowWrap {
-    width: auto;
-    padding: 6px 0;
-  }
-
-  .arrowSvg {
-    transform: rotate(90deg);
-  }
-
-  .headerBar {
-    flex-wrap: wrap;
+  .havesPanel {
+    border-right: none;
+    border-bottom: 1px solid var(--color-gray-200);
   }
 }

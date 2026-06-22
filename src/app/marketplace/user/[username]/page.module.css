@@ -204,12 +204,26 @@
 }
 
 @media (max-width: 640px) {
+  .main {
+    padding: 16px var(--space-md);
+  }
+
   .profileCard {
-    padding: var(--space-lg);
+    padding: var(--space-md);
+  }
+
+  .avatar {
+    width: 48px;
+    height: 48px;
+    font-size: var(--font-size-xl);
   }
 
   .username {
     font-size: var(--font-size-xl);
+  }
+
+  .statValue {
+    font-size: var(--font-size-2xl);
   }
 
   .statsRow {

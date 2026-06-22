@@ -180,3 +180,17 @@
   background-color: var(--color-yellow);
   border-radius: 11px;
 }
+
+@media (max-width: 640px) {
+  .main {
+    padding: 16px var(--space-md);
+  }
+
+  .title {
+    font-size: var(--font-size-xl);
+  }
+
+  .container {
+    max-width: 100%;
+  }
+}

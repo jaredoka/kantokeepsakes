@@ -55,9 +55,9 @@ export default function LoginPage() {
       <div className={styles.card}>
         <div className={styles.logoWrap}>
           <Image
-            src="/images/Kanto-Keepsakes-logo.webp"
+            src="/images/logo-wordmark-trimmed.png"
             alt="Kanto Keepsakes"
-            width={140}
+            width={85}
             height={36}
             className={styles.logo}
           />

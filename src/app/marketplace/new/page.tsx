@@ -17,11 +17,22 @@ import {
   LANGUAGE_LABELS,
   GRADING_COMPANIES,
   PSA_GRADES,
+  CGC_GRADES,
+  BGS_GRADES,
   type ListingFormData,
   type GradingCompany,
-  type PSAGrade,
 } from "@/lib/marketplace/types";
 import styles from "./page.module.css";
+
+function getConditionTag(grader: GradingCompany, grade: string): string {
+  if (grader === "RAW") return "[RAW]";
+  if (grader === "SEALED") return "[SEALED]";
+  return `[${grader}${grade}]`;
+}
+
+function stripExistingTag(title: string): string {
+  return title.replace(/^\[[A-Z0-9.]+\]\s*/, "");
+}
 
 export default function NewListingPage() {
   const router = useRouter();
@@ -32,7 +43,7 @@ export default function NewListingPage() {
 
   const [form, setForm] = useState<ListingFormData>({
     type: "WTS",
-    title: "",
+    title: "[RAW] ",
     description: "",
     category: "singles",
     language: "japanese",
@@ -45,7 +56,7 @@ export default function NewListingPage() {
     lookingForDescription: "",
     lookingForImages: [],
     grader: "RAW",
-    psaGrade: "10",
+    grade: "10",
   });
 
   useEffect(() => {
@@ -65,6 +76,59 @@ export default function NewListingPage() {
   ) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
+
+  function handleGraderChange(newGrader: GradingCompany) {
+    setForm((prev) => {
+      const body = stripExistingTag(prev.title);
+      const newGrade =
+        newGrader === "PSA"
+          ? "10"
+          : newGrader === "CGC" || newGrader === "BGS"
+            ? "9.5"
+            : "";
+      const tag = getConditionTag(newGrader, newGrade);
+      return {
+        ...prev,
+        grader: newGrader,
+        grade: newGrade,
+        title: body ? `${tag} ${body}` : `${tag} `,
+      };
+    });
+  }
+
+  function handleGradeChange(newGrade: string) {
+    setForm((prev) => {
+      const body = stripExistingTag(prev.title);
+      const tag = getConditionTag(prev.grader, newGrade);
+      return {
+        ...prev,
+        grade: newGrade,
+        title: body ? `${tag} ${body}` : `${tag} `,
+      };
+    });
+  }
+
+  function handleTitleChange(raw: string) {
+    const tag = getConditionTag(form.grader, form.grade);
+    const prefix = tag + " ";
+    if (!raw.startsWith(prefix)) {
+      const body = stripExistingTag(raw);
+      updateField("title", prefix + body);
+    } else {
+      updateField("title", raw);
+    }
+  }
+
+  const gradeOptions =
+    form.grader === "PSA"
+      ? PSA_GRADES
+      : form.grader === "CGC"
+        ? CGC_GRADES
+        : form.grader === "BGS"
+          ? BGS_GRADES
+          : null;
+
+  const currentTag = getConditionTag(form.grader, form.grade);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -143,8 +207,17 @@ export default function NewListingPage() {
     <main className={styles.main}>
       <div className={styles.card}>
         <Link href="/marketplace" className={styles.backLink}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
           Back to Marketplace
         </Link>
@@ -173,7 +246,44 @@ export default function NewListingPage() {
             </div>
           </div>
 
-          {/* Title */}
+          {/* Condition / Grading — before Title */}
+          <div className={styles.field}>
+            <label className={styles.label}>Condition</label>
+            <div className={styles.gradingRow}>
+              <div className={styles.gradingPills}>
+                {GRADING_COMPANIES.map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    className={`${styles.gradingPill} ${form.grader === g ? styles.gradingPillActive : ""}`}
+                    onClick={() => handleGraderChange(g)}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {gradeOptions && (
+              <div className={styles.gradePickerWrap}>
+                <span className={styles.gradePickerLabel}>Grade</span>
+                <div className={styles.gradePicker}>
+                  {gradeOptions.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      className={`${styles.gradeBtn} ${form.grade === g ? styles.gradeBtnActive : ""}`}
+                      onClick={() => handleGradeChange(g)}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className={styles.gradePreview}>{currentTag}</div>
+          </div>
+
+          {/* Title — auto-prefixed with condition tag */}
           <div className={styles.field}>
             <label htmlFor="title" className={styles.label}>
               Title
@@ -182,14 +292,12 @@ export default function NewListingPage() {
               id="title"
               type="text"
               value={form.title}
-              onChange={(e) => updateField("title", e.target.value)}
+              onChange={(e) => handleTitleChange(e.target.value)}
               className={styles.input}
-              placeholder='e.g. "WTS Charizard VMAX Alt Art NM"'
+              placeholder={`${currentTag} e.g. Charizard ex`}
               maxLength={120}
             />
-            <span className={styles.charCount}>
-              {form.title.length}/120
-            </span>
+            <span className={styles.charCount}>{form.title.length}/120</span>
           </div>
 
           {/* Description */}
@@ -211,93 +319,53 @@ export default function NewListingPage() {
             </span>
           </div>
 
-          {/* Category */}
-          <div className={styles.field}>
-            <label htmlFor="category" className={styles.label}>
-              Category
-            </label>
-            <select
-              id="category"
-              value={form.category}
-              onChange={(e) =>
-                updateField(
-                  "category",
-                  e.target.value as ListingFormData["category"]
-                )
-              }
-              className={styles.select}
-            >
-              {LISTING_CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {CATEGORY_LABELS[c]}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Language */}
-          <div className={styles.field}>
-            <label htmlFor="language" className={styles.label}>
-              Language
-            </label>
-            <select
-              id="language"
-              value={form.language}
-              onChange={(e) =>
-                updateField(
-                  "language",
-                  e.target.value as ListingFormData["language"]
-                )
-              }
-              className={styles.select}
-            >
-              {LISTING_LANGUAGES.map((l) => (
-                <option key={l} value={l}>
-                  {LANGUAGE_LABELS[l]}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Grading */}
-          <div className={styles.field}>
-            <label className={styles.label}>Grading</label>
-            <div className={styles.gradingRow}>
-              <div className={styles.gradingPills}>
-                {GRADING_COMPANIES.map((g) => (
-                  <button
-                    key={g}
-                    type="button"
-                    className={`${styles.gradingPill} ${form.grader === g ? styles.gradingPillActive : ""}`}
-                    onClick={() => updateField("grader", g)}
-                  >
-                    {g}
-                  </button>
+          {/* Category + Language — inline on desktop, stacked on mobile */}
+          <div className={styles.categoryLanguageRow}>
+            <div className={`${styles.field} ${styles.fieldFlex}`}>
+              <label htmlFor="category" className={styles.label}>
+                Category
+              </label>
+              <select
+                id="category"
+                value={form.category}
+                onChange={(e) =>
+                  updateField(
+                    "category",
+                    e.target.value as ListingFormData["category"]
+                  )
+                }
+                className={styles.select}
+              >
+                {LISTING_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {CATEGORY_LABELS[c]}
+                  </option>
                 ))}
-              </div>
-              {form.grader === "PSA" && (
-                <div className={styles.gradePickerWrap}>
-                  <span className={styles.gradePickerLabel}>Grade</span>
-                  <div className={styles.gradePicker}>
-                    {PSA_GRADES.map((g) => (
-                      <button
-                        key={g}
-                        type="button"
-                        className={`${styles.gradeBtn} ${form.psaGrade === g ? styles.gradeBtnActive : ""}`}
-                        onClick={() => updateField("psaGrade", g)}
-                      >
-                        {g}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              </select>
             </div>
-            {form.grader === "PSA" && (
-              <div className={styles.gradePreview}>
-                PSA {form.psaGrade}
-              </div>
-            )}
+
+            <div className={`${styles.field} ${styles.fieldFlex}`}>
+              <label htmlFor="language" className={styles.label}>
+                Language
+              </label>
+              <select
+                id="language"
+                value={form.language}
+                onChange={(e) =>
+                  updateField(
+                    "language",
+                    e.target.value as ListingFormData["language"]
+                  )
+                }
+                className={styles.select}
+              >
+                {LISTING_LANGUAGES.map((l) => (
+                  <option key={l} value={l}>
+                    {LANGUAGE_LABELS[l]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* My Items — Images */}
@@ -309,7 +377,7 @@ export default function NewListingPage() {
             />
           </div>
 
-          {/* What do you want? Section */}
+          {/* What do you want? */}
           <div className={styles.sectionDivider}>
             <h2 className={styles.sectionTitle}>What do you want?</h2>
             <p className={styles.sectionSubtitle}>
@@ -325,7 +393,8 @@ export default function NewListingPage() {
                 onChange={(e) => updateField("wantsCash", e.target.checked)}
               />
               <span className={styles.checkboxLabel}>
-                Cash <span className={styles.checkboxHint}>— set your price</span>
+                Cash{" "}
+                <span className={styles.checkboxHint}>— set your price</span>
               </span>
             </label>
             <label className={styles.checkboxRow}>
@@ -335,7 +404,10 @@ export default function NewListingPage() {
                 onChange={(e) => updateField("wantsCards", e.target.checked)}
               />
               <span className={styles.checkboxLabel}>
-                Cards <span className={styles.checkboxHint}>— trade for specific cards</span>
+                Cards{" "}
+                <span className={styles.checkboxHint}>
+                  — trade for specific cards
+                </span>
               </span>
             </label>
             <label className={styles.checkboxRow}>
@@ -345,15 +417,17 @@ export default function NewListingPage() {
                 onChange={(e) => updateField("wantsOffers", e.target.checked)}
               />
               <span className={styles.checkboxLabel}>
-                Offers <span className={styles.checkboxHint}>— open to any offer</span>
+                Offers{" "}
+                <span className={styles.checkboxHint}>
+                  — open to any offer
+                </span>
               </span>
             </label>
           </div>
 
-          {/* Cash fields — shown when wantsCash is checked */}
           {form.wantsCash && (
             <div className={styles.priceRow}>
-              <div className={styles.field} style={{ flex: 1 }}>
+              <div className={`${styles.field} ${styles.fieldFlex}`}>
                 <label htmlFor="price" className={styles.label}>
                   Price
                 </label>
@@ -393,7 +467,6 @@ export default function NewListingPage() {
             </div>
           )}
 
-          {/* Cards fields — shown when wantsCards is checked */}
           {form.wantsCards && (
             <>
               <div className={styles.field}>
@@ -418,17 +491,19 @@ export default function NewListingPage() {
 
               <div className={styles.field}>
                 <label className={styles.label}>
-                  Reference Photos <span className={styles.optional}>(optional)</span>
+                  Reference Photos{" "}
+                  <span className={styles.optional}>(optional)</span>
                 </label>
                 <ImageUploader
                   images={form.lookingForImages}
-                  onImagesChange={(imgs) => updateField("lookingForImages", imgs)}
+                  onImagesChange={(imgs) =>
+                    updateField("lookingForImages", imgs)
+                  }
                 />
               </div>
             </>
           )}
 
-          {/* Turnstile */}
           <div className={styles.turnstile}>
             <Turnstile onVerify={onVerify} />
           </div>

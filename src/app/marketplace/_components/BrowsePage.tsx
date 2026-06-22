@@ -4,6 +4,7 @@ import ListingCard from "@/components/ListingCard";
 import FilterBar from "@/components/FilterBar";
 import Pagination from "@/components/Pagination";
 import EmptyState from "@/components/EmptyState";
+import MobileFilterSection from "./MobileFilterSection";
 import type {
   ListingType,
   ListingCategory,
@@ -49,6 +50,8 @@ export default async function BrowsePage({
     data: { user },
   } = await supabase.auth.getUser();
 
+  const activeFilterCount = countActiveFilters(filters);
+
   return (
     <main className={styles.main}>
       <div className={styles.container}>
@@ -70,16 +73,22 @@ export default async function BrowsePage({
                 WTB
               </Link>
             </div>
+
+            {/* Mobile-only filter toggle */}
+            <MobileFilterSection
+              filters={filters}
+              basePath={basePath}
+              activeFilterCount={activeFilterCount}
+            />
+
             <div className={styles.headerActions}>
               {user && (
                 <Link href="/marketplace/my-listings" className={styles.secondaryBtn}>
                   My Listings
                 </Link>
               )}
-              <Link
-                href="/marketplace/new"
-                className={styles.primaryBtn}
-              >
+              {/* Desktop: text button */}
+              <Link href="/marketplace/new" className={`${styles.primaryBtn} ${styles.createBtnDesktop}`}>
                 + Create Listing
               </Link>
             </div>
@@ -87,14 +96,13 @@ export default async function BrowsePage({
         </div>
 
         <div className={styles.layout}>
-          {/* Left sidebar — filters */}
+          {/* Left sidebar — filters (desktop only) */}
           <aside className={styles.sidebar}>
             <FilterBar filters={filters} basePath={basePath} />
           </aside>
 
-          {/* Right — listing grid */}
+          {/* Right — listing content */}
           <section className={styles.content}>
-
             {listings.length === 0 ? (
               <EmptyState
                 hasFilters={hasActiveFilters(filters)}
@@ -106,8 +114,12 @@ export default async function BrowsePage({
                   {total} listing{total !== 1 ? "s" : ""}
                 </p>
                 <div className={styles.grid}>
-                  {listings.map((listing: ListingWithProfile) => (
-                    <ListingCard key={listing.id} listing={listing} />
+                  {listings.map((listing: ListingWithProfile, index: number) => (
+                    <ListingCard
+                      key={listing.id}
+                      listing={listing}
+                      tone={index % 2 === 0 ? "yellow" : "blue"}
+                    />
                   ))}
                 </div>
                 {totalPages > 1 && (
@@ -121,6 +133,24 @@ export default async function BrowsePage({
           </section>
         </div>
       </div>
+
+      {/* Mobile FAB — create listing */}
+      {user && (
+        <Link href="/marketplace/new" className={styles.fab} aria-label="Create listing">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </Link>
+      )}
     </main>
   );
 }
@@ -131,8 +161,7 @@ function validCategory(
   v: string | string[] | undefined
 ): ListingCategory | undefined {
   const allowed = ["sealed", "singles", "graded", "accessories"];
-  if (typeof v === "string" && allowed.includes(v))
-    return v as ListingCategory;
+  if (typeof v === "string" && allowed.includes(v)) return v as ListingCategory;
   return undefined;
 }
 
@@ -140,23 +169,18 @@ function validLanguage(
   v: string | string[] | undefined
 ): ListingLanguage | undefined {
   const allowed = ["japanese", "english", "any"];
-  if (typeof v === "string" && allowed.includes(v))
-    return v as ListingLanguage;
+  if (typeof v === "string" && allowed.includes(v)) return v as ListingLanguage;
   return undefined;
 }
 
-function validSort(
-  v: string | string[] | undefined
-): ListingFilters["sort"] {
+function validSort(v: string | string[] | undefined): ListingFilters["sort"] {
   const allowed = ["newest", "oldest", "price_asc", "price_desc"];
   if (typeof v === "string" && allowed.includes(v))
     return v as ListingFilters["sort"];
   return "newest";
 }
 
-function validNumber(
-  v: string | string[] | undefined
-): number | undefined {
+function validNumber(v: string | string[] | undefined): number | undefined {
   if (typeof v !== "string") return undefined;
   const n = Number(v);
   if (isNaN(n) || n < 0) return undefined;
@@ -171,4 +195,14 @@ function hasActiveFilters(filters: ListingFilters): boolean {
     filters.priceMax !== undefined ||
     filters.search
   );
+}
+
+function countActiveFilters(filters: ListingFilters): number {
+  let count = 0;
+  if (filters.category) count++;
+  if (filters.language) count++;
+  if (filters.priceMin !== undefined) count++;
+  if (filters.priceMax !== undefined) count++;
+  if (filters.search) count++;
+  return count;
 }

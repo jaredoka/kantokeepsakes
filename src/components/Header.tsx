@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { getCart } from "@/lib/cart";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./Header.module.css";
 
@@ -12,24 +11,11 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
   const [username, setUsername] = useState<string | null>(null);
   const [authLoaded, setAuthLoaded] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const isMarketplace = pathname.startsWith("/marketplace");
-  const isInbox = pathname.startsWith("/marketplace/inbox");
-
-  const updateCount = useCallback(() => {
-    const cart = getCart();
-    setCartCount(cart.reduce((sum, item) => sum + item.quantity, 0));
-  }, []);
-
-  useEffect(() => {
-    updateCount();
-    window.addEventListener("cart-updated", updateCount);
-    return () => window.removeEventListener("cart-updated", updateCount);
-  }, [updateCount]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -58,7 +44,9 @@ export default function Header() {
 
     async function getSession() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) {
           const { data: profile } = await supabase
             .from("profiles")
@@ -81,32 +69,28 @@ export default function Header() {
 
     getSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("username")
-            .eq("id", session.user.id)
-            .single();
-          setUsername(profile?.username ?? null);
-          fetchUnread(session.user.id);
-        } else {
-          setUsername(null);
-          setUnreadCount(0);
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", session.user.id)
+          .single();
+        setUsername(profile?.username ?? null);
+        fetchUnread(session.user.id);
+      } else {
+        setUsername(null);
+        setUnreadCount(0);
       }
-    );
+    });
 
     return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (menuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    document.body.style.overflow = menuOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
@@ -133,170 +117,188 @@ export default function Header() {
         {/* Logo */}
         <Link href="/" className={styles.logoLink}>
           <Image
-            src="/images/Kanto-Keepsakes-logo.webp"
+            src="/images/logo-wordmark-trimmed.png"
             alt="Kanto Keepsakes"
-            width={140}
-            height={44}
+            width={66}
+            height={28}
             className={styles.logo}
             priority
           />
         </Link>
 
-        {/* Desktop inline nav */}
-        <nav className={styles.desktopNav}>
-          <Link
-            href="/marketplace"
-            className={`${styles.desktopNavLink} ${isMarketplace && !isInbox ? styles.desktopNavLinkActive : ""}`}
-          >
-            Marketplace
-          </Link>
-          {username && (
-            <Link
-              href="/marketplace/inbox"
-              className={`${styles.desktopNavLink} ${isInbox ? styles.desktopNavLinkActive : ""}`}
+        {/* Marketplace — only inline nav link */}
+        <Link
+          href="/marketplace"
+          className={`${styles.marketplaceLink} ${isMarketplace ? styles.marketplaceLinkActive : ""}`}
+        >
+          Marketplace
+        </Link>
+
+        {/* Right: Avatar → Bell → Hamburger */}
+        <div className={styles.rightActions}>
+          {authLoaded && username && (
+            <button
+              className={styles.avatarBtn}
+              onClick={() => router.push(`/marketplace/user/${username}`)}
+              aria-label={`Profile: ${username}`}
             >
-              Inbox
-              {unreadCount > 0 && <span className={styles.unreadDot} />}
-            </Link>
+              <span className={styles.avatar}>
+                {username.charAt(0).toUpperCase()}
+              </span>
+              <span className={styles.avatarName}>{username}</span>
+            </button>
           )}
-        </nav>
 
-        {/* Desktop actions */}
-        <div className={styles.desktopActions}>
-          {authLoaded && (
-            <>
-              {username ? (
-                <>
-                  <Link href="/marketplace/user" className={styles.avatarLink}>
-                    <span className={styles.avatar}>
-                      {username.charAt(0).toUpperCase()}
-                    </span>
-                    <span className={styles.avatarName}>{username}</span>
-                  </Link>
-                  <Link href="/marketplace/new" className={styles.postBtn}>
-                    + Post Listing
-                  </Link>
-                  <button
-                    className={styles.logoutBtn}
-                    onClick={handleLogout}
-                  >
-                    Log out
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link href="/login" className={styles.secondaryBtn}>
-                    Log in
-                  </Link>
-                  <Link href="/signup" className={styles.primaryBtn}>
-                    Sign up
-                  </Link>
-                </>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Mobile: marketplace link + hamburger */}
-        <div className={styles.mobileRight}>
-          <Link href="/marketplace" className={styles.headerMarketplace}>
-            Marketplace
-          </Link>
           <button
-            className={`${styles.hamburger} ${menuOpen ? styles.hamburgerActive : ""}`}
-            aria-label="Open menu"
+            className={styles.iconBtn}
+            onClick={() => router.push("/marketplace/inbox")}
+            aria-label="Inbox"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            {unreadCount > 0 && (
+              <span className={styles.bellBadge}>
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            className={styles.iconBtn}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen(!menuOpen)}
           >
-            <span className={styles.hamburgerLine} />
-            <span className={styles.hamburgerLine} />
-            <span className={styles.hamburgerLine} />
+            {menuOpen ? (
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 12h18M3 6h18M3 18h18" />
+              </svg>
+            )}
           </button>
         </div>
       </div>
 
-      {/* Mobile backdrop + drawer */}
+      {/* Backdrop */}
       <div
         className={`${styles.backdrop} ${menuOpen ? styles.backdropVisible : ""}`}
         onClick={() => setMenuOpen(false)}
       />
 
+      {/* Drawer */}
       <nav
         className={`${styles.navOverlay} ${menuOpen ? styles.navOpen : ""}`}
         aria-label="Main navigation"
       >
+        {authLoaded && (
+          <div className={styles.authSection}>
+            {username ? (
+              <div className={styles.authUser}>
+                <span className={styles.username}>{username}</span>
+                <button
+                  className={styles.mobileLogoutBtn}
+                  onClick={handleLogout}
+                >
+                  Log out
+                </button>
+              </div>
+            ) : (
+              <div className={styles.authLinks}>
+                <Link
+                  href="/login"
+                  className={styles.authLink}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/signup"
+                  className={styles.authLinkPrimary}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
         <ul className={styles.navList}>
-          {authLoaded && (
-            <li className={styles.authSection}>
-              {username ? (
-                <div className={styles.authUser}>
-                  <span className={styles.username}>{username}</span>
-                  <button
-                    className={styles.mobileLogoutBtn}
-                    onClick={handleLogout}
-                  >
-                    Log out
-                  </button>
-                </div>
-              ) : (
-                <div className={styles.authLinks}>
-                  <Link href="/login" className={styles.authLink} onClick={() => setMenuOpen(false)}>
-                    Log in
-                  </Link>
-                  <Link href="/signup" className={styles.authLinkPrimary} onClick={() => setMenuOpen(false)}>
-                    Sign up
-                  </Link>
-                </div>
-              )}
-            </li>
-          )}
-          {username && (
-            <li>
-              <Link href="/marketplace/new" className={`${styles.navLink} ${styles.navPostListing}`} onClick={() => setMenuOpen(false)}>
-                + Post Listing
-              </Link>
-            </li>
-          )}
           <li>
-            <Link href="/marketplace" className={`${styles.navLink} ${styles.navMarketplace}`} onClick={() => setMenuOpen(false)}>
-              Marketplace
-            </Link>
-          </li>
-          {username && (
-            <li>
-              <Link href="/marketplace/inbox" className={`${styles.navLink} ${styles.navInbox}`} onClick={() => setMenuOpen(false)}>
-                Inbox {unreadCount > 0 && <span className={styles.unreadBadge}>{unreadCount}</span>}
-              </Link>
-            </li>
-          )}
-          <li>
-            <Link href="/" className={styles.navLink} onClick={() => setMenuOpen(false)}>
+            <Link
+              href="/"
+              className={styles.navLink}
+              onClick={() => setMenuOpen(false)}
+            >
               Home
             </Link>
           </li>
           <li>
-            <Link href="/japanese" className={styles.navLink} onClick={() => setMenuOpen(false)}>
-              Japanese
+            <Link
+              href="/marketplace"
+              className={styles.navLink}
+              onClick={() => setMenuOpen(false)}
+            >
+              Marketplace
             </Link>
           </li>
           <li>
-            <Link href="/english" className={styles.navLink} onClick={() => setMenuOpen(false)}>
-              English
+            <Link
+              href="/marketplace/inbox"
+              className={styles.navLink}
+              onClick={() => setMenuOpen(false)}
+            >
+              Inbox
             </Link>
           </li>
           <li>
-            <Link href="/accessories" className={styles.navLink} onClick={() => setMenuOpen(false)}>
-              TCG Accessories
+            <Link
+              href="/about"
+              className={styles.navLink}
+              onClick={() => setMenuOpen(false)}
+            >
+              About Us
             </Link>
           </li>
           <li>
-            <Link href="/preorder" className={styles.navLink} onClick={() => setMenuOpen(false)}>
-              Preorder
-            </Link>
-          </li>
-          <li>
-            <Link href="/cart" className={`${styles.navLink} ${styles.navCart}`} onClick={() => setMenuOpen(false)}>
-              Cart <span className={styles.cartCount}>{cartCount}</span>
+            <Link
+              href="/contact"
+              className={styles.navLink}
+              onClick={() => setMenuOpen(false)}
+            >
+              Contact Us
             </Link>
           </li>
         </ul>

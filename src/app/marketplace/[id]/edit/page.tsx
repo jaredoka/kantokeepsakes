@@ -16,10 +16,11 @@ import {
   LANGUAGE_LABELS,
   GRADING_COMPANIES,
   PSA_GRADES,
+  CGC_GRADES,
+  BGS_GRADES,
   type ListingFormData,
   type Listing,
   type GradingCompany,
-  type PSAGrade,
 } from "@/lib/marketplace/types";
 import styles from "./page.module.css";
 
@@ -52,7 +53,7 @@ export default function EditListingPage({
     lookingForDescription: "",
     lookingForImages: [],
     grader: "RAW",
-    psaGrade: "10",
+    grade: "10",
   });
 
   useEffect(() => {
@@ -108,7 +109,7 @@ export default function EditListingPage({
         lookingForDescription: listing.looking_for_description || "",
         lookingForImages: listing.looking_for_images || [],
         grader: "RAW",
-        psaGrade: "10",
+        grade: "10",
       });
       setLoading(false);
     }
@@ -330,7 +331,7 @@ export default function EditListingPage({
 
           {/* Grading */}
           <div className={styles.field}>
-            <label className={styles.label}>Grading</label>
+            <label className={styles.label}>Condition</label>
             <div className={styles.gradingRow}>
               <div className={styles.gradingPills}>
                 {GRADING_COMPANIES.map((g) => (
@@ -338,33 +339,28 @@ export default function EditListingPage({
                     key={g}
                     type="button"
                     className={`${styles.gradingPill} ${form.grader === g ? styles.gradingPillActive : ""}`}
-                    onClick={() => updateField("grader", g)}
+                    onClick={() => updateField("grader", g as GradingCompany)}
                   >
                     {g}
                   </button>
                 ))}
               </div>
-              {form.grader === "PSA" && (
-                <div className={styles.gradePickerWrap}>
-                  <span className={styles.gradePickerLabel}>Grade</span>
-                  <div className={styles.gradePicker}>
-                    {PSA_GRADES.map((g) => (
-                      <button
-                        key={g}
-                        type="button"
-                        className={`${styles.gradeBtn} ${form.psaGrade === g ? styles.gradeBtnActive : ""}`}
-                        onClick={() => updateField("psaGrade", g)}
-                      >
-                        {g}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
-            {form.grader === "PSA" && (
-              <div className={styles.gradePreview}>
-                PSA {form.psaGrade}
+            {(form.grader === "PSA" || form.grader === "CGC" || form.grader === "BGS") && (
+              <div className={styles.gradePickerWrap}>
+                <span className={styles.gradePickerLabel}>Grade</span>
+                <div className={styles.gradePicker}>
+                  {(form.grader === "PSA" ? PSA_GRADES : form.grader === "CGC" ? CGC_GRADES : BGS_GRADES).map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      className={`${styles.gradeBtn} ${form.grade === g ? styles.gradeBtnActive : ""}`}
+                      onClick={() => updateField("grade", g)}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>

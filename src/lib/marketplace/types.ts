@@ -166,11 +166,17 @@ export interface OfferWithProfile extends Offer {
 
 // Grading
 
-export const GRADING_COMPANIES = ["RAW", "PSA"] as const;
+export const GRADING_COMPANIES = ["RAW", "PSA", "CGC", "BGS", "SEALED"] as const;
 export type GradingCompany = (typeof GRADING_COMPANIES)[number];
 
 export const PSA_GRADES = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"] as const;
 export type PSAGrade = (typeof PSA_GRADES)[number];
+
+export const CGC_GRADES = ["5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5", "10"] as const;
+export type CGCGrade = (typeof CGC_GRADES)[number];
+
+export const BGS_GRADES = ["5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5"] as const;
+export type BGSGrade = (typeof BGS_GRADES)[number];
 
 // Form data types (for create/edit forms)
 
@@ -189,7 +195,7 @@ export interface ListingFormData {
   lookingForDescription: string;
   lookingForImages: string[];
   grader: GradingCompany;
-  psaGrade: PSAGrade;
+  grade: string; // grade number for PSA/CGC/BGS — e.g. "10", "9.5"
 }
 
 // Image upload

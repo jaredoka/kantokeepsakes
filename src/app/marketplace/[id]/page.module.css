@@ -229,4 +229,9 @@
   .price {
     font-size: var(--font-size-2xl);
   }
+
+  /* Padding so content isn't hidden behind the sticky action bar */
+  .main {
+    padding-bottom: 80px;
+  }
 }

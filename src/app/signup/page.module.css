@@ -135,3 +135,19 @@
 .link:hover {
   text-decoration: underline;
 }
+
+@media (max-width: 640px) {
+  .main {
+    align-items: flex-start;
+    padding: var(--space-md);
+    background-color: var(--color-white);
+  }
+
+  .card {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: var(--space-lg) 0;
+    max-width: 100%;
+  }
+}
