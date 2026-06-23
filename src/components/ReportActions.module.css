@@ -68,6 +68,38 @@
   cursor: not-allowed;
 }
 
+.forceCompleteBtn {
+  padding: var(--space-xs) var(--space-md);
+  background-color: #fef3c7;
+  color: #92400e;
+  font-weight: 600;
+  font-size: var(--font-size-xs);
+  border: 1px solid #fde68a;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.forceCompleteBtn:hover:not(:disabled) {
+  background-color: #fde68a;
+}
+
+.cancelTradeBtn {
+  padding: var(--space-xs) var(--space-md);
+  background-color: #fff1f2;
+  color: #be123c;
+  font-weight: 600;
+  font-size: var(--font-size-xs);
+  border: 1px solid #fecdd3;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.cancelTradeBtn:hover:not(:disabled) {
+  background-color: #fecdd3;
+}
+
 .doneRow {
   margin-top: var(--space-xs);
 }

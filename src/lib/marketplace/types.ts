@@ -30,6 +30,7 @@ export const REPORT_REASONS = [
   "spam",
   "harassment",
   "inappropriate",
+  "trade_dispute",
   "other",
 ] as const;
 export type ReportReason = (typeof REPORT_REASONS)[number];
@@ -135,6 +136,21 @@ export interface TradeConfirmation {
   confirmed_user_id: string;
   rating: number;
   comment: string | null;
+  created_at: string;
+}
+
+export const TRADE_COMPLETION_STATUSES = [
+  "completed",
+  "disputed",
+  "auto_completed",
+] as const;
+export type TradeCompletionStatus = (typeof TRADE_COMPLETION_STATUSES)[number];
+
+export interface TradeCompletionRow {
+  id: string;
+  listing_id: string;
+  user_id: string;
+  status: TradeCompletionStatus;
   created_at: string;
 }
 

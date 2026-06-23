@@ -7,6 +7,7 @@ import SellerCard from "@/components/SellerCard";
 import ActionBar from "@/components/ActionBar";
 import BumpButton from "@/components/BumpButton";
 import RelistButton from "@/components/RelistButton";
+import TradeCompletion from "@/components/TradeCompletion";
 import TradeConfirmation from "@/components/TradeConfirmation";
 import OfferList from "@/components/OfferList";
 import {
@@ -106,6 +107,20 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
     .maybeSingle();
 
   const hasAcceptedOffer = !!acceptedOffer;
+
+  // Check trade completion status
+  let bothCompleted = false;
+  if (hasAcceptedOffer) {
+    const { data: completions } = await supabase
+      .from("trade_completions")
+      .select("status")
+      .eq("listing_id", listing.id);
+
+    bothCompleted =
+      (completions || []).filter(
+        (c) => c.status === "completed" || c.status === "auto_completed"
+      ).length >= 2;
+  }
 
   const hasLookingFor =
     (listing.looking_for_description && listing.looking_for_description.trim()) ||
@@ -275,13 +290,24 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
               <OfferList listingId={listing.id} isOwner={isOwner} />
             )}
 
-            {/* Trade confirmation — gated behind accepted offer */}
+            {/* Trade completion — two-step flow */}
+            <TradeCompletion
+              listingId={listing.id}
+              isOwner={isOwner}
+              isAuthenticated={!!user}
+              isSold={isSold}
+              hasAcceptedOffer={hasAcceptedOffer}
+              currentUserId={user?.id}
+            />
+
+            {/* Trade ratings — gated behind both completions */}
             <TradeConfirmation
               listingId={listing.id}
               isOwner={isOwner}
               isAuthenticated={!!user}
               isSold={isSold}
               hasAcceptedOffer={hasAcceptedOffer}
+              bothCompleted={bothCompleted}
             />
           </div>
         </div>

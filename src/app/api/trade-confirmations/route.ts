@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+const RATING_WINDOW_DAYS = 14;
+
 // POST — create a trade confirmation (rating + optional comment)
+// Gated behind both trade completions
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -75,10 +78,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Require an accepted offer before trade confirmation
+  // Require an accepted offer — use offerer_id for counterparty identification
   const { data: acceptedOffer } = await supabase
     .from("offers")
-    .select("id")
+    .select("id, offerer_id")
     .eq("listing_id", listingId)
     .eq("status", "accepted")
     .limit(1)
@@ -86,54 +89,66 @@ export async function POST(request: NextRequest) {
 
   if (!acceptedOffer) {
     return NextResponse.json(
-      { error: "An offer must be accepted before confirming a trade." },
+      { error: "An offer must be accepted before rating." },
       { status: 400 }
     );
   }
 
-  // Verify the user is involved in this listing (either the owner or has a conversation about it)
+  // Verify the user is one of the two trade parties
   const isOwner = listing.user_id === user.id;
+  const isBuyer = acceptedOffer.offerer_id === user.id;
 
-  if (!isOwner) {
-    // Check if this user has a conversation for this listing (meaning they're the buyer/interested party)
-    const { data: conv } = await supabase
-      .from("conversations")
-      .select("id")
-      .eq("listing_id", listingId)
-      .eq("participant_2", user.id)
-      .limit(1)
-      .single();
-
-    if (!conv) {
-      return NextResponse.json(
-        { error: "You must be involved in this trade to confirm it." },
-        { status: 403 }
-      );
-    }
+  if (!isOwner && !isBuyer) {
+    return NextResponse.json(
+      { error: "You must be involved in this trade to rate." },
+      { status: 403 }
+    );
   }
 
-  // Determine the confirmed_user_id (the other party)
-  let confirmedUserId: string;
-  if (isOwner) {
-    // Owner confirms the buyer — find who they traded with via conversation
-    const { data: conv } = await supabase
-      .from("conversations")
-      .select("participant_2")
-      .eq("listing_id", listingId)
-      .limit(1)
-      .single();
+  // Gate: both parties must have completed the trade before rating
+  const { data: completions } = await supabase
+    .from("trade_completions")
+    .select("user_id, status, created_at")
+    .eq("listing_id", listingId);
 
-    if (!conv) {
-      return NextResponse.json(
-        { error: "No trade partner found for this listing." },
-        { status: 400 }
-      );
-    }
-    confirmedUserId = conv.participant_2;
-  } else {
-    // Buyer confirms the seller (listing owner)
-    confirmedUserId = listing.user_id;
+  const validCompletions = (completions || []).filter(
+    (c) => c.status === "completed" || c.status === "auto_completed"
+  );
+
+  if (validCompletions.length < 2) {
+    return NextResponse.json(
+      { error: "Both parties must complete the trade before rating." },
+      { status: 400 }
+    );
   }
+
+  // Check if any dispute is active
+  const hasDispute = (completions || []).some((c) => c.status === "disputed");
+  if (hasDispute) {
+    return NextResponse.json(
+      { error: "Cannot rate while a trade dispute is active." },
+      { status: 400 }
+    );
+  }
+
+  // Check 14-day rating window
+  const latestCompletion = validCompletions.reduce((latest, c) =>
+    new Date(c.created_at) > new Date(latest.created_at) ? c : latest
+  );
+  const windowEnd = new Date(latestCompletion.created_at);
+  windowEnd.setDate(windowEnd.getDate() + RATING_WINDOW_DAYS);
+
+  if (new Date() > windowEnd) {
+    return NextResponse.json(
+      { error: "The 14-day rating window has expired." },
+      { status: 400 }
+    );
+  }
+
+  // Determine the confirmed_user_id (the counterparty)
+  const confirmedUserId = isOwner
+    ? acceptedOffer.offerer_id
+    : listing.user_id;
 
   // Check for existing confirmation
   const { data: existing } = await supabase
@@ -141,11 +156,11 @@ export async function POST(request: NextRequest) {
     .select("id")
     .eq("listing_id", listingId)
     .eq("confirmer_id", user.id)
-    .single();
+    .maybeSingle();
 
   if (existing) {
     return NextResponse.json(
-      { error: "You have already confirmed this trade." },
+      { error: "You have already rated this trade." },
       { status: 409 }
     );
   }
@@ -163,7 +178,7 @@ export async function POST(request: NextRequest) {
 
   if (insertError) {
     return NextResponse.json(
-      { error: "Failed to create confirmation." },
+      { error: "Failed to create rating." },
       { status: 500 }
     );
   }
@@ -171,23 +186,11 @@ export async function POST(request: NextRequest) {
   // Update the confirmed user's reputation
   await updateReputation(supabase, confirmedUserId);
 
-  // Check if both parties have confirmed — if so, mark listing as sold
-  const { count: confirmCount } = await supabase
-    .from("trade_confirmations")
-    .select("*", { count: "exact", head: true })
-    .eq("listing_id", listingId);
-
-  if (confirmCount && confirmCount >= 2) {
-    await supabase
-      .from("listings")
-      .update({ status: "sold" })
-      .eq("id", listingId);
-  }
-
   return NextResponse.json({ success: true }, { status: 201 });
 }
 
 // GET — get confirmations for a listing or user
+// For listing queries: implements double-blind reveal logic
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const url = new URL(request.url);
@@ -195,6 +198,11 @@ export async function GET(request: NextRequest) {
   const userId = url.searchParams.get("userId");
 
   if (listingId) {
+    // Get the current user (for double-blind logic)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     const { data, error } = await supabase
       .from("trade_confirmations")
       .select(
@@ -210,10 +218,61 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(data || []);
+    const confirmations = data || [];
+
+    // Double-blind reveal logic:
+    // Ratings are revealed when:
+    // 1. Both parties have rated, OR
+    // 2. The 14-day rating window has expired
+    const bothRated = confirmations.length >= 2;
+
+    let windowExpired = false;
+    if (!bothRated) {
+      // Check if the rating window has expired
+      const { data: completions } = await supabase
+        .from("trade_completions")
+        .select("created_at, status")
+        .eq("listing_id", listingId);
+
+      const validCompletions = (completions || []).filter(
+        (c) => c.status === "completed" || c.status === "auto_completed"
+      );
+
+      if (validCompletions.length >= 2) {
+        const latestCompletion = validCompletions.reduce((latest, c) =>
+          new Date(c.created_at) > new Date(latest.created_at) ? c : latest
+        );
+        const windowEnd = new Date(latestCompletion.created_at);
+        windowEnd.setDate(windowEnd.getDate() + RATING_WINDOW_DAYS);
+        windowExpired = new Date() > windowEnd;
+      }
+    }
+
+    const revealed = bothRated || windowExpired;
+
+    // Apply double-blind: if not revealed, redact the other party's rating
+    const result = confirmations.map((c) => {
+      if (revealed) {
+        return { ...c, revealed: true };
+      }
+      // Show own rating, redact others
+      if (user && c.confirmer_id === user.id) {
+        return { ...c, revealed: true };
+      }
+      return {
+        ...c,
+        rating: null,
+        comment: null,
+        confirmer: null,
+        revealed: false,
+      };
+    });
+
+    return NextResponse.json(result);
   }
 
   if (userId) {
+    // User profile reviews — always shown (these are received ratings, already public)
     const { data, error } = await supabase
       .from("trade_confirmations")
       .select(
@@ -229,7 +288,55 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(data || []);
+    // For user profile, check reveal status per listing
+    const reviews = data || [];
+    const revealedReviews = await Promise.all(
+      reviews.map(async (review) => {
+        // Check if both parties rated this listing
+        const { count } = await supabase
+          .from("trade_confirmations")
+          .select("*", { count: "exact", head: true })
+          .eq("listing_id", review.listing_id);
+
+        if (count && count >= 2) {
+          return { ...review, revealed: true };
+        }
+
+        // Check if rating window expired
+        const { data: completions } = await supabase
+          .from("trade_completions")
+          .select("created_at, status")
+          .eq("listing_id", review.listing_id);
+
+        const validCompletions = (completions || []).filter(
+          (c: { status: string }) =>
+            c.status === "completed" || c.status === "auto_completed"
+        );
+
+        if (validCompletions.length >= 2) {
+          const latestCompletion = validCompletions.reduce(
+            (latest: { created_at: string }, c: { created_at: string }) =>
+              new Date(c.created_at) > new Date(latest.created_at) ? c : latest
+          );
+          const windowEnd = new Date(latestCompletion.created_at);
+          windowEnd.setDate(windowEnd.getDate() + RATING_WINDOW_DAYS);
+          if (new Date() > windowEnd) {
+            return { ...review, revealed: true };
+          }
+        }
+
+        // Not revealed yet — redact
+        return {
+          ...review,
+          rating: null,
+          comment: null,
+          confirmer: null,
+          revealed: false,
+        };
+      })
+    );
+
+    return NextResponse.json(revealedReviews);
   }
 
   return NextResponse.json(

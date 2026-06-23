@@ -6,10 +6,12 @@ import styles from "./TradeConfirmation.module.css";
 
 interface Confirmation {
   id: string;
-  rating: number;
+  rating: number | null;
   comment: string | null;
   created_at: string;
+  confirmer_id: string;
   confirmer: { username: string } | null;
+  revealed: boolean;
 }
 
 interface TradeConfirmationProps {
@@ -18,6 +20,7 @@ interface TradeConfirmationProps {
   isAuthenticated: boolean;
   isSold: boolean;
   hasAcceptedOffer?: boolean;
+  bothCompleted?: boolean;
 }
 
 export default function TradeConfirmation({
@@ -26,6 +29,7 @@ export default function TradeConfirmation({
   isAuthenticated,
   isSold,
   hasAcceptedOffer = false,
+  bothCompleted = false,
 }: TradeConfirmationProps) {
   const [confirmations, setConfirmations] = useState<Confirmation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,16 +58,9 @@ export default function TradeConfirmation({
     }
   }, [listingId]);
 
-  // Check if current user already confirmed
   useEffect(() => {
     fetchConfirmations();
   }, [fetchConfirmations]);
-
-  useEffect(() => {
-    // The API returns 409 if the user already confirmed, but we can also
-    // check client-side by seeing if any confirmation's confirmer matches
-    // (we don't have the current username here, so we rely on submit-time check)
-  }, [confirmations]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -96,7 +93,7 @@ export default function TradeConfirmation({
           setHasConfirmed(true);
           setError("");
         } else {
-          setError(data.error || "Failed to submit confirmation.");
+          setError(data.error || "Failed to submit rating.");
         }
       }
     } catch {
@@ -108,33 +105,25 @@ export default function TradeConfirmation({
 
   if (loading) return null;
 
-  const showForm = isAuthenticated && !hasConfirmed && !success && hasAcceptedOffer;
-  const bothConfirmed = confirmations.length >= 2;
+  // Only show the rating section after both parties have completed the trade
+  const showForm =
+    isAuthenticated &&
+    !hasConfirmed &&
+    !success &&
+    hasAcceptedOffer &&
+    bothCompleted;
 
   return (
     <div className={styles.section}>
-      <h3 className={styles.heading}>Trade Confirmation</h3>
+      <h3 className={styles.heading}>
+        {bothCompleted ? "Rate This Trade" : "Trade Ratings"}
+      </h3>
 
-      {/* Status */}
-      {bothConfirmed && (
-        <div className={styles.completeBanner}>
-          Both parties confirmed this trade.
-        </div>
-      )}
-
-      {isSold && !bothConfirmed && confirmations.length === 1 && (
-        <div className={styles.pendingBanner}>
-          One party has confirmed. Waiting for the other.
-        </div>
-      )}
-
-      {/* Confirmation form — only for involved parties */}
+      {/* Rating form — only after both parties completed */}
       {showForm && (
         <form className={styles.form} onSubmit={handleSubmit}>
           <p className={styles.formLabel}>
-            {isOwner
-              ? "Confirm this trade and rate the buyer:"
-              : "Confirm this trade and rate the seller:"}
+            {isOwner ? "Rate the buyer:" : "Rate the seller:"}
           </p>
 
           <div className={styles.ratingRow}>
@@ -158,28 +147,31 @@ export default function TradeConfirmation({
             className={styles.submitBtn}
             disabled={submitting || rating === 0}
           >
-            {submitting ? "Submitting..." : "Confirm Trade"}
+            {submitting ? "Submitting..." : "Submit Rating"}
           </button>
         </form>
       )}
 
       {success && (
         <div className={styles.successBanner}>
-          Trade confirmed! Thank you for your feedback.
+          Rating submitted! It will be visible once both parties have rated (or
+          after 14 days).
         </div>
       )}
 
       {hasConfirmed && !success && (
         <p className={styles.alreadyConfirmed}>
-          You have already confirmed this trade.
+          You have already rated this trade.
         </p>
       )}
 
-      {!isAuthenticated && confirmations.length === 0 && (
-        <p className={styles.noConfirmations}>No trade confirmations yet.</p>
+      {!bothCompleted && confirmations.length === 0 && (
+        <p className={styles.noConfirmations}>
+          Ratings will be available after both parties complete the trade.
+        </p>
       )}
 
-      {/* Existing confirmations / reviews */}
+      {/* Existing reviews — respect double-blind */}
       {confirmations.length > 0 && (
         <div className={styles.reviews}>
           <h4 className={styles.reviewsHeading}>
@@ -187,21 +179,32 @@ export default function TradeConfirmation({
           </h4>
           {confirmations.map((c) => (
             <div key={c.id} className={styles.review}>
-              <div className={styles.reviewHeader}>
-                <span className={styles.reviewUser}>
-                  {c.confirmer?.username || "Unknown"}
-                </span>
-                <StarRating value={c.rating} readonly size="sm" />
-                <span className={styles.reviewDate}>
-                  {new Date(c.created_at).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
-              {c.comment && (
-                <p className={styles.reviewComment}>{c.comment}</p>
+              {c.revealed ? (
+                <>
+                  <div className={styles.reviewHeader}>
+                    <span className={styles.reviewUser}>
+                      {c.confirmer?.username || "Unknown"}
+                    </span>
+                    <StarRating value={c.rating || 0} readonly size="sm" />
+                    <span className={styles.reviewDate}>
+                      {new Date(c.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  {c.comment && (
+                    <p className={styles.reviewComment}>{c.comment}</p>
+                  )}
+                </>
+              ) : (
+                <div className={styles.reviewHeader}>
+                  <span className={styles.reviewUser}>Rating hidden</span>
+                  <span className={styles.reviewDate}>
+                    Visible once both parties rate or after 14 days
+                  </span>
+                </div>
               )}
             </div>
           ))}

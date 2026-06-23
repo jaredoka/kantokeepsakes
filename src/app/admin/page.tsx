@@ -16,6 +16,7 @@ const REASON_LABELS: Record<ReportReason, string> = {
   spam: "Spam",
   harassment: "Harassment",
   inappropriate: "Inappropriate",
+  trade_dispute: "Trade Dispute",
   other: "Other",
 };
 
@@ -123,6 +124,8 @@ export default async function AdminDashboard() {
                     reportId={report.id}
                     reportedUserId={report.reported_user?.id || ""}
                     isBanned={report.reported_user?.is_banned || false}
+                    reason={report.reason}
+                    listingId={report.listing_id}
                   />
                 </div>
               ))}
