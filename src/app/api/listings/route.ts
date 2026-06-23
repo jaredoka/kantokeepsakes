@@ -145,9 +145,6 @@ export async function POST(request: NextRequest) {
       price: wantsCash ? (price ?? null) : null,
       currency: (currency as Currency) || "BND",
       images: images || [],
-      looking_for_description: wantsCards ? (lookingForDescription?.trim() || null) : null,
-      looking_for_images: wantsCards ? (lookingForImages || []) : [],
-      wants_offers: !!wantsOffers,
       status: "active",
       bumped_at: now,
       expires_at: expiresAt,
@@ -156,6 +153,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (insertError) {
+    console.error("Listing insert error:", insertError);
     return NextResponse.json(
       { error: "Failed to create listing. Please try again." },
       { status: 500 }

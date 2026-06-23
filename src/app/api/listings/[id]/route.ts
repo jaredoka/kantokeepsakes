@@ -148,9 +148,6 @@ export async function PATCH(
       price: wantsCash ? (price ?? null) : null,
       currency: (currency as Currency) || "BND",
       images: images || [],
-      looking_for_description: wantsCards ? (lookingForDescription?.trim() || null) : null,
-      looking_for_images: wantsCards ? (lookingForImages || []) : [],
-      wants_offers: !!wantsOffers,
     })
     .eq("id", id)
     .eq("user_id", user.id);
