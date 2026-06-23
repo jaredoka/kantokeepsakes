@@ -1,0 +1,121 @@
+.main {
+  min-height: calc(100vh - var(--header-height));
+  padding: var(--space-2xl) var(--space-md);
+  background-color: var(--color-gray-100);
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-2xl);
+  box-shadow: var(--shadow-md);
+}
+
+.heading {
+  font-size: var(--font-size-3xl);
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-sm);
+}
+
+.intro {
+  font-size: var(--font-size-lg);
+  color: var(--color-gray-500);
+  margin-bottom: var(--space-2xl);
+  line-height: var(--line-base);
+}
+
+.section {
+  margin-bottom: var(--space-2xl);
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.subheading {
+  font-size: var(--font-size-xl);
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-md);
+}
+
+.text {
+  font-size: var(--font-size-base);
+  color: var(--color-gray-700);
+  line-height: var(--line-base);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.listItem {
+  font-size: var(--font-size-base);
+  color: var(--color-gray-700);
+  line-height: var(--line-base);
+  padding-left: var(--space-md);
+  border-left: 3px solid var(--color-yellow);
+}
+
+.listItem strong {
+  color: var(--color-gray-900);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.btnPrimary {
+  padding: var(--space-sm) var(--space-lg);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  border-radius: var(--border-radius);
+  background-color: var(--color-yellow);
+  color: var(--color-black);
+  transition: background-color var(--transition-fast);
+}
+
+.btnPrimary:hover {
+  background-color: var(--color-yellow-dark);
+}
+
+.btnSecondary {
+  padding: var(--space-sm) var(--space-lg);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  border-radius: var(--border-radius);
+  background-color: var(--color-white);
+  color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-300);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.btnSecondary:hover {
+  border-color: var(--color-gray-500);
+  background-color: var(--color-gray-100);
+}
+
+@media (max-width: 640px) {
+  .main {
+    padding: var(--space-md);
+    background-color: var(--color-white);
+  }
+
+  .container {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: var(--space-lg) 0;
+  }
+
+  .heading {
+    font-size: var(--font-size-2xl);
+  }
+}

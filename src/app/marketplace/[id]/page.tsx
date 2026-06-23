@@ -58,7 +58,7 @@ export async function generateMetadata({
   const listing = await getListing(id);
 
   if (!listing) {
-    return { title: "Listing Not Found — Kanto Keepsakes" };
+    return { title: "Listing Not Found" };
   }
 
   const priceText =
@@ -67,7 +67,7 @@ export async function generateMetadata({
       : "Make Offer";
 
   return {
-    title: `${listing.title} — Kanto Keepsakes`,
+    title: listing.title,
     description: `${LISTING_TYPE_LABELS[listing.type]} — ${listing.description.slice(0, 160)}`,
     openGraph: {
       title: `${listing.type}: ${listing.title} (${priceText})`,

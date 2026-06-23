@@ -2,7 +2,7 @@ import Link from "next/link";
 import styles from "./page.module.css";
 
 export const metadata = {
-  title: "Account Banned — Kanto Keepsakes",
+  title: "Account Banned",
 };
 
 export default function BannedPage() {

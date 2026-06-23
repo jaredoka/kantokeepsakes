@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import CategoryPage from "@/components/CategoryPage";
 
 export const metadata: Metadata = {
-  title: "English Products — Kanto Keepsakes",
+  title: "English",
   description:
     "Browse all English Pokemon TCG products — sealed, singles, and graded cards at Kanto Keepsakes.",
 };

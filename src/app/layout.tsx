@@ -11,9 +11,36 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Kanto Keepsakes — Pokemon TCG",
+  title: {
+    default: "Kanto Keepsakes — Pokemon TCG",
+    template: "%s | Kanto Keepsakes",
+  },
   description:
     "Kanto Keepsakes — Pokemon TCG retailer based in Brunei. Shop Japanese and English sealed products, singles, graded cards, and accessories.",
+  openGraph: {
+    title: "Kanto Keepsakes — Pokemon TCG",
+    description:
+      "Brunei's peer-to-peer Pokemon TCG marketplace. Buy, sell, and trade cards with local collectors.",
+    url: "https://kantokeepsakes.com",
+    siteName: "Kanto Keepsakes",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Kanto Keepsakes logo",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kanto Keepsakes — Pokemon TCG",
+    description:
+      "Brunei's peer-to-peer Pokemon TCG marketplace. Buy, sell, and trade cards with local collectors.",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({

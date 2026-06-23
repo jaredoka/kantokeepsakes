@@ -91,13 +91,13 @@
 }
 
 .typeBadgeWts {
-  background-color: var(--color-success-bg);
-  color: var(--color-success-fg);
+  background-color: #c49010;
+  color: white;
 }
 
 .typeBadgeWtb {
-  background-color: var(--color-info-bg);
-  color: var(--color-info-fg);
+  background-color: #1565a8;
+  color: white;
 }
 
 .meta {

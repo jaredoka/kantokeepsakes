@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import CategoryPage from "@/components/CategoryPage";
 
 export const metadata: Metadata = {
-  title: "Japanese Singles — Kanto Keepsakes",
+  title: "Japanese Singles",
   description: "Japanese Pokemon TCG singles — individual cards at Kanto Keepsakes.",
 };
 

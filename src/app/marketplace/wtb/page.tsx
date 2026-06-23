@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import BrowsePage from "../_components/BrowsePage";
 
 export const metadata: Metadata = {
-  title: "Want to Buy — Kanto Keepsakes",
+  title: "WTB",
   description:
     "Browse cards and products that collectors are looking to buy on the Kanto Keepsakes marketplace.",
 };

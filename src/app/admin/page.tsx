@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin";
+
+export const metadata: Metadata = {
+  title: "Admin",
+};
 import ReportActions from "@/components/ReportActions";
 import { REPORT_REASONS, type ReportReason } from "@/lib/marketplace/types";
 import styles from "./page.module.css";

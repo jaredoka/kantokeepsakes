@@ -73,13 +73,13 @@ export async function generateMetadata({
   const profile = await getProfile(decodeURIComponent(username));
 
   if (!profile) {
-    return { title: "User Not Found — Kanto Keepsakes" };
+    return { title: "User Not Found" };
   }
 
   const tier = getReputationTier(profile.completed_trades);
 
   return {
-    title: `${profile.username} — ${tier.label} — Kanto Keepsakes`,
+    title: `${profile.username}`,
     description: `View ${profile.username}'s profile. ${profile.completed_trades} completed trade${profile.completed_trades !== 1 ? "s" : ""}.`,
   };
 }
