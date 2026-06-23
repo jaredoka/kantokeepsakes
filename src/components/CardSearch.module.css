@@ -1,0 +1,170 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* Selected cards strip */
+.selected {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.selectedCard {
+  position: relative;
+  width: 80px;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  border: 2px solid var(--color-yellow);
+  background-color: var(--color-gray-100);
+}
+
+.selectedImg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.removeBtn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.removeBtn:hover {
+  background-color: rgba(0, 0, 0, 0.9);
+}
+
+/* Search input */
+.searchRow {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.searchInput {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-900);
+  background-color: var(--color-white);
+  transition: border-color var(--transition-fast);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--color-yellow);
+  box-shadow: 0 0 0 3px rgba(245, 197, 24, 0.2);
+}
+
+.searchInput::placeholder {
+  color: var(--color-gray-400);
+}
+
+/* Results grid */
+.results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: var(--space-sm);
+  max-height: 320px;
+  overflow-y: auto;
+  padding: var(--space-xs);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius);
+  background-color: var(--color-gray-50);
+}
+
+.resultCard {
+  cursor: pointer;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  border: 2px solid transparent;
+  background-color: var(--color-white);
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.resultCard:hover {
+  border-color: var(--color-yellow);
+  transform: scale(1.03);
+}
+
+.resultCardSelected {
+  border-color: var(--color-yellow);
+  box-shadow: 0 0 0 2px rgba(245, 197, 24, 0.3);
+}
+
+.resultImg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.resultName {
+  padding: 3px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-gray-700);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resultSet {
+  padding: 0 4px 3px;
+  font-size: 9px;
+  color: var(--color-gray-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* States */
+.loading,
+.empty,
+.errorMsg {
+  padding: var(--space-md);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+}
+
+.errorMsg {
+  color: var(--color-danger-fg);
+}
+
+.hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+}
+
+.countLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .results {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    max-height: 260px;
+  }
+
+  .selectedCard {
+    width: 64px;
+  }
+}

@@ -315,7 +315,7 @@ export async function GET(request: NextRequest) {
 
         if (validCompletions.length >= 2) {
           const latestCompletion = validCompletions.reduce(
-            (latest: { created_at: string }, c: { created_at: string }) =>
+            (latest: { created_at: string; status: string }, c: { created_at: string; status: string }) =>
               new Date(c.created_at) > new Date(latest.created_at) ? c : latest
           );
           const windowEnd = new Date(latestCompletion.created_at);

@@ -12,6 +12,7 @@ const REASON_LABELS: Record<ReportReason, string> = {
   spam: "Spam",
   harassment: "Harassment",
   inappropriate: "Inappropriate Content",
+  trade_dispute: "Trade Dispute",
   other: "Other",
 };
 

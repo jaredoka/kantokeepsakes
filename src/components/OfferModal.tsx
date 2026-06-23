@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { validateOfferMessage } from "@/lib/marketplace/validation";
-import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from "@/lib/marketplace/types";
-import { validateImageFile } from "@/lib/marketplace/validation";
+import CardSearch from "@/components/CardSearch";
 import styles from "./OfferModal.module.css";
 
 interface OfferModalProps {
@@ -17,66 +16,9 @@ export default function OfferModal({ listingId, onClose, listingType = "WTS" }: 
   const isWtb = listingType === "WTB";
   const router = useRouter();
   const [message, setMessage] = useState("");
-  const [frontImage, setFrontImage] = useState<string | null>(null);
-  const [backImage, setBackImage] = useState<string | null>(null);
+  const [cardImages, setCardImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploadingFront, setUploadingFront] = useState(false);
-  const [uploadingBack, setUploadingBack] = useState(false);
   const [error, setError] = useState("");
-
-  const frontInputRef = useRef<HTMLInputElement>(null);
-  const backInputRef = useRef<HTMLInputElement>(null);
-
-  async function uploadImage(file: File): Promise<string | null> {
-    const validation = validateImageFile(file);
-    if (!validation.valid) {
-      setError(validation.error!);
-      return null;
-    }
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const res = await fetch("/api/listings/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error || "Upload failed.");
-      return null;
-    }
-
-    const data = await res.json();
-    return data.url;
-  }
-
-  async function handleImageSelect(
-    file: File,
-    side: "front" | "back"
-  ) {
-    setError("");
-    const setter = side === "front" ? setUploadingFront : setUploadingBack;
-    setter(true);
-
-    const url = await uploadImage(file);
-    if (url) {
-      if (side === "front") setFrontImage(url);
-      else setBackImage(url);
-    }
-
-    setter(false);
-  }
-
-  function handleFileChange(
-    e: React.ChangeEvent<HTMLInputElement>,
-    side: "front" | "back"
-  ) {
-    const file = e.target.files?.[0];
-    if (file) handleImageSelect(file, side);
-    e.target.value = "";
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -97,8 +39,8 @@ export default function OfferModal({ listingId, onClose, listingType = "WTS" }: 
         body: JSON.stringify({
           listingId,
           message: message.trim(),
-          frontImage,
-          backImage,
+          frontImage: cardImages[0] || null,
+          backImage: null,
         }),
       });
 
@@ -115,9 +57,6 @@ export default function OfferModal({ listingId, onClose, listingType = "WTS" }: 
       setLoading(false);
     }
   }
-
-  const acceptStr = ACCEPTED_IMAGE_TYPES.join(",");
-  const isUploading = uploadingFront || uploadingBack;
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -147,75 +86,13 @@ export default function OfferModal({ listingId, onClose, listingType = "WTS" }: 
 
           <div className={styles.field}>
             <label className={styles.label}>
-              Card Photos <span className={styles.optional}>(optional)</span>
+              Card Image <span className={styles.optional}>(optional)</span>
             </label>
-            <div className={styles.imageFields}>
-              <div className={styles.imageField}>
-                <span className={styles.imageLabel}>Front</span>
-                {frontImage ? (
-                  <div className={styles.imagePreview}>
-                    <img src={frontImage} alt="Front of card" />
-                    <button
-                      type="button"
-                      className={styles.imageRemoveBtn}
-                      onClick={() => setFrontImage(null)}
-                    >
-                      &times;
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className={styles.uploadBtn}
-                    onClick={() => frontInputRef.current?.click()}
-                    disabled={uploadingFront}
-                  >
-                    <span className={styles.uploadIcon}>+</span>
-                    <span>{uploadingFront ? "Uploading..." : "Add front"}</span>
-                  </button>
-                )}
-                <input
-                  ref={frontInputRef}
-                  type="file"
-                  accept={acceptStr}
-                  onChange={(e) => handleFileChange(e, "front")}
-                  className={styles.hiddenInput}
-                />
-              </div>
-
-              <div className={styles.imageField}>
-                <span className={styles.imageLabel}>Back</span>
-                {backImage ? (
-                  <div className={styles.imagePreview}>
-                    <img src={backImage} alt="Back of card" />
-                    <button
-                      type="button"
-                      className={styles.imageRemoveBtn}
-                      onClick={() => setBackImage(null)}
-                    >
-                      &times;
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className={styles.uploadBtn}
-                    onClick={() => backInputRef.current?.click()}
-                    disabled={uploadingBack}
-                  >
-                    <span className={styles.uploadIcon}>+</span>
-                    <span>{uploadingBack ? "Uploading..." : "Add back"}</span>
-                  </button>
-                )}
-                <input
-                  ref={backInputRef}
-                  type="file"
-                  accept={acceptStr}
-                  onChange={(e) => handleFileChange(e, "back")}
-                  className={styles.hiddenInput}
-                />
-              </div>
-            </div>
+            <CardSearch
+              images={cardImages}
+              onImagesChange={setCardImages}
+              max={1}
+            />
           </div>
 
           <div className={styles.actions}>
@@ -229,7 +106,7 @@ export default function OfferModal({ listingId, onClose, listingType = "WTS" }: 
             <button
               type="submit"
               className={styles.submitBtn}
-              disabled={loading || isUploading}
+              disabled={loading}
             >
               {loading ? "Sending..." : "Send Offer"}
             </button>

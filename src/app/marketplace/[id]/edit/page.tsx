@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import ImageUploader from "@/components/ImageUploader";
+import CardSearch from "@/components/CardSearch";
+import SetSearch from "@/components/SetSearch";
 import { validateListing } from "@/lib/marketplace/validation";
 import {
   LISTING_TYPES,
@@ -121,7 +123,13 @@ export default function EditListingPage({
     key: K,
     value: ListingFormData[K]
   ) {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => {
+      // Clear images when switching categories (different image sources)
+      if (key === "category" && value !== prev.category) {
+        return { ...prev, [key]: value, images: [] };
+      }
+      return { ...prev, [key]: value };
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -365,13 +373,33 @@ export default function EditListingPage({
             )}
           </div>
 
-          {/* My Items — Images */}
+          {/* My Items — Images (category-specific picker) */}
           <div className={styles.field}>
-            <label className={styles.label}>My Items — Photos</label>
-            <ImageUploader
-              images={form.images}
-              onImagesChange={(imgs) => updateField("images", imgs)}
-            />
+            <label className={styles.label}>
+              {form.category === "accessories"
+                ? "My Items — Photos"
+                : form.category === "sealed"
+                  ? "Select Set"
+                  : "Select Card"}
+            </label>
+            {(form.category === "singles" || form.category === "graded") && (
+              <CardSearch
+                images={form.images}
+                onImagesChange={(imgs) => updateField("images", imgs)}
+              />
+            )}
+            {form.category === "sealed" && (
+              <SetSearch
+                images={form.images}
+                onImagesChange={(imgs) => updateField("images", imgs)}
+              />
+            )}
+            {form.category === "accessories" && (
+              <ImageUploader
+                images={form.images}
+                onImagesChange={(imgs) => updateField("images", imgs)}
+              />
+            )}
           </div>
 
           {/* What do you want? Section */}
