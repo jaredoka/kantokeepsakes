@@ -7,7 +7,6 @@ export const LISTING_CATEGORIES = [
   "sealed",
   "singles",
   "graded",
-  "accessories",
 ] as const;
 export type ListingCategory = (typeof LISTING_CATEGORIES)[number];
 
@@ -57,7 +56,6 @@ export const CATEGORY_LABELS: Record<ListingCategory, string> = {
   sealed: "Sealed",
   singles: "Singles",
   graded: "Graded",
-  accessories: "Accessories",
 };
 
 export const LANGUAGE_LABELS: Record<ListingLanguage, string> = {
@@ -100,7 +98,11 @@ export interface Listing {
   images: string[];
   looking_for_description: string | null;
   looking_for_images: string[];
+  wants_cash: boolean;
   wants_offers: boolean;
+  wants_singles: boolean;
+  wants_graded: boolean;
+  wants_sealed: boolean;
   status: ListingStatus;
   created_at: string;
   bumped_at: string;
@@ -206,10 +208,10 @@ export interface ListingFormData {
   currency: Currency;
   images: string[];
   wantsCash: boolean;
-  wantsCards: boolean;
   wantsOffers: boolean;
-  lookingForDescription: string;
-  lookingForImages: string[];
+  wantsSingles: boolean;
+  wantsGraded: boolean;
+  wantsSealed: boolean;
   grader: GradingCompany;
   grade: string; // grade number for PSA/CGC/BGS — e.g. "10", "9.5"
 }

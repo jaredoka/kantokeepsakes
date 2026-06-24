@@ -7,10 +7,9 @@ import styles from "./SetSearch.module.css";
 interface PokemonSet {
   id: string;
   name: string;
-  series: string;
-  releaseDate: string;
+  logo: string | null;
+  symbol: string | null;
   total: number;
-  images: { symbol: string; logo: string };
 }
 
 interface SetSearchProps {
@@ -28,6 +27,7 @@ export default function SetSearch({
   max = MAX_IMAGES,
 }: SetSearchProps) {
   const [query, setQuery] = useState("");
+  const [lang, setLang] = useState<"en" | "ja">("en");
   const [results, setResults] = useState<PokemonSet[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,17 +36,19 @@ export default function SetSearch({
 
   // Load recent sets on mount
   useEffect(() => {
-    loadRecentSets();
+    loadRecentSets(lang);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function loadRecentSets() {
+  async function loadRecentSets(setLang: string) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/pokemon-tcg/sets?pageSize=20");
+      const res = await fetch(`/api/pokemon-tcg/sets?lang=${setLang}`);
       if (res.ok) {
         const data = await res.json();
-        setResults(data.sets || []);
+        // Take first 20 (newest) from the reversed list
+        setResults((data.sets || []).slice(0, 20));
       }
     } catch {
       // Silently fail for initial load
@@ -55,10 +57,9 @@ export default function SetSearch({
     }
   }
 
-  const search = useCallback(async (searchQuery: string) => {
+  const search = useCallback(async (searchQuery: string, searchLang: string) => {
     if (searchQuery.trim().length === 0) {
-      // Reset to recent sets
-      loadRecentSets();
+      loadRecentSets(searchLang);
       setSearched(false);
       return;
     }
@@ -73,7 +74,7 @@ export default function SetSearch({
 
     try {
       const res = await fetch(
-        `/api/pokemon-tcg/sets?name=${encodeURIComponent(searchQuery.trim())}&pageSize=30`
+        `/api/pokemon-tcg/sets?name=${encodeURIComponent(searchQuery.trim())}&lang=${searchLang}`
       );
 
       if (!res.ok) {
@@ -91,6 +92,7 @@ export default function SetSearch({
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleInputChange(value: string) {
@@ -101,8 +103,17 @@ export default function SetSearch({
     }
 
     debounceRef.current = setTimeout(() => {
-      search(value);
+      search(value, lang);
     }, 400);
+  }
+
+  function handleLangChange(newLang: "en" | "ja") {
+    setLang(newLang);
+    if (query.trim().length >= 2) {
+      search(query, newLang);
+    } else {
+      loadRecentSets(newLang);
+    }
   }
 
   // Cleanup debounce on unmount
@@ -113,9 +124,9 @@ export default function SetSearch({
   }, []);
 
   function selectSet(set: PokemonSet) {
-    const url = set.images.logo;
+    if (!set.logo) return;
+    const url = set.logo;
     if (images.includes(url)) {
-      // Deselect
       onImagesChange(images.filter((img) => img !== url));
     } else if (images.length < max) {
       onImagesChange([...images, url]);
@@ -127,11 +138,10 @@ export default function SetSearch({
   }
 
   // Map selected URLs back to set data for display
-  const selectedSets = images
-    .map((url) => {
-      const found = results.find((s) => s.images.logo === url);
-      return found ? { url, set: found } : { url, set: null };
-    });
+  const selectedSets = images.map((url) => {
+    const found = results.find((s) => s.logo && s.logo === url);
+    return found ? { url, set: found } : { url, set: null };
+  });
 
   return (
     <div className={styles.wrapper}>
@@ -159,14 +169,33 @@ export default function SetSearch({
         </div>
       )}
 
-      {/* Search input */}
+      {/* Language toggle + Search input */}
       <div className={styles.searchRow}>
+        <div className={styles.langToggle}>
+          <button
+            type="button"
+            className={`${styles.langBtn} ${lang === "en" ? styles.langBtnActive : ""}`}
+            onClick={() => handleLangChange("en")}
+          >
+            EN
+          </button>
+          <button
+            type="button"
+            className={`${styles.langBtn} ${lang === "ja" ? styles.langBtnActive : ""}`}
+            onClick={() => handleLangChange("ja")}
+          >
+            JA
+          </button>
+        </div>
         <input
           type="text"
           value={query}
           onChange={(e) => handleInputChange(e.target.value)}
           className={styles.searchInput}
-          placeholder="Search set name (e.g. Prismatic, Surging Sparks)..."
+          placeholder={lang === "ja"
+            ? "Search set name (e.g. \u30B9\u30AB\u30FC\u30EC\u30C3\u30C8, \u30D0\u30A4\u30AA\u30EC\u30C3\u30C8)..."
+            : "Search set name (e.g. Prismatic, Surging Sparks)..."
+          }
         />
       </div>
 
@@ -186,24 +215,30 @@ export default function SetSearch({
       {!loading && results.length > 0 && (
         <div className={styles.results}>
           {results.map((set) => {
-            const isSelected = images.includes(set.images.logo);
+            const isSelected = set.logo ? images.includes(set.logo) : false;
+            const hasLogo = !!set.logo;
             return (
               <button
                 key={set.id}
                 type="button"
-                className={`${styles.resultSet} ${isSelected ? styles.resultSetSelected : ""}`}
+                className={`${styles.resultSet} ${isSelected ? styles.resultSetSelected : ""} ${!hasLogo ? styles.resultSetDisabled : ""}`}
                 onClick={() => selectSet(set)}
+                disabled={!hasLogo}
               >
-                <img
-                  src={set.images.logo}
-                  alt={set.name}
-                  className={styles.resultLogo}
-                  loading="lazy"
-                />
+                {hasLogo ? (
+                  <img
+                    src={set.logo!}
+                    alt={set.name}
+                    className={styles.resultLogo}
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className={styles.resultLogoPlaceholder} />
+                )}
                 <div className={styles.resultInfo}>
                   <span className={styles.resultName}>{set.name}</span>
                   <span className={styles.resultMeta}>
-                    {set.series} &middot; {set.total} cards &middot; {set.releaseDate}
+                    {set.total} cards{!hasLogo ? " · No logo" : ""}
                   </span>
                 </div>
               </button>

@@ -19,6 +19,7 @@ import {
 } from "@/lib/marketplace/types";
 import type { Profile } from "@/lib/marketplace/types";
 import { getExpiryWarning, getExpiryUrgency } from "@/lib/marketplace/dates";
+import { parseGradingTag } from "@/lib/marketplace/grading";
 import styles from "./page.module.css";
 
 /** Parse a leading [TAG] from a title, e.g. "[PSA10] Charizard …" */
@@ -126,6 +127,16 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
     (listing.looking_for_description && listing.looking_for_description.trim()) ||
     (listing.looking_for_images && listing.looking_for_images.length > 0);
 
+  const wantTypes: string[] = [];
+  if (listing.wants_cash || listing.price !== null) wantTypes.push("Cash");
+  if (listing.wants_offers) wantTypes.push("Any Offers");
+  if (listing.wants_singles) wantTypes.push("Any Singles");
+  if (listing.wants_graded) wantTypes.push("Any Graded");
+  if (listing.wants_sealed) wantTypes.push("Any Sealed");
+
+  const grading =
+    listing.category === "graded" ? parseGradingTag(listing.title) : null;
+
   const backPath = listing.type === "WTB" ? "/marketplace/wtb" : "/marketplace/wts";
 
   return (
@@ -207,7 +218,7 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
               <h2 className={styles.sectionHeading}>
                 {listing.type === "WTS" ? "For Sale" : "Want to Buy"}
               </h2>
-              <ImageGallery images={listing.images} alt={listing.title} />
+              <ImageGallery images={listing.images} alt={listing.title} grading={grading} />
             </div>
 
             {/* Description */}
@@ -217,10 +228,22 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
               ))}
             </div>
 
-            {/* Looking for section */}
-            {hasLookingFor && (
+            {/* Wants section */}
+            {wantTypes.length > 0 && (
               <div className={styles.section}>
                 <h2 className={styles.sectionHeading}>Looking For</h2>
+                <div className={styles.wantsPills}>
+                  {wantTypes.map((w) => (
+                    <span key={w} className={styles.wantPill}>{w}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Legacy looking-for section (backward compat for old listings) */}
+            {hasLookingFor && (
+              <div className={styles.section}>
+                <h2 className={styles.sectionHeading}>Trade Details</h2>
                 {listing.looking_for_images && listing.looking_for_images.length > 0 && (
                   <ImageGallery
                     images={listing.looking_for_images}

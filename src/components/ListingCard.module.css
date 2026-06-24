@@ -1,4 +1,4 @@
-/* ListingCard — two-column Haves/Wants with header bar */
+/* ListingCard — image-focused Haves/Wants with header bar */
 
 .card {
   display: flex;
@@ -150,14 +150,14 @@
 
 /* --- Haves panel --- */
 .havesPanel {
-  padding: 8px var(--space-md);
+  padding: 8px var(--space-md) 10px;
   border-right: 1px solid var(--color-gray-200);
   min-width: 0;
 }
 
 /* --- Wants panel --- */
 .wantsPanel {
-  padding: 8px var(--space-md);
+  padding: 8px var(--space-md) 10px;
   min-width: 0;
 }
 
@@ -172,96 +172,70 @@
   margin-bottom: 6px;
 }
 
-/* --- Have item --- */
-.haveItem {
+/* --- Image grid (Haves) --- */
+.imageGrid {
   display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  min-width: 0;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 180px;
+  overflow: hidden;
 }
 
-.thumbWrap {
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.6);
+.imageCell {
+  width: 72px;
   border-radius: var(--border-radius);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--color-gray-200);
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--color-gray-200);
-  overflow: hidden;
 }
 
-.thumb {
+.cardImg {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  display: block;
 }
 
-.placeholderIcon {
-  flex-shrink: 0;
-}
-
-.haveTitle {
-  font-size: var(--font-size-sm);
-  color: var(--color-gray-900);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-  flex: 1;
-}
-
-.conditionTag {
-  display: inline;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--color-yellow-dark);
-  margin-right: 4px;
-}
-
-/* --- Want rows --- */
-.wantRows {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.wantRow {
+.overflowCell {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--border-radius);
+  background: var(--color-gray-100);
+  border: 1px solid var(--color-gray-200);
   display: flex;
   align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.wantLabel {
-  font-size: 11px;
-  color: var(--text-muted);
-  width: 44px;
-  flex-shrink: 0;
-  font-weight: 500;
-}
-
-.wantValue {
+  justify-content: center;
   font-size: var(--font-size-sm);
   font-weight: 700;
-  color: var(--color-black);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-  flex: 1;
+  color: var(--color-gray-500);
 }
 
-.wantDesc {
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
+/* --- Want pills (Wants) --- */
+.wantPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.wantPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--border-radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-200);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-  flex: 1;
+}
+
+.wantPillValue {
+  font-weight: 700;
+  color: var(--color-black);
 }
 
 /* --- Owner footer --- */
@@ -313,5 +287,14 @@
   .havesPanel {
     border-right: none;
     border-bottom: 1px solid var(--color-gray-200);
+  }
+
+  .imageCell {
+    width: 60px;
+  }
+
+  .overflowCell {
+    width: 60px;
+    height: 60px;
   }
 }

@@ -160,7 +160,7 @@ export default async function BrowsePage({
 function validCategory(
   v: string | string[] | undefined
 ): ListingCategory | undefined {
-  const allowed = ["sealed", "singles", "graded", "accessories"];
+  const allowed = ["sealed", "singles", "graded"];
   if (typeof v === "string" && allowed.includes(v)) return v as ListingCategory;
   return undefined;
 }

@@ -1,0 +1,97 @@
+/* GradedCardImage — CSS-only slab frame overlay for graded cards */
+
+.slab {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+/* Company-specific border colors */
+.slabPSA {
+  border: 2px solid #cc2229;
+}
+
+.slabCGC {
+  border: 2px solid #1a6fb5;
+}
+
+.slabBGS {
+  border: 2px solid #1a1a1a;
+}
+
+/* Label bar at top of slab */
+.label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 2px 6px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.labelPSA {
+  background: #cc2229;
+  color: #fff;
+}
+
+.labelCGC {
+  background: #1a6fb5;
+  color: #fff;
+}
+
+.labelBGS {
+  background: #1a1a1a;
+  color: #d4a843;
+}
+
+/* Grade number */
+.grade {
+  font-weight: 900;
+  font-size: 10px;
+}
+
+/* Image container */
+.imageWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.imageWrap img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* --- Size variants --- */
+
+/* Thumbnail size (listing cards, gallery thumbnails) */
+.slabSm .label {
+  padding: 1px 4px;
+  font-size: 7px;
+  gap: 2px;
+}
+
+.slabSm .grade {
+  font-size: 8px;
+}
+
+/* Large size (gallery main image) */
+.slabLg .label {
+  padding: 4px 10px;
+  font-size: 12px;
+  gap: 5px;
+}
+
+.slabLg .grade {
+  font-size: 13px;
+}

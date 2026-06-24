@@ -61,10 +61,10 @@ export async function POST(request: NextRequest) {
     currency?: string;
     images?: string[];
     wantsCash?: boolean;
-    wantsCards?: boolean;
     wantsOffers?: boolean;
-    lookingForDescription?: string;
-    lookingForImages?: string[];
+    wantsSingles?: boolean;
+    wantsGraded?: boolean;
+    wantsSealed?: boolean;
     turnstileToken?: string;
   };
 
@@ -84,10 +84,10 @@ export async function POST(request: NextRequest) {
     currency,
     images,
     wantsCash,
-    wantsCards,
     wantsOffers,
-    lookingForDescription,
-    lookingForImages,
+    wantsSingles,
+    wantsGraded,
+    wantsSealed,
     turnstileToken,
   } = body;
 
@@ -118,10 +118,10 @@ export async function POST(request: NextRequest) {
     currency: currency || "",
     images: images || [],
     wantsCash: !!wantsCash,
-    wantsCards: !!wantsCards,
     wantsOffers: !!wantsOffers,
-    lookingForDescription: lookingForDescription || "",
-    lookingForImages: lookingForImages || [],
+    wantsSingles: !!wantsSingles,
+    wantsGraded: !!wantsGraded,
+    wantsSealed: !!wantsSealed,
   });
 
   if (!validation.valid) {
@@ -145,6 +145,11 @@ export async function POST(request: NextRequest) {
       price: wantsCash ? (price ?? null) : null,
       currency: (currency as Currency) || "BND",
       images: images || [],
+      wants_cash: !!wantsCash,
+      wants_offers: !!wantsOffers,
+      wants_singles: !!wantsSingles,
+      wants_graded: !!wantsGraded,
+      wants_sealed: !!wantsSealed,
       status: "active",
       bumped_at: now,
       expires_at: expiresAt,

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import Turnstile from "@/components/Turnstile";
-import ImageUploader from "@/components/ImageUploader";
 import CardSearch from "@/components/CardSearch";
 import SetSearch from "@/components/SetSearch";
 import { validateListing } from "@/lib/marketplace/validation";
@@ -53,10 +52,10 @@ export default function NewListingPage() {
     currency: "BND",
     images: [],
     wantsCash: false,
-    wantsCards: false,
     wantsOffers: false,
-    lookingForDescription: "",
-    lookingForImages: [],
+    wantsSingles: false,
+    wantsGraded: false,
+    wantsSealed: false,
     grader: "RAW",
     grade: "10",
   });
@@ -379,11 +378,7 @@ export default function NewListingPage() {
           {/* My Items — Images (category-specific picker) */}
           <div className={styles.field}>
             <label className={styles.label}>
-              {form.category === "accessories"
-                ? "My Items — Photos"
-                : form.category === "sealed"
-                  ? "Select Set"
-                  : "Select Card"}
+              {form.category === "sealed" ? "Select Set" : "Select Card"}
             </label>
             {(form.category === "singles" || form.category === "graded") && (
               <CardSearch
@@ -393,12 +388,6 @@ export default function NewListingPage() {
             )}
             {form.category === "sealed" && (
               <SetSearch
-                images={form.images}
-                onImagesChange={(imgs) => updateField("images", imgs)}
-              />
-            )}
-            {form.category === "accessories" && (
-              <ImageUploader
                 images={form.images}
                 onImagesChange={(imgs) => updateField("images", imgs)}
               />
@@ -428,26 +417,52 @@ export default function NewListingPage() {
             <label className={styles.checkboxRow}>
               <input
                 type="checkbox"
-                checked={form.wantsCards}
-                onChange={(e) => updateField("wantsCards", e.target.checked)}
+                checked={form.wantsOffers}
+                onChange={(e) => updateField("wantsOffers", e.target.checked)}
               />
               <span className={styles.checkboxLabel}>
-                Cards{" "}
+                Any Offers{" "}
                 <span className={styles.checkboxHint}>
-                  — trade for specific cards
+                  — open to any offer
                 </span>
               </span>
             </label>
             <label className={styles.checkboxRow}>
               <input
                 type="checkbox"
-                checked={form.wantsOffers}
-                onChange={(e) => updateField("wantsOffers", e.target.checked)}
+                checked={form.wantsSingles}
+                onChange={(e) => updateField("wantsSingles", e.target.checked)}
               />
               <span className={styles.checkboxLabel}>
-                Offers{" "}
+                Any Singles{" "}
                 <span className={styles.checkboxHint}>
-                  — open to any offer
+                  — trade for singles
+                </span>
+              </span>
+            </label>
+            <label className={styles.checkboxRow}>
+              <input
+                type="checkbox"
+                checked={form.wantsGraded}
+                onChange={(e) => updateField("wantsGraded", e.target.checked)}
+              />
+              <span className={styles.checkboxLabel}>
+                Any Graded{" "}
+                <span className={styles.checkboxHint}>
+                  — trade for graded cards
+                </span>
+              </span>
+            </label>
+            <label className={styles.checkboxRow}>
+              <input
+                type="checkbox"
+                checked={form.wantsSealed}
+                onChange={(e) => updateField("wantsSealed", e.target.checked)}
+              />
+              <span className={styles.checkboxLabel}>
+                Any Sealed{" "}
+                <span className={styles.checkboxHint}>
+                  — trade for sealed products
                 </span>
               </span>
             </label>
@@ -493,43 +508,6 @@ export default function NewListingPage() {
                 </select>
               </div>
             </div>
-          )}
-
-          {form.wantsCards && (
-            <>
-              <div className={styles.field}>
-                <label htmlFor="lookingForDescription" className={styles.label}>
-                  Cards you want
-                </label>
-                <textarea
-                  id="lookingForDescription"
-                  value={form.lookingForDescription}
-                  onChange={(e) =>
-                    updateField("lookingForDescription", e.target.value)
-                  }
-                  className={styles.textarea}
-                  placeholder="e.g. Pikachu VMAX Alt Art, any Charizard card..."
-                  rows={3}
-                  maxLength={1000}
-                />
-                <span className={styles.charCount}>
-                  {form.lookingForDescription.length}/1000
-                </span>
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>
-                  Reference Photos{" "}
-                  <span className={styles.optional}>(optional)</span>
-                </label>
-                <ImageUploader
-                  images={form.lookingForImages}
-                  onImagesChange={(imgs) =>
-                    updateField("lookingForImages", imgs)
-                  }
-                />
-              </div>
-            </>
           )}
 
           <div className={styles.turnstile}>

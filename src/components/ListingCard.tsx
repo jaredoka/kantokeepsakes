@@ -7,6 +7,8 @@ import {
   type ListingWithProfile,
 } from "@/lib/marketplace/types";
 import { getExpiryWarning, getExpiryUrgency } from "@/lib/marketplace/dates";
+import { parseGradingTag } from "@/lib/marketplace/grading";
+import GradedCardImage from "./GradedCardImage";
 import styles from "./ListingCard.module.css";
 
 interface ListingCardProps {
@@ -14,12 +16,6 @@ interface ListingCardProps {
   showStatus?: boolean;
   showActions?: boolean;
   tone?: "yellow" | "blue";
-}
-
-function parseConditionTag(title: string): { tag: string | null; rest: string } {
-  const match = title.match(/^\[([A-Z0-9.]+)\]\s*/);
-  if (match) return { tag: match[1], rest: title.slice(match[0].length) };
-  return { tag: null, rest: title };
 }
 
 function formatRelativeTime(dateStr: string): string {
@@ -37,6 +33,9 @@ function formatRelativeTime(dateStr: string): string {
   return `${diffMonths}mo ago`;
 }
 
+/** Max visible images before showing "+N" overflow */
+const MAX_VISIBLE_IMAGES = 6;
+
 export default function ListingCard({
   listing,
   showStatus = false,
@@ -48,15 +47,36 @@ export default function ListingCard({
     ? (listing as ListingWithProfile).profiles
     : null;
 
-  const { tag: conditionTag, rest: titleText } = parseConditionTag(listing.title);
-
-  const hasCash = listing.price !== null;
-  const hasCards =
-    listing.looking_for_description && listing.looking_for_description.trim();
+  const hasCash = listing.wants_cash || listing.price !== null;
   const hasOffers = listing.wants_offers;
-  const showFallback = !hasCash && !hasCards && !hasOffers;
+  const hasSingles = listing.wants_singles;
+  const hasGraded = listing.wants_graded;
+  const hasSealed = listing.wants_sealed;
+  const showFallback = !hasCash && !hasOffers && !hasSingles && !hasGraded && !hasSealed;
 
   const bodyClass = tone === "blue" ? styles.bodyBlue : styles.bodyYellow;
+
+  // Parse grading info for graded listings
+  const grading =
+    listing.category === "graded" ? parseGradingTag(listing.title) : null;
+
+  // Images to show, with overflow indicator
+  const visibleImages = listing.images.slice(0, MAX_VISIBLE_IMAGES);
+  const overflowCount = listing.images.length - MAX_VISIBLE_IMAGES;
+
+  // Collect want pills
+  const wantPills: { label: string; value?: string }[] = [];
+  if (hasCash && listing.price !== null) {
+    wantPills.push({
+      label: "Cash",
+      value: `${CURRENCY_SYMBOLS[listing.currency]}${listing.price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`,
+    });
+  }
+  if (hasOffers) wantPills.push({ label: "Any Offers" });
+  if (hasSingles) wantPills.push({ label: "Singles" });
+  if (hasGraded) wantPills.push({ label: "Graded" });
+  if (hasSealed) wantPills.push({ label: "Sealed" });
+  if (showFallback) wantPills.push({ label: "Offers" });
 
   return (
     <div className={styles.card}>
@@ -111,76 +131,70 @@ export default function ListingCard({
           </div>
         </div>
 
-        {/* Body: Haves | Wants — two column grid */}
+        {/* Body: Haves images + Wants pills */}
         <div className={`${styles.body} ${bodyClass}`}>
-          {/* Haves panel */}
+          {/* Haves — image grid */}
           <div className={styles.havesPanel}>
             <span className={styles.colLabel}>Haves</span>
-            <div className={styles.haveItem}>
-              <div className={styles.thumbWrap}>
-                {listing.images.length > 0 ? (
-                  <img
-                    src={listing.images[0]}
-                    alt={listing.title}
-                    className={styles.thumb}
-                  />
-                ) : (
+            <div className={styles.imageGrid}>
+              {visibleImages.length > 0 ? (
+                visibleImages.map((url, i) =>
+                  grading ? (
+                    <GradedCardImage
+                      key={i}
+                      src={url}
+                      alt={`Card ${i + 1}`}
+                      grading={grading}
+                      size="sm"
+                      className={styles.imageCell}
+                    />
+                  ) : (
+                    <div key={i} className={styles.imageCell}>
+                      <img
+                        src={url}
+                        alt={`Card ${i + 1}`}
+                        className={styles.cardImg}
+                        loading="lazy"
+                      />
+                    </div>
+                  )
+                )
+              ) : (
+                <div className={styles.imageCell}>
                   <svg
-                    width="16"
-                    height="16"
+                    width="24"
+                    height="24"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="#d1d5db"
                     strokeWidth="1.5"
-                    className={styles.placeholderIcon}
                   >
                     <rect x="3" y="3" width="18" height="18" rx="2" />
                     <circle cx="8.5" cy="8.5" r="1.5" />
                     <path d="m21 15-5-5L5 21" />
                   </svg>
-                )}
-              </div>
-              <span className={styles.haveTitle}>
-                {conditionTag && (
-                  <span className={styles.conditionTag}>[{conditionTag}]</span>
-                )}
-                {titleText}
-              </span>
+                </div>
+              )}
+              {overflowCount > 0 && (
+                <div className={styles.overflowCell}>
+                  +{overflowCount}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Wants panel */}
+          {/* Wants — compact pills */}
           <div className={styles.wantsPanel}>
             <span className={styles.colLabel}>Wants</span>
-            <div className={styles.wantRows}>
-              {hasCash && (
-                <div className={styles.wantRow}>
-                  <span className={styles.wantLabel}>Cash</span>
-                  <span className={styles.wantValue}>
-                    {CURRENCY_SYMBOLS[listing.currency]}
-                    {listing.price!.toLocaleString(undefined, {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
-                </div>
-              )}
-
-              {hasCards && (
-                <div className={styles.wantRow}>
-                  <span className={styles.wantLabel}>Trade</span>
-                  <span className={styles.wantDesc}>
-                    {listing.looking_for_description}
-                  </span>
-                </div>
-              )}
-
-              {(hasOffers || showFallback) && (
-                <div className={styles.wantRow}>
-                  <span className={styles.wantLabel}>Offers</span>
-                  <span className={styles.wantDesc}>Open to offers</span>
-                </div>
-              )}
+            <div className={styles.wantPills}>
+              {wantPills.map((pill) => (
+                <span key={pill.label} className={styles.wantPill}>
+                  {pill.label}
+                  {pill.value && (
+                    <span className={styles.wantPillValue}>{pill.value}</span>
+                  )}
+                </span>
+              ))}
             </div>
           </div>
         </div>

@@ -4,8 +4,7 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 const SEARCH_LIMIT = 20; // requests per minute
 const SEARCH_WINDOW_MS = 60 * 1000;
 
-const API_BASE = "https://api.pokemontcg.io/v2/sets";
-const API_KEY = process.env.POKEMON_TCG_API_KEY;
+const TCGDEX_BASE = "https://api.tcgdex.net/v2";
 
 export async function GET(request: NextRequest) {
   const ip = getClientIp(request.headers);
@@ -24,26 +23,13 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = request.nextUrl;
   const name = searchParams.get("name")?.trim();
-  const page = searchParams.get("page") || "1";
-  const pageSize = searchParams.get("pageSize") || "20";
+  const lang = searchParams.get("lang") === "ja" ? "ja" : "en";
 
-  // Build query — optionally filter by name
-  let url: string;
-  if (name && name.length >= 2) {
-    const query = `name:"${name}*"`;
-    url = `${API_BASE}?q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}&orderBy=-releaseDate`;
-  } else {
-    // Return recent sets if no search query
-    url = `${API_BASE}?page=${page}&pageSize=${pageSize}&orderBy=-releaseDate`;
-  }
-
-  const headers: Record<string, string> = {};
-  if (API_KEY) {
-    headers["X-Api-Key"] = API_KEY;
-  }
+  // Fetch all sets from TCGdex
+  const url = `${TCGDEX_BASE}/${lang}/sets`;
 
   try {
-    const res = await fetch(url, { headers });
+    const res = await fetch(url);
 
     if (!res.ok) {
       return NextResponse.json(
@@ -54,33 +40,37 @@ export async function GET(request: NextRequest) {
 
     const data = await res.json();
 
-    // Return simplified set data
-    const sets = (data.data || []).map(
+    // TCGdex returns an array of sets
+    let sets = (Array.isArray(data) ? data : []).map(
       (set: {
         id: string;
         name: string;
-        series: string;
-        releaseDate: string;
-        total: number;
-        images: { symbol: string; logo: string };
+        logo?: string;
+        symbol?: string;
+        cardCount?: { total: number; official: number };
       }) => ({
         id: set.id,
         name: set.name,
-        series: set.series,
-        releaseDate: set.releaseDate,
-        total: set.total,
-        images: {
-          symbol: set.images.symbol,
-          logo: set.images.logo,
-        },
+        logo: set.logo ? `${set.logo}.png` : null,
+        symbol: set.symbol ? `${set.symbol}.png` : null,
+        total: set.cardCount?.total ?? 0,
       })
     );
 
+    // Filter by name if provided
+    if (name && name.length >= 2) {
+      const nameLower = name.toLowerCase();
+      sets = sets.filter((s: { name: string }) =>
+        s.name.toLowerCase().includes(nameLower)
+      );
+    }
+
+    // Reverse so newest sets appear first (TCGdex returns oldest first)
+    sets.reverse();
+
     return NextResponse.json({
       sets,
-      totalCount: data.totalCount || 0,
-      page: data.page || 1,
-      pageSize: data.pageSize || 20,
+      totalCount: sets.length,
     });
   } catch {
     return NextResponse.json(

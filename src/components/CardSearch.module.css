@@ -48,6 +48,39 @@
   background-color: rgba(0, 0, 0, 0.9);
 }
 
+/* Language toggle */
+.langToggle {
+  display: flex;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.langBtn {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-gray-300);
+  background-color: var(--color-white);
+  color: var(--color-gray-500);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.langBtn:first-child {
+  border-radius: var(--border-radius) 0 0 var(--border-radius);
+  border-right: none;
+}
+
+.langBtn:last-child {
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+
+.langBtnActive {
+  background-color: var(--color-yellow);
+  color: var(--color-gray-900);
+  border-color: var(--color-yellow);
+}
+
 /* Search input */
 .searchRow {
   display: flex;
@@ -73,6 +106,60 @@
 
 .searchInput::placeholder {
   color: var(--color-gray-400);
+}
+
+/* Filter row */
+.filterRow {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.filterSelect {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-700);
+  background-color: var(--color-white);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: var(--color-yellow);
+  box-shadow: 0 0 0 3px rgba(245, 197, 24, 0.2);
+}
+
+.filterSelect:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.promoBtn {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius);
+  background-color: var(--color-white);
+  color: var(--color-gray-500);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.promoBtn:hover {
+  border-color: var(--color-gray-400);
+}
+
+.promoBtnActive {
+  background-color: var(--color-yellow);
+  color: var(--color-gray-900);
+  border-color: var(--color-yellow);
 }
 
 /* Results grid */
@@ -124,15 +211,6 @@
   text-overflow: ellipsis;
 }
 
-.resultSet {
-  padding: 0 4px 3px;
-  font-size: 9px;
-  color: var(--color-gray-500);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* States */
 .loading,
 .empty,
@@ -166,5 +244,13 @@
 
   .selectedCard {
     width: 64px;
+  }
+
+  .filterRow {
+    flex-wrap: wrap;
+  }
+
+  .filterSelect {
+    flex: 1 1 40%;
   }
 }

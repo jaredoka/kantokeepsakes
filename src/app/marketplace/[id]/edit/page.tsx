@@ -4,7 +4,6 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import ImageUploader from "@/components/ImageUploader";
 import CardSearch from "@/components/CardSearch";
 import SetSearch from "@/components/SetSearch";
 import { validateListing } from "@/lib/marketplace/validation";
@@ -50,10 +49,10 @@ export default function EditListingPage({
     currency: "BND",
     images: [],
     wantsCash: false,
-    wantsCards: false,
     wantsOffers: false,
-    lookingForDescription: "",
-    lookingForImages: [],
+    wantsSingles: false,
+    wantsGraded: false,
+    wantsSealed: false,
     grader: "RAW",
     grade: "10",
   });
@@ -92,10 +91,6 @@ export default function EditListingPage({
         return;
       }
 
-      const hasLookingFor =
-        (listing.looking_for_description && listing.looking_for_description.trim()) ||
-        (listing.looking_for_images && listing.looking_for_images.length > 0);
-
       setForm({
         type: listing.type,
         title: listing.title,
@@ -105,11 +100,11 @@ export default function EditListingPage({
         price: listing.price !== null ? String(listing.price) : "",
         currency: listing.currency,
         images: listing.images,
-        wantsCash: listing.price !== null,
-        wantsCards: !!hasLookingFor,
+        wantsCash: listing.wants_cash ?? listing.price !== null,
         wantsOffers: listing.wants_offers ?? false,
-        lookingForDescription: listing.looking_for_description || "",
-        lookingForImages: listing.looking_for_images || [],
+        wantsSingles: listing.wants_singles ?? false,
+        wantsGraded: listing.wants_graded ?? false,
+        wantsSealed: listing.wants_sealed ?? false,
         grader: "RAW",
         grade: "10",
       });
@@ -376,11 +371,7 @@ export default function EditListingPage({
           {/* My Items — Images (category-specific picker) */}
           <div className={styles.field}>
             <label className={styles.label}>
-              {form.category === "accessories"
-                ? "My Items — Photos"
-                : form.category === "sealed"
-                  ? "Select Set"
-                  : "Select Card"}
+              {form.category === "sealed" ? "Select Set" : "Select Card"}
             </label>
             {(form.category === "singles" || form.category === "graded") && (
               <CardSearch
@@ -390,12 +381,6 @@ export default function EditListingPage({
             )}
             {form.category === "sealed" && (
               <SetSearch
-                images={form.images}
-                onImagesChange={(imgs) => updateField("images", imgs)}
-              />
-            )}
-            {form.category === "accessories" && (
-              <ImageUploader
                 images={form.images}
                 onImagesChange={(imgs) => updateField("images", imgs)}
               />
@@ -424,21 +409,41 @@ export default function EditListingPage({
             <label className={styles.checkboxRow}>
               <input
                 type="checkbox"
-                checked={form.wantsCards}
-                onChange={(e) => updateField("wantsCards", e.target.checked)}
+                checked={form.wantsOffers}
+                onChange={(e) => updateField("wantsOffers", e.target.checked)}
               />
               <span className={styles.checkboxLabel}>
-                Cards <span className={styles.checkboxHint}>— trade for specific cards</span>
+                Any Offers <span className={styles.checkboxHint}>— open to any offer</span>
               </span>
             </label>
             <label className={styles.checkboxRow}>
               <input
                 type="checkbox"
-                checked={form.wantsOffers}
-                onChange={(e) => updateField("wantsOffers", e.target.checked)}
+                checked={form.wantsSingles}
+                onChange={(e) => updateField("wantsSingles", e.target.checked)}
               />
               <span className={styles.checkboxLabel}>
-                Offers <span className={styles.checkboxHint}>— open to any offer</span>
+                Any Singles <span className={styles.checkboxHint}>— trade for singles</span>
+              </span>
+            </label>
+            <label className={styles.checkboxRow}>
+              <input
+                type="checkbox"
+                checked={form.wantsGraded}
+                onChange={(e) => updateField("wantsGraded", e.target.checked)}
+              />
+              <span className={styles.checkboxLabel}>
+                Any Graded <span className={styles.checkboxHint}>— trade for graded cards</span>
+              </span>
+            </label>
+            <label className={styles.checkboxRow}>
+              <input
+                type="checkbox"
+                checked={form.wantsSealed}
+                onChange={(e) => updateField("wantsSealed", e.target.checked)}
+              />
+              <span className={styles.checkboxLabel}>
+                Any Sealed <span className={styles.checkboxHint}>— trade for sealed products</span>
               </span>
             </label>
           </div>
@@ -484,41 +489,6 @@ export default function EditListingPage({
                 </select>
               </div>
             </div>
-          )}
-
-          {/* Cards fields */}
-          {form.wantsCards && (
-            <>
-              <div className={styles.field}>
-                <label htmlFor="lookingForDescription" className={styles.label}>
-                  Cards you want
-                </label>
-                <textarea
-                  id="lookingForDescription"
-                  value={form.lookingForDescription}
-                  onChange={(e) =>
-                    updateField("lookingForDescription", e.target.value)
-                  }
-                  className={styles.textarea}
-                  placeholder="e.g. Pikachu VMAX Alt Art, any Charizard card..."
-                  rows={3}
-                  maxLength={1000}
-                />
-                <span className={styles.charCount}>
-                  {form.lookingForDescription.length}/1000
-                </span>
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>
-                  Reference Photos <span className={styles.optional}>(optional)</span>
-                </label>
-                <ImageUploader
-                  images={form.lookingForImages}
-                  onImagesChange={(imgs) => updateField("lookingForImages", imgs)}
-                />
-              </div>
-            </>
           )}
 
           <div className={styles.actions}>

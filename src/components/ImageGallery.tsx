@@ -1,14 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import type { GradingInfo } from "@/lib/marketplace/grading";
+import GradedCardImage from "./GradedCardImage";
 import styles from "./ImageGallery.module.css";
 
 interface ImageGalleryProps {
   images: string[];
   alt: string;
+  /** When provided, images are wrapped in a graded slab overlay */
+  grading?: GradingInfo | null;
 }
 
-export default function ImageGallery({ images, alt }: ImageGalleryProps) {
+export default function ImageGallery({ images, alt, grading }: ImageGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   if (images.length === 0) {
@@ -36,11 +40,21 @@ export default function ImageGallery({ images, alt }: ImageGalleryProps) {
   return (
     <div className={styles.gallery}>
       <div className={styles.mainImageWrap}>
-        <img
-          src={images[activeIndex]}
-          alt={`${alt} — image ${activeIndex + 1}`}
-          className={styles.mainImage}
-        />
+        {grading ? (
+          <GradedCardImage
+            src={images[activeIndex]}
+            alt={`${alt} — image ${activeIndex + 1}`}
+            grading={grading}
+            size="lg"
+            className={styles.mainImage}
+          />
+        ) : (
+          <img
+            src={images[activeIndex]}
+            alt={`${alt} — image ${activeIndex + 1}`}
+            className={styles.mainImage}
+          />
+        )}
       </div>
 
       {images.length > 1 && (
@@ -52,11 +66,21 @@ export default function ImageGallery({ images, alt }: ImageGalleryProps) {
               onClick={() => setActiveIndex(i)}
               aria-label={`View image ${i + 1}`}
             >
-              <img
-                src={src}
-                alt={`${alt} — thumbnail ${i + 1}`}
-                className={styles.thumbImg}
-              />
+              {grading ? (
+                <GradedCardImage
+                  src={src}
+                  alt={`${alt} — thumbnail ${i + 1}`}
+                  grading={grading}
+                  size="sm"
+                  className={styles.thumbImg}
+                />
+              ) : (
+                <img
+                  src={src}
+                  alt={`${alt} — thumbnail ${i + 1}`}
+                  className={styles.thumbImg}
+                />
+              )}
             </button>
           ))}
         </div>

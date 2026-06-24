@@ -172,6 +172,24 @@
   margin-bottom: 0;
 }
 
+/* Wants pills */
+.wantsPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.wantPill {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-200);
+}
+
 /* Expiry & owner actions */
 .expiryWarning {
   display: inline-block;

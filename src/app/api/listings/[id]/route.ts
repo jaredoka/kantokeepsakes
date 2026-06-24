@@ -99,10 +99,10 @@ export async function PATCH(
     currency?: string;
     images?: string[];
     wantsCash?: boolean;
-    wantsCards?: boolean;
     wantsOffers?: boolean;
-    lookingForDescription?: string;
-    lookingForImages?: string[];
+    wantsSingles?: boolean;
+    wantsGraded?: boolean;
+    wantsSealed?: boolean;
   };
 
   try {
@@ -113,8 +113,7 @@ export async function PATCH(
 
   const {
     type, title, description, category, language, price, currency, images,
-    wantsCash, wantsCards, wantsOffers,
-    lookingForDescription, lookingForImages,
+    wantsCash, wantsOffers, wantsSingles, wantsGraded, wantsSealed,
   } = body;
 
   const validation = validateListing({
@@ -127,10 +126,10 @@ export async function PATCH(
     currency: currency || "",
     images: images || [],
     wantsCash: !!wantsCash,
-    wantsCards: !!wantsCards,
     wantsOffers: !!wantsOffers,
-    lookingForDescription: lookingForDescription || "",
-    lookingForImages: lookingForImages || [],
+    wantsSingles: !!wantsSingles,
+    wantsGraded: !!wantsGraded,
+    wantsSealed: !!wantsSealed,
   });
 
   if (!validation.valid) {
@@ -148,6 +147,11 @@ export async function PATCH(
       price: wantsCash ? (price ?? null) : null,
       currency: (currency as Currency) || "BND",
       images: images || [],
+      wants_cash: !!wantsCash,
+      wants_offers: !!wantsOffers,
+      wants_singles: !!wantsSingles,
+      wants_graded: !!wantsGraded,
+      wants_sealed: !!wantsSealed,
     })
     .eq("id", id)
     .eq("user_id", user.id);
