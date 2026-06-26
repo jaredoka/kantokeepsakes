@@ -213,6 +213,63 @@ All tables have Row Level Security (RLS) enabled.
 
 ---
 
+## Development Workflow
+
+This project follows **GitHub Flow** — every change gets its own branch, and `main` is always the stable production build deployed at [kantokeepsakes.com](https://kantokeepsakes.com).
+
+### Rules
+
+- `main` is **always production-ready**. Never commit directly to `main`.
+- Every feature, fix, or maintenance task gets its own short-lived branch.
+- Changes reach production by opening a Pull Request on GitHub, reviewing, and merging.
+- Vercel automatically creates a **preview deployment URL** for every open PR — use it to verify changes before merging.
+
+### Branch naming
+
+| Prefix | Use for | Example |
+|--------|---------|---------|
+| `feature/` | New functionality | `feature/email-notifications` |
+| `fix/` | Bug fixes | `fix/listing-image-not-loading` |
+| `chore/` | Deps, config, docs, cleanup | `chore/update-dependencies` |
+
+### Daily cycle
+
+```bash
+# 1. Start a new change
+git checkout main
+git pull origin main
+git checkout -b feature/your-feature-name
+
+# 2. Do your work, commit as you go
+git add <specific-files>
+git commit -m "Add your feature description"
+
+# 3. Push the branch and open a Pull Request on GitHub
+git push -u origin feature/your-feature-name
+# → GitHub will show a "Compare & pull request" button
+# → Vercel will post a preview deployment URL in the PR
+
+# 4. Review the preview, then merge the PR on GitHub
+
+# 5. Clean up the branch locally after merging
+git checkout main
+git pull origin main
+git branch -d feature/your-feature-name
+```
+
+### Protecting main (one-time GitHub setup)
+
+Go to [github.com/jaredoka/kantokeepsakes](https://github.com/jaredoka/kantokeepsakes) → **Settings → Branches → Add branch protection rule**:
+
+- Branch name pattern: `main`
+- ✅ Require a pull request before merging
+- Approvals required: `0` (solo dev — you review and merge your own PRs)
+- ✅ Do not allow bypassing the above settings
+
+This prevents accidental direct pushes to production.
+
+---
+
 ## What I Learned
 
 This project started as a static HTML/CSS/JS site and evolved into a full-stack Next.js application with a real-time marketplace. As a beginner full-stack web developer building this project with the help of **Claude Code (Opus 4.6 by Anthropic)**, here is what I learned:

@@ -29,6 +29,43 @@ Copy from `.env.local.example` → `.env.local` if the file is missing.
 
 ---
 
+## Git Workflow
+
+This project uses **GitHub Flow**. `main` is always production (auto-deployed to kantokeepsakes.com via Vercel).
+
+### Rules for all future work
+- **Never commit directly to `main`.**
+- Every task (feature, fix, chore) starts on its own branch.
+- Changes merge into `main` via a Pull Request on GitHub.
+- Vercel auto-creates a preview deployment URL for every PR.
+
+### Branch naming
+
+| Prefix | Use for |
+|--------|---------|
+| `feature/` | New functionality (e.g. `feature/email-notifications`) |
+| `fix/` | Bug fixes (e.g. `fix/listing-image-not-loading`) |
+| `chore/` | Deps, config, docs, cleanup |
+
+### Starting any new task
+
+```bash
+git checkout main && git pull origin main
+git checkout -b feature/<task-name>
+# ... make changes, commit ...
+git push -u origin feature/<task-name>
+# Open PR on GitHub → Vercel posts preview URL → merge → delete branch
+```
+
+### Infrastructure added (Session 9)
+- `.github/PULL_REQUEST_TEMPLATE.md` — auto-populates PR description on GitHub
+- `README.md` → Development Workflow section — full workflow docs including branch protection setup
+
+### Branch protection
+Branch protection on `main` has been configured in GitHub UI (require PR before merging, no bypass).
+
+---
+
 ## Feature Status (All Sessions)
 
 ### Auth
