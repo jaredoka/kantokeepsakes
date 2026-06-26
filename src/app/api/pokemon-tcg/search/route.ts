@@ -9,6 +9,8 @@ const TCGDEX_BASE = "https://api.tcgdex.net/v2";
 // Series IDs to exclude (mobile games, not physical TCG)
 const EXCLUDED_SERIES = new Set(["tcgp"]);
 
+const HAS_LATIN = /[a-zA-Z]/;
+
 interface RawCard {
   id: string;
   localId: string;
@@ -35,10 +37,35 @@ function mapCard(card: RawCard): MappedCard {
   };
 }
 
+/** Convert EN image URLs to JA equivalents */
+function enCardToJa(card: MappedCard): MappedCard {
+  return {
+    ...card,
+    id: `ja-${card.id}`,
+    images: {
+      small: card.images.small.replace("/en/", "/ja/"),
+      large: card.images.large.replace("/en/", "/ja/"),
+    },
+  };
+}
+
+/** Merge JA-native and EN-converted results, deduplicating by base ID */
+function mergeCards(jaCards: MappedCard[], enCards: MappedCard[]): MappedCard[] {
+  const enAsJa = enCards.map(enCardToJa);
+  const jaIdSet = new Set(jaCards.map((c) => c.id));
+  const merged: MappedCard[] = [...jaCards];
+  for (const card of enAsJa) {
+    const baseId = card.id.replace("ja-", "");
+    if (!jaIdSet.has(baseId)) {
+      merged.push(card);
+    }
+  }
+  return merged;
+}
+
 /** Check if a card belongs to an excluded series (e.g. TCG Pocket) */
 function isExcludedCard(card: RawCard): boolean {
   if (!card.image) return true;
-  // Image URLs follow pattern: https://assets.tcgdex.net/{lang}/{seriesId}/{setId}/{localId}
   for (const seriesId of EXCLUDED_SERIES) {
     if (card.image.includes(`/${seriesId}/`)) return true;
   }
@@ -58,6 +85,27 @@ async function fetchCards(
   return (Array.isArray(data) ? data : [])
     .filter((c: RawCard) => c.image && !isExcludedCard(c))
     .map(mapCard);
+}
+
+/** Fetch all cards from a set, filtered by name */
+async function fetchSetCards(
+  lang: string,
+  setId: string,
+  name: string
+): Promise<RawCard[]> {
+  const res = await fetch(
+    `${TCGDEX_BASE}/${lang}/sets/${encodeURIComponent(setId)}`
+  );
+  if (!res.ok) return [];
+  const data = await res.json();
+  const cards: RawCard[] = data.cards || [];
+  const nameLower = name.toLowerCase();
+  return cards.filter(
+    (c) =>
+      c.image &&
+      !isExcludedCard(c) &&
+      c.name.toLowerCase().includes(nameLower)
+  );
 }
 
 export async function GET(request: NextRequest) {
@@ -82,7 +130,6 @@ export async function GET(request: NextRequest) {
   const pageSize = searchParams.get("pageSize") || "40";
   const setId = searchParams.get("setId")?.trim();
   const seriesId = searchParams.get("seriesId")?.trim();
-  const dualLang = searchParams.get("dualLang") === "true";
 
   if (!name || name.length < 2) {
     return NextResponse.json(
@@ -91,19 +138,21 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Determine if we should dual-search (JA mode with Latin chars in query)
+  const shouldDual = lang === "ja" && HAS_LATIN.test(name);
+
   // If filtering by specific set, search within that set
   if (setId) {
-    return searchBySet(lang, setId, name, Number(page), Number(pageSize));
+    return searchBySet(lang, setId, name, Number(page), Number(pageSize), shouldDual);
   }
 
   // If filtering by era (series), search all sets in that series
   if (seriesId) {
-    return searchBySeries(lang, seriesId, name, Number(page), Number(pageSize));
+    return searchBySeries(lang, seriesId, name, Number(page), Number(pageSize), shouldDual);
   }
 
-  // Dual-search: when lang=ja and query contains Latin chars, search both
-  // EN and JA endpoints and merge results with JA image preference
-  if (dualLang && lang === "ja") {
+  // JA mode with Latin chars: dual-search both EN and JA endpoints
+  if (shouldDual) {
     return dualSearch(name, page, pageSize);
   }
 
@@ -126,14 +175,16 @@ export async function GET(request: NextRequest) {
 
 /**
  * Search all sets in a series for cards matching the name.
- * Fetches series detail to get set IDs, then searches each set in parallel.
+ * When shouldDual is true (JA mode + Latin query), also searches EN endpoint
+ * sets and merges results with JA image URLs.
  */
 async function searchBySeries(
   lang: string,
   seriesId: string,
   name: string,
   page: number,
-  pageSize: number
+  pageSize: number,
+  shouldDual: boolean
 ) {
   try {
     // Fetch series detail to get set IDs
@@ -160,25 +211,11 @@ async function searchBySeries(
     }
 
     // Search each set in parallel
-    const nameLower = name.toLowerCase();
     const setResults = await Promise.allSettled(
-      sets.map(async (set) => {
-        const res = await fetch(
-          `${TCGDEX_BASE}/${lang}/sets/${encodeURIComponent(set.id)}`
-        );
-        if (!res.ok) return [];
-        const data = await res.json();
-        const cards: RawCard[] = data.cards || [];
-        return cards.filter(
-          (c) =>
-            c.image &&
-            !isExcludedCard(c) &&
-            c.name.toLowerCase().includes(nameLower)
-        );
-      })
+      sets.map((set) => fetchSetCards(lang, set.id, name))
     );
 
-    // Merge all results
+    // Merge all results from JA (or primary lang) sets
     const allMatches: RawCard[] = [];
     for (const result of setResults) {
       if (result.status === "fulfilled") {
@@ -186,15 +223,39 @@ async function searchBySeries(
       }
     }
 
+    let cards = allMatches.map(mapCard);
+
+    // If dual-search enabled, also search EN sets and merge
+    if (shouldDual) {
+      const enSeriesRes = await fetch(
+        `${TCGDEX_BASE}/en/series/${encodeURIComponent(seriesId)}`
+      );
+      if (enSeriesRes.ok) {
+        const enSeriesData = await enSeriesRes.json();
+        const enSets: { id: string }[] = enSeriesData.sets || [];
+        const enSetResults = await Promise.allSettled(
+          enSets.map((set) => fetchSetCards("en", set.id, name))
+        );
+        const enMatches: RawCard[] = [];
+        for (const result of enSetResults) {
+          if (result.status === "fulfilled") {
+            enMatches.push(...result.value);
+          }
+        }
+        cards = mergeCards(cards, enMatches.map(mapCard));
+      }
+    }
+
     // Paginate the merged results
     const start = (page - 1) * pageSize;
-    const paged = allMatches.slice(start, start + pageSize);
+    const paged = cards.slice(start, start + pageSize);
 
     return NextResponse.json({
-      cards: paged.map(mapCard),
-      totalCount: allMatches.length,
+      cards: paged,
+      totalCount: cards.length,
       page,
       pageSize,
+      dualSearch: shouldDual,
     });
   } catch {
     return NextResponse.json(
@@ -216,27 +277,7 @@ async function dualSearch(name: string, page: string, pageSize: string) {
       fetchCards("ja", name, page, pageSize),
     ]);
 
-    // Convert EN results to JA image URLs (replace /en/ with /ja/ in path)
-    const enAsJa: MappedCard[] = enCards.map((card) => ({
-      ...card,
-      id: `ja-${card.id}`,
-      images: {
-        small: card.images.small.replace("/en/", "/ja/"),
-        large: card.images.large.replace("/en/", "/ja/"),
-      },
-    }));
-
-    // Build a set of JA card base IDs to deduplicate
-    const jaIdSet = new Set(jaCards.map((c) => c.id));
-
-    // Merge: JA-native results first, then EN-converted results (skipping dupes)
-    const merged: MappedCard[] = [...jaCards];
-    for (const card of enAsJa) {
-      const baseId = card.id.replace("ja-", "");
-      if (!jaIdSet.has(baseId)) {
-        merged.push(card);
-      }
-    }
+    const merged = mergeCards(jaCards, enCards);
 
     return NextResponse.json({
       cards: merged,
@@ -253,48 +294,38 @@ async function dualSearch(name: string, page: string, pageSize: string) {
   }
 }
 
+/**
+ * Search within a specific set for cards matching the name.
+ * When shouldDual is true, also searches the EN version of the set and merges.
+ */
 async function searchBySet(
   lang: string,
   setId: string,
   name: string,
   page: number,
-  pageSize: number
+  pageSize: number,
+  shouldDual: boolean
 ) {
-  const url = `${TCGDEX_BASE}/${lang}/sets/${encodeURIComponent(setId)}`;
-
   try {
-    const res = await fetch(url);
+    const filtered = await fetchSetCards(lang, setId, name);
+    let cards = filtered.map(mapCard);
 
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: "Set not found." },
-        { status: 404 }
-      );
+    // If dual-search enabled, also search EN set and merge
+    if (shouldDual) {
+      const enFiltered = await fetchSetCards("en", setId, name);
+      cards = mergeCards(cards, enFiltered.map(mapCard));
     }
-
-    const data = await res.json();
-    const allCards: RawCard[] = data.cards || [];
-
-    // Filter by name (case-insensitive partial match)
-    const nameLower = name.toLowerCase();
-    const filtered = allCards.filter(
-      (c) =>
-        c.image &&
-        !isExcludedCard(c) &&
-        c.name.toLowerCase().includes(nameLower)
-    );
 
     // Paginate
     const start = (page - 1) * pageSize;
-    const paged = filtered.slice(start, start + pageSize);
-
-    const cards = paged.map(mapCard);
+    const paged = cards.slice(start, start + pageSize);
 
     return NextResponse.json({
-      cards,
-      totalCount: filtered.length,
+      cards: paged,
+      totalCount: cards.length,
       page,
       pageSize,
+      dualSearch: shouldDual,
     });
   } catch {
     return NextResponse.json(

@@ -1,7 +1,19 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { MAX_IMAGES } from "@/lib/marketplace/types";
+import {
+  MAX_IMAGES,
+  GRADING_COMPANIES,
+  PSA_GRADES,
+  CGC_GRADES,
+  BGS_GRADES,
+  WANT_ITEM_TYPES,
+  WANT_ITEM_TYPE_LABELS,
+  type HaveImage,
+  type WantItem,
+  type GradingCompany,
+  type WantItemType,
+} from "@/lib/marketplace/types";
 import styles from "./CardSearch.module.css";
 
 interface PokemonCard {
@@ -24,22 +36,44 @@ interface Series {
   sets: SeriesSet[];
 }
 
-interface CardSearchProps {
-  /** Currently selected card image URLs */
-  images: string[];
-  /** Called when the selected images change */
-  onImagesChange: (images: string[]) => void;
-  /** Max number of images allowed (defaults to MAX_IMAGES) */
-  max?: number;
+// "have" mode props
+interface HaveModeProps {
+  mode: "have";
+  haveImages: HaveImage[];
+  onHaveImagesChange: (images: HaveImage[]) => void;
+  wantItems?: never;
+  onWantItemsChange?: never;
 }
 
-const HAS_LATIN = /[a-zA-Z]/;
+// "want" mode props
+interface WantModeProps {
+  mode: "want";
+  wantItems: WantItem[];
+  onWantItemsChange: (items: WantItem[]) => void;
+  haveImages?: never;
+  onHaveImagesChange?: never;
+}
 
-export default function CardSearch({
-  images,
-  onImagesChange,
-  max = MAX_IMAGES,
-}: CardSearchProps) {
+type CardSearchProps = (HaveModeProps | WantModeProps) & {
+  max?: number;
+};
+
+function getGradeOptions(grader: GradingCompany) {
+  if (grader === "PSA") return PSA_GRADES;
+  if (grader === "CGC") return CGC_GRADES;
+  if (grader === "BGS") return BGS_GRADES;
+  return null;
+}
+
+function getGradeLabel(grader: GradingCompany, grade: string): string {
+  if (grader === "RAW") return "RAW";
+  if (grader === "SEALED") return "SEALED";
+  return `${grader} ${grade}`;
+}
+
+export default function CardSearch(props: CardSearchProps) {
+  const { mode, max = MAX_IMAGES } = props;
+
   const [query, setQuery] = useState("");
   const [lang, setLang] = useState<"en" | "ja">("en");
   const [results, setResults] = useState<PokemonCard[]>([]);
@@ -54,6 +88,18 @@ export default function CardSearch({
   const [selectedEra, setSelectedEra] = useState("");
   const [selectedSet, setSelectedSet] = useState("");
   const [promosOnly, setPromosOnly] = useState(false);
+
+  // Per-card grading edit state (have mode)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  // Get current items list based on mode
+  const selectedUrls =
+    mode === "have"
+      ? props.haveImages.map((img) => img.url)
+      : props.wantItems.map((item) => item.url);
+
+  const itemCount =
+    mode === "have" ? props.haveImages.length : props.wantItems.length;
 
   // Load series on mount and when language changes
   useEffect(() => {
@@ -104,14 +150,6 @@ export default function CardSearch({
           params.set("seriesId", eraId);
         }
 
-        // Dual-search: JA mode + query has Latin chars + no set/era filter
-        const needsDual =
-          searchLang === "ja" &&
-          HAS_LATIN.test(searchQuery) &&
-          !setId &&
-          !eraId;
-        if (needsDual) params.set("dualLang", "true");
-
         const res = await fetch(`/api/pokemon-tcg/search?${params}`);
 
         if (!res.ok) {
@@ -147,11 +185,9 @@ export default function CardSearch({
 
   function handleLangChange(newLang: "en" | "ja") {
     setLang(newLang);
-    // Reset filters when language changes (IDs differ between languages)
     setSelectedEra("");
     setSelectedSet("");
     setPromosOnly(false);
-    // Re-search with new language if there's a query
     if (query.trim().length >= 2) {
       search(query, newLang, "", "");
     }
@@ -159,8 +195,7 @@ export default function CardSearch({
 
   function handleEraChange(eraId: string) {
     setSelectedEra(eraId);
-    setSelectedSet(""); // Reset set when era changes
-    // Re-search if query exists
+    setSelectedSet("");
     if (query.trim().length >= 2) {
       search(query, lang, "", eraId);
     }
@@ -168,7 +203,6 @@ export default function CardSearch({
 
   function handleSetChange(setId: string) {
     setSelectedSet(setId);
-    // Re-search with set filter
     if (query.trim().length >= 2) {
       search(query, lang, setId, selectedEra);
     }
@@ -177,7 +211,7 @@ export default function CardSearch({
   function handlePromosToggle() {
     const next = !promosOnly;
     setPromosOnly(next);
-    setSelectedSet(""); // Reset set selection when toggling promos
+    setSelectedSet("");
     if (query.trim().length >= 2) {
       search(query, lang, "", selectedEra);
     }
@@ -192,15 +226,70 @@ export default function CardSearch({
 
   function selectCard(card: PokemonCard) {
     const url = card.images.large;
-    if (images.includes(url)) {
-      onImagesChange(images.filter((img) => img !== url));
-    } else if (images.length < max) {
-      onImagesChange([...images, url]);
+    if (selectedUrls.includes(url)) {
+      // Deselect
+      if (mode === "have") {
+        props.onHaveImagesChange(
+          props.haveImages.filter((img) => img.url !== url)
+        );
+      } else {
+        props.onWantItemsChange(
+          props.wantItems.filter((item) => item.url !== url)
+        );
+      }
+      setEditingIndex(null);
+    } else if (itemCount < max) {
+      // Select with defaults
+      if (mode === "have") {
+        props.onHaveImagesChange([
+          ...props.haveImages,
+          { url, grader: "RAW", grade: "" },
+        ]);
+      } else {
+        props.onWantItemsChange([
+          ...props.wantItems,
+          { url, type: "singles" },
+        ]);
+      }
     }
   }
 
-  function removeImage(index: number) {
-    onImagesChange(images.filter((_, i) => i !== index));
+  function removeItem(index: number) {
+    if (mode === "have") {
+      props.onHaveImagesChange(props.haveImages.filter((_, i) => i !== index));
+    } else {
+      props.onWantItemsChange(props.wantItems.filter((_, i) => i !== index));
+    }
+    if (editingIndex === index) setEditingIndex(null);
+  }
+
+  // Per-card grading handlers (have mode)
+  function handleCardGraderChange(index: number, newGrader: GradingCompany) {
+    if (mode !== "have") return;
+    const updated = [...props.haveImages];
+    const newGrade =
+      newGrader === "PSA"
+        ? "10"
+        : newGrader === "CGC" || newGrader === "BGS"
+          ? "9.5"
+          : "";
+    updated[index] = { ...updated[index], grader: newGrader, grade: newGrade };
+    props.onHaveImagesChange(updated);
+  }
+
+  function handleCardGradeChange(index: number, newGrade: string) {
+    if (mode !== "have") return;
+    const updated = [...props.haveImages];
+    updated[index] = { ...updated[index], grade: newGrade };
+    props.onHaveImagesChange(updated);
+  }
+
+  // Per-card type handler (want mode)
+  function handleCardTypeChange(index: number, newType: WantItemType) {
+    if (mode !== "want") return;
+    const updated = [...props.wantItems];
+    updated[index] = { ...updated[index], type: newType };
+    props.onWantItemsChange(updated);
   }
 
   // Compute available sets based on selected era and promo filter
@@ -218,7 +307,6 @@ export default function CardSearch({
       return sets;
     }
     if (promosOnly) {
-      // Show all promo sets across all eras
       return seriesList.flatMap((era) =>
         era.sets.filter(
           (s) =>
@@ -236,11 +324,9 @@ export default function CardSearch({
     card: PokemonCard
   ) {
     const img = e.currentTarget;
-    // If the JA image failed, try EN equivalent
     if (img.src.includes("/ja/")) {
       img.src = img.src.replace("/ja/", "/en/");
     }
-    // Also fix the large URL stored in the card reference for selection
     if (card.images.small.includes("/ja/")) {
       card.images.small = card.images.small.replace("/ja/", "/en/");
       card.images.large = card.images.large.replace("/ja/", "/en/");
@@ -249,26 +335,114 @@ export default function CardSearch({
 
   return (
     <div className={styles.wrapper}>
-      {/* Selected cards */}
-      {images.length > 0 && (
+      {/* Selected cards with grading/type overlays */}
+      {itemCount > 0 && (
         <div className={styles.selected}>
-          {images.map((url, i) => (
-            <div key={url} className={styles.selectedCard}>
-              <img
-                src={url}
-                alt={`Selected card ${i + 1}`}
-                className={styles.selectedImg}
-              />
-              <button
-                type="button"
-                className={styles.removeBtn}
-                onClick={() => removeImage(i)}
-                aria-label={`Remove card ${i + 1}`}
-              >
-                &times;
-              </button>
-            </div>
-          ))}
+          {mode === "have"
+            ? props.haveImages.map((img, i) => (
+                <div key={img.url} className={styles.selectedCard}>
+                  <img
+                    src={img.url}
+                    alt={`Selected card ${i + 1}`}
+                    className={styles.selectedImg}
+                  />
+                  {/* Grading badge overlay */}
+                  <button
+                    type="button"
+                    className={styles.gradeBadge}
+                    onClick={() =>
+                      setEditingIndex(editingIndex === i ? null : i)
+                    }
+                    title="Click to change grade"
+                  >
+                    {getGradeLabel(img.grader, img.grade)}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.removeBtn}
+                    onClick={() => removeItem(i)}
+                    aria-label={`Remove card ${i + 1}`}
+                  >
+                    &times;
+                  </button>
+                  {/* Inline grading picker */}
+                  {editingIndex === i && (
+                    <div className={styles.gradingPopover}>
+                      <div className={styles.gradingPopoverPills}>
+                        {GRADING_COMPANIES.map((g) => (
+                          <button
+                            key={g}
+                            type="button"
+                            className={`${styles.gradingPopoverPill} ${img.grader === g ? styles.gradingPopoverPillActive : ""}`}
+                            onClick={() => handleCardGraderChange(i, g)}
+                          >
+                            {g}
+                          </button>
+                        ))}
+                      </div>
+                      {getGradeOptions(img.grader) && (
+                        <div className={styles.gradingPopoverGrades}>
+                          {getGradeOptions(img.grader)!.map((g) => (
+                            <button
+                              key={g}
+                              type="button"
+                              className={`${styles.gradingPopoverGradeBtn} ${img.grade === g ? styles.gradingPopoverGradeBtnActive : ""}`}
+                              onClick={() => handleCardGradeChange(i, g)}
+                            >
+                              {g}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            : props.wantItems.map((item, i) => (
+                <div key={item.url} className={styles.selectedCard}>
+                  <img
+                    src={item.url}
+                    alt={`Wanted card ${i + 1}`}
+                    className={styles.selectedImg}
+                  />
+                  {/* Type badge overlay */}
+                  <button
+                    type="button"
+                    className={styles.typeBadge}
+                    onClick={() =>
+                      setEditingIndex(editingIndex === i ? null : i)
+                    }
+                    title="Click to change type"
+                  >
+                    {WANT_ITEM_TYPE_LABELS[item.type]}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.removeBtn}
+                    onClick={() => removeItem(i)}
+                    aria-label={`Remove card ${i + 1}`}
+                  >
+                    &times;
+                  </button>
+                  {/* Inline type picker */}
+                  {editingIndex === i && (
+                    <div className={styles.gradingPopover}>
+                      <div className={styles.gradingPopoverPills}>
+                        {WANT_ITEM_TYPES.map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            className={`${styles.gradingPopoverPill} ${item.type === t ? styles.gradingPopoverPillActive : ""}`}
+                            onClick={() => handleCardTypeChange(i, t)}
+                          >
+                            {WANT_ITEM_TYPE_LABELS[t]}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
         </div>
       )}
 
@@ -341,7 +515,7 @@ export default function CardSearch({
       </div>
 
       <div className={styles.countLabel}>
-        {images.length}/{max} selected
+        {itemCount}/{max} selected
       </div>
 
       {/* Results */}
@@ -356,7 +530,7 @@ export default function CardSearch({
       {!loading && results.length > 0 && (
         <div className={styles.results}>
           {results.map((card) => {
-            const isSelected = images.includes(card.images.large);
+            const isSelected = selectedUrls.includes(card.images.large);
             return (
               <button
                 key={card.id}

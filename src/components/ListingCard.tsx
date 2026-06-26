@@ -7,8 +7,6 @@ import {
   type ListingWithProfile,
 } from "@/lib/marketplace/types";
 import { getExpiryWarning, getExpiryUrgency } from "@/lib/marketplace/dates";
-import { parseGradingTag } from "@/lib/marketplace/grading";
-import GradedCardImage from "./GradedCardImage";
 import styles from "./ListingCard.module.css";
 
 interface ListingCardProps {
@@ -52,22 +50,9 @@ export default function ListingCard({
   const hasSealed = listing.wants_sealed;
   const showFallback = !hasCash && !hasOffers && !hasSingles && !hasGraded && !hasSealed;
 
-  const bodyClass = listing.type === "WTB" ? styles.bodyBlue : styles.bodyYellow;
-
-  // Parse grading info for graded listings
-  const grading =
-    listing.category === "graded" ? parseGradingTag(listing.title) : null;
-
   // Images to show, with overflow indicator
   const visibleImages = listing.images.slice(0, MAX_VISIBLE_IMAGES);
   const overflowCount = listing.images.length - MAX_VISIBLE_IMAGES;
-
-  // Cell sizing class based on category
-  const cellSizeClass = grading
-    ? styles.imageCellGraded
-    : listing.category === "singles"
-      ? styles.imageCellSingles
-      : styles.imageCellDefault;
 
   // Collect want pills
   const wantPills: { label: string; value?: string }[] = [];
@@ -88,12 +73,6 @@ export default function ListingCard({
       <Link href={`/marketplace/${listing.id}`} className={styles.cardLink}>
         {/* Header bar */}
         <div className={styles.headerBar}>
-          <span
-            className={`${styles.typeBadge} ${listing.type === "WTB" ? styles.typeBadgeWtb : styles.typeBadgeWts}`}
-          >
-            {listing.type}
-          </span>
-
           {profile && (
             <span className={styles.usernamePill}>
               <span className={styles.pillUsername}>{profile.username}</span>
@@ -137,33 +116,22 @@ export default function ListingCard({
         </div>
 
         {/* Body: Haves images + Wants pills */}
-        <div className={`${styles.body} ${bodyClass}`}>
+        <div className={styles.body}>
           {/* Haves — image grid */}
           <div className={styles.havesPanel}>
             <span className={styles.colLabel}>Haves</span>
             <div className={styles.imageGrid}>
               {visibleImages.length > 0 ? (
-                visibleImages.map((url, i) =>
-                  grading ? (
-                    <div key={i} className={`${styles.imageCell} ${cellSizeClass}`}>
-                      <GradedCardImage
-                        src={url}
-                        alt={`Card ${i + 1}`}
-                        grading={grading}
-                        size="sm"
-                      />
-                    </div>
-                  ) : (
-                    <div key={i} className={`${styles.imageCell} ${cellSizeClass}`}>
-                      <img
-                        src={url}
-                        alt={`Card ${i + 1}`}
-                        className={styles.cardImg}
-                        loading="lazy"
-                      />
-                    </div>
-                  )
-                )
+                visibleImages.map((url, i) => (
+                  <div key={i} className={`${styles.imageCell} ${styles.imageCellDefault}`}>
+                    <img
+                      src={url}
+                      alt={`Card ${i + 1}`}
+                      className={styles.cardImg}
+                      loading="lazy"
+                    />
+                  </div>
+                ))
               ) : (
                 <div className={`${styles.imageCell} ${styles.imageCellDefault}`}>
                   <svg

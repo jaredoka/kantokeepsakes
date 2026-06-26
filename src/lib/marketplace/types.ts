@@ -196,24 +196,43 @@ export type CGCGrade = (typeof CGC_GRADES)[number];
 export const BGS_GRADES = ["5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5"] as const;
 export type BGSGrade = (typeof BGS_GRADES)[number];
 
+// Per-card grading for have images
+export interface HaveImage {
+  url: string;
+  grader: GradingCompany;
+  grade: string; // e.g. "10", "9.5", "" for RAW/SEALED
+}
+
+// Per-card type tag for want items
+export const WANT_ITEM_TYPES = ["singles", "graded", "sealed"] as const;
+export type WantItemType = (typeof WANT_ITEM_TYPES)[number];
+
+export const WANT_ITEM_TYPE_LABELS: Record<WantItemType, string> = {
+  singles: "Singles",
+  graded: "Graded",
+  sealed: "Sealed",
+};
+
+export interface WantItem {
+  url: string;
+  type: WantItemType;
+}
+
 // Form data types (for create/edit forms)
 
 export interface ListingFormData {
-  type: ListingType;
-  title: string;
+  havesText: string; // user text after [H]
+  wantsText: string; // user text after [W]
   description: string;
-  category: ListingCategory;
-  language: ListingLanguage;
   price: string; // string for form input, parsed to number on submit
   currency: Currency;
-  images: string[];
+  haveImages: HaveImage[]; // cards with per-card grading
+  wantItems: WantItem[]; // cards/items user wants with type tags
   wantsCash: boolean;
   wantsOffers: boolean;
   wantsSingles: boolean;
   wantsGraded: boolean;
   wantsSealed: boolean;
-  grader: GradingCompany;
-  grade: string; // grade number for PSA/CGC/BGS — e.g. "10", "9.5"
 }
 
 // Image upload
