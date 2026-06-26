@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateListing } from "@/lib/marketplace/validation";
-import {
-  type ListingType,
-  type ListingCategory,
-  type ListingLanguage,
-  type Currency,
-} from "@/lib/marketplace/types";
+import type { Currency, HaveImage, WantItem } from "@/lib/marketplace/types";
 
 // GET — fetch a single listing (public)
 export async function GET(
@@ -90,14 +85,13 @@ export async function PATCH(
   }
 
   let body: {
-    type?: string;
-    title?: string;
+    havesText?: string;
+    wantsText?: string;
     description?: string;
-    category?: string;
-    language?: string;
     price?: number | null;
     currency?: string;
-    images?: string[];
+    haveImages?: HaveImage[];
+    wantItems?: WantItem[];
     wantsCash?: boolean;
     wantsOffers?: boolean;
     wantsSingles?: boolean;
@@ -112,19 +106,18 @@ export async function PATCH(
   }
 
   const {
-    type, title, description, category, language, price, currency, images,
+    havesText, wantsText, description, price, currency, haveImages, wantItems,
     wantsCash, wantsOffers, wantsSingles, wantsGraded, wantsSealed,
   } = body;
 
   const validation = validateListing({
-    type: type || "",
-    title: title || "",
+    havesText: havesText || "",
+    wantsText: wantsText || "",
     description: description || "",
-    category: category || "",
-    language: language || "",
     price: price === null || price === undefined ? "" : String(price),
     currency: currency || "",
-    images: images || [],
+    haveImages: haveImages || [],
+    wantItems: wantItems || [],
     wantsCash: !!wantsCash,
     wantsOffers: !!wantsOffers,
     wantsSingles: !!wantsSingles,
@@ -136,17 +129,20 @@ export async function PATCH(
     return NextResponse.json({ error: validation.error }, { status: 400 });
   }
 
+  // Construct title from [H] and [W] text
+  const title = `[H] ${(havesText || "").trim()} [W] ${(wantsText || "").trim()}`;
+  const imageUrls = (haveImages || []).map((img) => img.url);
+  const wantImageUrls = (wantItems || []).map((item) => item.url);
+
   const { error: updateError } = await supabase
     .from("listings")
     .update({
-      type: type as ListingType,
-      title: (title as string).trim(),
+      title: title.trim(),
       description: (description as string).trim(),
-      category: category as ListingCategory,
-      language: language as ListingLanguage,
       price: wantsCash ? (price ?? null) : null,
       currency: (currency as Currency) || "BND",
-      images: images || [],
+      images: imageUrls,
+      looking_for_images: wantImageUrls,
       wants_cash: !!wantsCash,
       wants_offers: !!wantsOffers,
       wants_singles: !!wantsSingles,

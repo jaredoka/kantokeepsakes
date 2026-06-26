@@ -2,12 +2,6 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
-import {
-  LISTING_CATEGORIES,
-  LISTING_LANGUAGES,
-  CATEGORY_LABELS,
-  LANGUAGE_LABELS,
-} from "@/lib/marketplace/types";
 import type { ListingFilters } from "@/lib/marketplace/queries";
 import styles from "./FilterBar.module.css";
 
@@ -52,14 +46,6 @@ export default function FilterBar({ filters, basePath }: FilterBarProps) {
     [router, pathname, searchParams]
   );
 
-  const toggleParam = useCallback(
-    (key: string, value: string) => {
-      const current = searchParams.get(key);
-      updateParams({ [key]: current === value ? undefined : value });
-    },
-    [searchParams, updateParams]
-  );
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     updateParams({ search: searchInput.trim() || undefined });
@@ -71,8 +57,6 @@ export default function FilterBar({ filters, basePath }: FilterBarProps) {
   };
 
   const hasFilters = !!(
-    filters.category ||
-    filters.language ||
     filters.priceMin !== undefined ||
     filters.priceMax !== undefined ||
     filters.search
@@ -93,38 +77,6 @@ export default function FilterBar({ filters, basePath }: FilterBarProps) {
           Search
         </button>
       </form>
-
-      {/* Category */}
-      <div className={styles.filterGroup}>
-        <span className={styles.filterLabel}>Category</span>
-        <div className={styles.pills}>
-          {LISTING_CATEGORIES.map((c) => (
-            <button
-              key={c}
-              className={`${styles.pill} ${filters.category === c ? styles.pillActive : ""}`}
-              onClick={() => toggleParam("category", c)}
-            >
-              {CATEGORY_LABELS[c]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Language */}
-      <div className={styles.filterGroup}>
-        <span className={styles.filterLabel}>Language</span>
-        <div className={styles.pills}>
-          {LISTING_LANGUAGES.map((l) => (
-            <button
-              key={l}
-              className={`${styles.pill} ${filters.language === l ? styles.pillActive : ""}`}
-              onClick={() => toggleParam("language", l)}
-            >
-              {LANGUAGE_LABELS[l]}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Sort */}
       <div className={styles.filterGroup}>

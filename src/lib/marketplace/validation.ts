@@ -1,15 +1,11 @@
 import {
-  LISTING_TYPES,
-  LISTING_CATEGORIES,
-  LISTING_LANGUAGES,
   CURRENCIES,
   ACCEPTED_IMAGE_TYPES,
   MAX_IMAGES,
   MAX_IMAGE_SIZE_BYTES,
-  type ListingType,
-  type ListingCategory,
-  type ListingLanguage,
   type Currency,
+  type HaveImage,
+  type WantItem,
 } from "./types";
 
 export interface ValidationResult {
@@ -17,13 +13,23 @@ export interface ValidationResult {
   error?: string;
 }
 
-export function validateTitle(title: string): ValidationResult {
-  const trimmed = title.trim();
-  if (!trimmed) return { valid: false, error: "Title is required." };
-  if (trimmed.length < 5)
-    return { valid: false, error: "Title must be at least 5 characters." };
-  if (trimmed.length > 120)
-    return { valid: false, error: "Title must be 120 characters or fewer." };
+export function validateHavesText(text: string): ValidationResult {
+  const trimmed = text.trim();
+  if (!trimmed) return { valid: false, error: "Haves text is required." };
+  if (trimmed.length < 2)
+    return { valid: false, error: "Haves text must be at least 2 characters." };
+  if (trimmed.length > 100)
+    return { valid: false, error: "Haves text must be 100 characters or fewer." };
+  return { valid: true };
+}
+
+export function validateWantsText(text: string): ValidationResult {
+  const trimmed = text.trim();
+  if (!trimmed) return { valid: false, error: "Wants text is required." };
+  if (trimmed.length < 2)
+    return { valid: false, error: "Wants text must be at least 2 characters." };
+  if (trimmed.length > 100)
+    return { valid: false, error: "Wants text must be 100 characters or fewer." };
   return { valid: true };
 }
 
@@ -43,24 +49,6 @@ export function validateDescription(description: string): ValidationResult {
   return { valid: true };
 }
 
-export function validateType(type: string): ValidationResult {
-  if (!LISTING_TYPES.includes(type as ListingType))
-    return { valid: false, error: "Invalid listing type." };
-  return { valid: true };
-}
-
-export function validateCategory(category: string): ValidationResult {
-  if (!LISTING_CATEGORIES.includes(category as ListingCategory))
-    return { valid: false, error: "Invalid category." };
-  return { valid: true };
-}
-
-export function validateLanguage(language: string): ValidationResult {
-  if (!LISTING_LANGUAGES.includes(language as ListingLanguage))
-    return { valid: false, error: "Invalid language." };
-  return { valid: true };
-}
-
 export function validateCurrency(currency: string): ValidationResult {
   if (!CURRENCIES.includes(currency as Currency))
     return { valid: false, error: "Invalid currency." };
@@ -77,9 +65,15 @@ export function validatePrice(price: string): ValidationResult {
   return { valid: true };
 }
 
-export function validateImages(images: string[]): ValidationResult {
+export function validateHaveImages(images: HaveImage[]): ValidationResult {
   if (images.length > MAX_IMAGES)
-    return { valid: false, error: `Maximum ${MAX_IMAGES} images allowed.` };
+    return { valid: false, error: `Maximum ${MAX_IMAGES} have images allowed.` };
+  return { valid: true };
+}
+
+export function validateWantItems(items: WantItem[]): ValidationResult {
+  if (items.length > MAX_IMAGES)
+    return { valid: false, error: `Maximum ${MAX_IMAGES} want items allowed.` };
   return { valid: true };
 }
 
@@ -109,14 +103,13 @@ export function validateOfferMessage(message: string): ValidationResult {
 }
 
 export interface ListingInput {
-  type: string;
-  title: string;
+  havesText: string;
+  wantsText: string;
   description: string;
-  category: string;
-  language: string;
   price: string;
   currency: string;
-  images: string[];
+  haveImages: HaveImage[];
+  wantItems: WantItem[];
   wantsCash?: boolean;
   wantsOffers?: boolean;
   wantsSingles?: boolean;
@@ -126,14 +119,13 @@ export interface ListingInput {
 
 export function validateListing(data: ListingInput): ValidationResult {
   const checks = [
-    validateType(data.type),
-    validateTitle(data.title),
+    validateHavesText(data.havesText),
+    validateWantsText(data.wantsText),
     validateDescription(data.description),
-    validateCategory(data.category),
-    validateLanguage(data.language),
     validatePrice(data.price),
     validateCurrency(data.currency),
-    validateImages(data.images),
+    validateHaveImages(data.haveImages),
+    validateWantItems(data.wantItems),
   ];
 
   for (const check of checks) {

@@ -4,19 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { validateOfferMessage } from "@/lib/marketplace/validation";
 import CardSearch from "@/components/CardSearch";
+import type { HaveImage } from "@/lib/marketplace/types";
 import styles from "./OfferModal.module.css";
 
 interface OfferModalProps {
   listingId: string;
   onClose: () => void;
-  listingType?: "WTS" | "WTB";
 }
 
-export default function OfferModal({ listingId, onClose, listingType = "WTS" }: OfferModalProps) {
-  const isWtb = listingType === "WTB";
+export default function OfferModal({ listingId, onClose }: OfferModalProps) {
   const router = useRouter();
   const [message, setMessage] = useState("");
-  const [cardImages, setCardImages] = useState<string[]>([]);
+  const [cardImages, setCardImages] = useState<HaveImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -39,7 +38,7 @@ export default function OfferModal({ listingId, onClose, listingType = "WTS" }: 
         body: JSON.stringify({
           listingId,
           message: message.trim(),
-          frontImage: cardImages[0] || null,
+          frontImage: cardImages[0]?.url || null,
           backImage: null,
         }),
       });
@@ -61,9 +60,7 @@ export default function OfferModal({ listingId, onClose, listingType = "WTS" }: 
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <h2 className={styles.heading}>
-          {isWtb ? "Offer to Sell" : "Make an Offer"}
-        </h2>
+        <h2 className={styles.heading}>Make an Offer</h2>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           {error && <div className={styles.error}>{error}</div>}
@@ -77,7 +74,7 @@ export default function OfferModal({ listingId, onClose, listingType = "WTS" }: 
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               className={styles.textarea}
-              placeholder={isWtb ? "Describe what you're selling, condition, asking price..." : "Describe your offer..."}
+              placeholder="Describe your offer..."
               rows={3}
               maxLength={1000}
             />
@@ -89,8 +86,9 @@ export default function OfferModal({ listingId, onClose, listingType = "WTS" }: 
               Card Image <span className={styles.optional}>(optional)</span>
             </label>
             <CardSearch
-              images={cardImages}
-              onImagesChange={setCardImages}
+              mode="have"
+              haveImages={cardImages}
+              onHaveImagesChange={setCardImages}
               max={1}
             />
           </div>

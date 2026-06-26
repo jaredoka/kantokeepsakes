@@ -69,7 +69,7 @@ export default function AboutPage() {
             <Link href="/signup" className={styles.btnPrimary}>
               Sign up
             </Link>
-            <Link href="/marketplace/wts" className={styles.btnSecondary}>
+            <Link href="/marketplace" className={styles.btnSecondary}>
               Browse listings
             </Link>
           </div>

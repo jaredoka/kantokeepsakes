@@ -3,12 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateListing } from "@/lib/marketplace/validation";
-import {
-  type ListingType,
-  type ListingCategory,
-  type ListingLanguage,
-  type Currency,
-} from "@/lib/marketplace/types";
+import type { HaveImage, WantItem } from "@/lib/marketplace/types";
 
 const CREATE_LIMIT = 10; // max listings per hour per IP
 const CREATE_WINDOW_MS = 60 * 60 * 1000;
@@ -52,14 +47,13 @@ export async function POST(request: NextRequest) {
   }
 
   let body: {
-    type?: string;
-    title?: string;
+    havesText?: string;
+    wantsText?: string;
     description?: string;
-    category?: string;
-    language?: string;
     price?: number | null;
     currency?: string;
-    images?: string[];
+    haveImages?: HaveImage[];
+    wantItems?: WantItem[];
     wantsCash?: boolean;
     wantsOffers?: boolean;
     wantsSingles?: boolean;
@@ -75,14 +69,13 @@ export async function POST(request: NextRequest) {
   }
 
   const {
-    type,
-    title,
+    havesText,
+    wantsText,
     description,
-    category,
-    language,
     price,
     currency,
-    images,
+    haveImages,
+    wantItems,
     wantsCash,
     wantsOffers,
     wantsSingles,
@@ -109,14 +102,13 @@ export async function POST(request: NextRequest) {
 
   // Validate fields
   const validation = validateListing({
-    type: type || "",
-    title: title || "",
+    havesText: havesText || "",
+    wantsText: wantsText || "",
     description: description || "",
-    category: category || "",
-    language: language || "",
     price: price === null || price === undefined ? "" : String(price),
     currency: currency || "",
-    images: images || [],
+    haveImages: haveImages || [],
+    wantItems: wantItems || [],
     wantsCash: !!wantsCash,
     wantsOffers: !!wantsOffers,
     wantsSingles: !!wantsSingles,
@@ -128,6 +120,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: validation.error }, { status: 400 });
   }
 
+  // Construct title from [H] and [W] text
+  const title = `[H] ${(havesText || "").trim()} [W] ${(wantsText || "").trim()}`;
+
+  // Extract image URLs from haveImages for the images column
+  const imageUrls = (haveImages || []).map((img) => img.url);
+
+  // Extract want item URLs for looking_for_images column
+  const wantImageUrls = (wantItems || []).map((item) => item.url);
+
   const now = new Date().toISOString();
   const expiresAt = new Date(
     Date.now() + 30 * 24 * 60 * 60 * 1000
@@ -137,14 +138,15 @@ export async function POST(request: NextRequest) {
     .from("listings")
     .insert({
       user_id: user.id,
-      type: type as ListingType,
-      title: (title as string).trim(),
+      type: "WTS" as const, // default for backward compatibility
+      title: title.trim(),
       description: (description as string).trim(),
-      category: category as ListingCategory,
-      language: language as ListingLanguage,
+      category: "singles" as const, // default for backward compatibility
+      language: "any" as const, // default for backward compatibility
       price: wantsCash ? (price ?? null) : null,
-      currency: (currency as Currency) || "BND",
-      images: images || [],
+      currency: (currency as "BND" | "USD" | "MYR" | "SGD") || "BND",
+      images: imageUrls,
+      looking_for_images: wantImageUrls,
       wants_cash: !!wantsCash,
       wants_offers: !!wantsOffers,
       wants_singles: !!wantsSingles,

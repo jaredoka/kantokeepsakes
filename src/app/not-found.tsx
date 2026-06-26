@@ -20,7 +20,7 @@ export default function NotFound() {
           <Link href="/" className={styles.btnPrimary}>
             Go home
           </Link>
-          <Link href="/marketplace/wts" className={styles.btnSecondary}>
+          <Link href="/marketplace" className={styles.btnSecondary}>
             Browse marketplace
           </Link>
         </div>

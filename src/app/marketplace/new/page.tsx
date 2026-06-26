@@ -6,34 +6,12 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import Turnstile from "@/components/Turnstile";
 import CardSearch from "@/components/CardSearch";
-import SetSearch from "@/components/SetSearch";
 import { validateListing } from "@/lib/marketplace/validation";
 import {
-  LISTING_TYPES,
-  LISTING_CATEGORIES,
-  LISTING_LANGUAGES,
   CURRENCIES,
-  LISTING_TYPE_LABELS,
-  CATEGORY_LABELS,
-  LANGUAGE_LABELS,
-  GRADING_COMPANIES,
-  PSA_GRADES,
-  CGC_GRADES,
-  BGS_GRADES,
   type ListingFormData,
-  type GradingCompany,
 } from "@/lib/marketplace/types";
 import styles from "./page.module.css";
-
-function getConditionTag(grader: GradingCompany, grade: string): string {
-  if (grader === "RAW") return "[RAW]";
-  if (grader === "SEALED") return "[SEALED]";
-  return `[${grader}${grade}]`;
-}
-
-function stripExistingTag(title: string): string {
-  return title.replace(/^\[[A-Z0-9.]+\]\s*/, "");
-}
 
 export default function NewListingPage() {
   const router = useRouter();
@@ -43,21 +21,18 @@ export default function NewListingPage() {
   const [authed, setAuthed] = useState<boolean | null>(null);
 
   const [form, setForm] = useState<ListingFormData>({
-    type: "WTS",
-    title: "[RAW] ",
+    havesText: "",
+    wantsText: "",
     description: "",
-    category: "singles",
-    language: "japanese",
     price: "",
     currency: "BND",
-    images: [],
+    haveImages: [],
+    wantItems: [],
     wantsCash: false,
     wantsOffers: false,
     wantsSingles: false,
     wantsGraded: false,
     wantsSealed: false,
-    grader: "RAW",
-    grade: "10",
   });
 
   useEffect(() => {
@@ -75,67 +50,8 @@ export default function NewListingPage() {
     key: K,
     value: ListingFormData[K]
   ) {
-    setForm((prev) => {
-      // Clear images when switching categories (different image sources)
-      if (key === "category" && value !== prev.category) {
-        return { ...prev, [key]: value, images: [] };
-      }
-      return { ...prev, [key]: value };
-    });
+    setForm((prev) => ({ ...prev, [key]: value }));
   }
-
-  function handleGraderChange(newGrader: GradingCompany) {
-    setForm((prev) => {
-      const body = stripExistingTag(prev.title);
-      const newGrade =
-        newGrader === "PSA"
-          ? "10"
-          : newGrader === "CGC" || newGrader === "BGS"
-            ? "9.5"
-            : "";
-      const tag = getConditionTag(newGrader, newGrade);
-      return {
-        ...prev,
-        grader: newGrader,
-        grade: newGrade,
-        title: body ? `${tag} ${body}` : `${tag} `,
-      };
-    });
-  }
-
-  function handleGradeChange(newGrade: string) {
-    setForm((prev) => {
-      const body = stripExistingTag(prev.title);
-      const tag = getConditionTag(prev.grader, newGrade);
-      return {
-        ...prev,
-        grade: newGrade,
-        title: body ? `${tag} ${body}` : `${tag} `,
-      };
-    });
-  }
-
-  function handleTitleChange(raw: string) {
-    const tag = getConditionTag(form.grader, form.grade);
-    const prefix = tag + " ";
-    if (!raw.startsWith(prefix)) {
-      const body = stripExistingTag(raw);
-      updateField("title", prefix + body);
-    } else {
-      updateField("title", raw);
-    }
-  }
-
-  const gradeOptions =
-    form.grader === "PSA"
-      ? PSA_GRADES
-      : form.grader === "CGC"
-        ? CGC_GRADES
-        : form.grader === "BGS"
-          ? BGS_GRADES
-          : null;
-
-  const currentTag = getConditionTag(form.grader, form.grade);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -210,6 +126,9 @@ export default function NewListingPage() {
     );
   }
 
+  // Build title preview
+  const titlePreview = `[H] ${form.havesText || "..."} [W] ${form.wantsText || "..."}`;
+
   return (
     <main className={styles.main}>
       <div className={styles.card}>
@@ -230,81 +149,48 @@ export default function NewListingPage() {
         </Link>
         <h1 className={styles.title}>Post a listing</h1>
         <p className={styles.subtitle}>
-          Post a WTB or WTS listing for Pokemon TCG items
+          Post a trade listing for Pokemon TCG items
         </p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           {error && <div className={styles.error}>{error}</div>}
 
-          {/* Listing Type */}
+          {/* Title — [H] and [W] inputs */}
           <div className={styles.field}>
-            <label className={styles.label}>Type</label>
-            <div className={styles.toggleGroup}>
-              {LISTING_TYPES.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  className={`${styles.toggleBtn} ${form.type === t ? styles.toggleBtnActive : ""}`}
-                  onClick={() => updateField("type", t)}
-                >
-                  {LISTING_TYPE_LABELS[t]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Condition / Grading — before Title */}
-          <div className={styles.field}>
-            <label className={styles.label}>Condition</label>
-            <div className={styles.gradingRow}>
-              <div className={styles.gradingPills}>
-                {GRADING_COMPANIES.map((g) => (
-                  <button
-                    key={g}
-                    type="button"
-                    className={`${styles.gradingPill} ${form.grader === g ? styles.gradingPillActive : ""}`}
-                    onClick={() => handleGraderChange(g)}
-                  >
-                    {g}
-                  </button>
-                ))}
+            <label className={styles.label}>Title</label>
+            <div className={styles.titlePreview}>{titlePreview}</div>
+            <div className={styles.titleRow}>
+              <div className={styles.titleInputGroup}>
+                <span className={styles.titlePrefix}>[H]</span>
+                <input
+                  type="text"
+                  value={form.havesText}
+                  onChange={(e) => updateField("havesText", e.target.value)}
+                  className={styles.titleInput}
+                  placeholder="e.g. Charizard ex PSA 10, Sealed ETB"
+                  maxLength={100}
+                />
               </div>
+              <span className={styles.charCount}>
+                {form.havesText.length}/100
+              </span>
             </div>
-            {gradeOptions && (
-              <div className={styles.gradePickerWrap}>
-                <span className={styles.gradePickerLabel}>Grade</span>
-                <div className={styles.gradePicker}>
-                  {gradeOptions.map((g) => (
-                    <button
-                      key={g}
-                      type="button"
-                      className={`${styles.gradeBtn} ${form.grade === g ? styles.gradeBtnActive : ""}`}
-                      onClick={() => handleGradeChange(g)}
-                    >
-                      {g}
-                    </button>
-                  ))}
-                </div>
+            <div className={styles.titleRow}>
+              <div className={styles.titleInputGroup}>
+                <span className={styles.titlePrefix}>[W]</span>
+                <input
+                  type="text"
+                  value={form.wantsText}
+                  onChange={(e) => updateField("wantsText", e.target.value)}
+                  className={styles.titleInput}
+                  placeholder="e.g. Mewtwo GX, Any offers, PayPal"
+                  maxLength={100}
+                />
               </div>
-            )}
-            <div className={styles.gradePreview}>{currentTag}</div>
-          </div>
-
-          {/* Title — auto-prefixed with condition tag */}
-          <div className={styles.field}>
-            <label htmlFor="title" className={styles.label}>
-              Title
-            </label>
-            <input
-              id="title"
-              type="text"
-              value={form.title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              className={styles.input}
-              placeholder={`${currentTag} e.g. Charizard ex`}
-              maxLength={120}
-            />
-            <span className={styles.charCount}>{form.title.length}/120</span>
+              <span className={styles.charCount}>
+                {form.wantsText.length}/100
+              </span>
+            </div>
           </div>
 
           {/* Description */}
@@ -317,7 +203,7 @@ export default function NewListingPage() {
               value={form.description}
               onChange={(e) => updateField("description", e.target.value)}
               className={styles.textarea}
-              placeholder="Condition, details, shipping info..."
+              placeholder="Condition details, card language, shipping info..."
               rows={5}
               maxLength={2000}
             />
@@ -326,77 +212,37 @@ export default function NewListingPage() {
             </span>
           </div>
 
-          {/* Category + Language — inline on desktop, stacked on mobile */}
-          <div className={styles.categoryLanguageRow}>
-            <div className={`${styles.field} ${styles.fieldFlex}`}>
-              <label htmlFor="category" className={styles.label}>
-                Category
-              </label>
-              <select
-                id="category"
-                value={form.category}
-                onChange={(e) =>
-                  updateField(
-                    "category",
-                    e.target.value as ListingFormData["category"]
-                  )
-                }
-                className={styles.select}
-              >
-                {LISTING_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {CATEGORY_LABELS[c]}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className={`${styles.field} ${styles.fieldFlex}`}>
-              <label htmlFor="language" className={styles.label}>
-                Language
-              </label>
-              <select
-                id="language"
-                value={form.language}
-                onChange={(e) =>
-                  updateField(
-                    "language",
-                    e.target.value as ListingFormData["language"]
-                  )
-                }
-                className={styles.select}
-              >
-                {LISTING_LANGUAGES.map((l) => (
-                  <option key={l} value={l}>
-                    {LANGUAGE_LABELS[l]}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* My Items — Images (category-specific picker) */}
+          {/* Haves — Card picker with per-card grading */}
           <div className={styles.field}>
             <label className={styles.label}>
-              {form.category === "sealed" ? "Select Set" : "Select Card"}
+              Have Cards{" "}
+              <span className={styles.optional}>(click card to set grade)</span>
             </label>
-            {(form.category === "singles" || form.category === "graded") && (
-              <CardSearch
-                images={form.images}
-                onImagesChange={(imgs) => updateField("images", imgs)}
-              />
-            )}
-            {form.category === "sealed" && (
-              <SetSearch
-                images={form.images}
-                onImagesChange={(imgs) => updateField("images", imgs)}
-              />
-            )}
+            <CardSearch
+              mode="have"
+              haveImages={form.haveImages}
+              onHaveImagesChange={(imgs) => updateField("haveImages", imgs)}
+            />
           </div>
 
-          {/* What do you want? */}
+          {/* Wants — Card picker with type tags */}
+          <div className={styles.field}>
+            <label className={styles.label}>
+              Want Cards{" "}
+              <span className={styles.optional}>
+                (click card to set type: Singles/Graded/Sealed)
+              </span>
+            </label>
+            <CardSearch
+              mode="want"
+              wantItems={form.wantItems}
+              onWantItemsChange={(items) => updateField("wantItems", items)}
+            />
+          </div>
+
+          {/* What do you want? — Preferences */}
           <div className={styles.sectionDivider}>
-            <h2 className={styles.sectionTitle}>What do you want?</h2>
+            <h2 className={styles.sectionTitle}>Trading Preferences</h2>
             <p className={styles.sectionSubtitle}>
               Select at least one. You can combine multiple options.
             </p>

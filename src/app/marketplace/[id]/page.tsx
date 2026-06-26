@@ -11,9 +11,6 @@ import TradeCompletion from "@/components/TradeCompletion";
 import TradeConfirmation from "@/components/TradeConfirmation";
 import OfferList from "@/components/OfferList";
 import {
-  LISTING_TYPE_LABELS,
-  CATEGORY_LABELS,
-  LANGUAGE_LABELS,
   CURRENCY_SYMBOLS,
   type ListingWithProfile,
 } from "@/lib/marketplace/types";
@@ -40,12 +37,6 @@ function formatTimeAgo(dateStr: string): string {
   return `${diffMonths}mo ago`;
 }
 
-/** Parse a leading [TAG] from a title, e.g. "[PSA10] Charizard …" */
-function parseConditionTag(title: string): { tag: string | null; rest: string } {
-  const match = title.match(/^\[([A-Z0-9]+)\]\s*/);
-  if (match) return { tag: match[1], rest: title.slice(match[0].length) };
-  return { tag: null, rest: title };
-}
 
 interface DetailPageProps {
   params: Promise<{ id: string }>;
@@ -88,9 +79,9 @@ export async function generateMetadata({
 
   return {
     title: listing.title,
-    description: `${LISTING_TYPE_LABELS[listing.type]} — ${listing.description.slice(0, 160)}`,
+    description: listing.description.slice(0, 160),
     openGraph: {
-      title: `${listing.type}: ${listing.title} (${priceText})`,
+      title: `${listing.title} (${priceText})`,
       description: listing.description.slice(0, 200),
       images: listing.images.length > 0 ? [listing.images[0]] : undefined,
     },
@@ -141,10 +132,6 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
       ).length >= 2;
   }
 
-  const hasLookingFor =
-    (listing.looking_for_description && listing.looking_for_description.trim()) ||
-    (listing.looking_for_images && listing.looking_for_images.length > 0);
-
   const wantTypes: string[] = [];
   if (listing.wants_cash || listing.price !== null) wantTypes.push("Cash");
   if (listing.wants_offers) wantTypes.push("Any Offers");
@@ -152,16 +139,14 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
   if (listing.wants_graded) wantTypes.push("Any Graded");
   if (listing.wants_sealed) wantTypes.push("Any Sealed");
 
-  const backPath = listing.type === "WTB" ? "/marketplace/wtb" : "/marketplace/wts";
-
   return (
     <main className={styles.main}>
       <div className={styles.container}>
-        <Link href={backPath} className={styles.backLink}>
+        <Link href="/marketplace" className={styles.backLink}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
-          Back to {listing.type === "WTB" ? "Want to Buy" : "Want to Sell"}
+          Back to Marketplace
         </Link>
 
         {(isSold || isExpired) && (
@@ -175,33 +160,9 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
         <div className={styles.detailLayout}>
           {/* LEFT COLUMN: lister info, images, description, seller, actions */}
           <div className={styles.leftCol}>
-            {/* Header: type badge, title, price, meta */}
+            {/* Header: title, price, meta */}
             <div className={styles.header}>
-              <div className={styles.typeBadgeRow}>
-                <span
-                  className={`${styles.typeBadge} ${listing.type === "WTB" ? styles.typeBadgeWtb : styles.typeBadgeWts}`}
-                >
-                  {LISTING_TYPE_LABELS[listing.type]}
-                </span>
-                <span className={styles.categoryPill}>
-                  {CATEGORY_LABELS[listing.category]}
-                </span>
-                <span className={styles.categoryPill}>
-                  {LANGUAGE_LABELS[listing.language]}
-                </span>
-              </div>
-
-              <h1 className={styles.title}>
-                {(() => {
-                  const { tag, rest } = parseConditionTag(listing.title);
-                  return (
-                    <>
-                      {tag && <span className={styles.conditionTag}>[{tag}]</span>}
-                      {rest}
-                    </>
-                  );
-                })()}
-              </h1>
+              <h1 className={styles.title}>{listing.title}</h1>
 
               <div className={styles.priceRow}>
                 {listing.price !== null ? (
@@ -233,13 +194,24 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
               </div>
             </div>
 
-            {/* Images */}
-            <div className={styles.section}>
-              <h2 className={styles.sectionHeading}>
-                {listing.type === "WTS" ? "For Sale" : "Want to Buy"}
-              </h2>
-              <ImageGallery images={listing.images} alt={listing.title} />
-            </div>
+            {/* Have Images */}
+            {listing.images.length > 0 && (
+              <div className={styles.section}>
+                <h2 className={styles.sectionHeading}>Haves</h2>
+                <ImageGallery images={listing.images} alt={listing.title} />
+              </div>
+            )}
+
+            {/* Want Images */}
+            {listing.looking_for_images && listing.looking_for_images.length > 0 && (
+              <div className={styles.section}>
+                <h2 className={styles.sectionHeading}>Wants</h2>
+                <ImageGallery
+                  images={listing.looking_for_images}
+                  alt="Wanted cards"
+                />
+              </div>
+            )}
 
             {/* Description */}
             <div className={styles.descriptionBox}>
@@ -255,7 +227,7 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
             {wantTypes.length > 0 && (
               <div className={styles.wantsBox}>
                 <div className={styles.wantsBoxLabel}>
-                  {listing.type === "WTS" ? "Asking" : "Looking for"}
+                  Trading Preferences
                 </div>
                 <div className={styles.wantsPills}>
                   {wantTypes.map((w) => (
@@ -276,23 +248,15 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
               </div>
             )}
 
-            {/* Legacy looking-for section (backward compat for old listings) */}
-            {hasLookingFor && (
-              <div className={styles.section}>
-                <h2 className={styles.sectionHeading}>Trade Details</h2>
-                {listing.looking_for_images && listing.looking_for_images.length > 0 && (
-                  <ImageGallery
-                    images={listing.looking_for_images}
-                    alt="Looking for reference"
-                  />
-                )}
-                {listing.looking_for_description && (
-                  <div className={styles.description}>
-                    {listing.looking_for_description.split("\n").map((line, i) => (
-                      <p key={i}>{line}</p>
-                    ))}
-                  </div>
-                )}
+            {/* Legacy looking-for description (backward compat for old listings) */}
+            {listing.looking_for_description && listing.looking_for_description.trim() && (
+              <div className={styles.descriptionBox}>
+                <div className={styles.descriptionBoxLabel}>Trade Details</div>
+                <div className={styles.description}>
+                  {listing.looking_for_description.split("\n").map((line, i) => (
+                    <p key={i}>{line}</p>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -340,7 +304,6 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
                 sellerId={listing.user_id}
                 isOwner={false}
                 isAuthenticated={!!user}
-                listingType={listing.type}
               />
             )}
 

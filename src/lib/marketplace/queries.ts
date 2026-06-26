@@ -1,15 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type {
-  ListingType,
-  ListingCategory,
-  ListingLanguage,
-  ListingWithProfile,
-} from "./types";
+import type { ListingWithProfile } from "./types";
 
 export interface ListingFilters {
-  type?: ListingType;
-  category?: ListingCategory;
-  language?: ListingLanguage;
   priceMin?: number;
   priceMax?: number;
   sort?: "newest" | "oldest" | "price_asc" | "price_desc";
@@ -23,9 +15,6 @@ export async function fetchListings(
   filters: ListingFilters
 ): Promise<{ listings: ListingWithProfile[]; total: number }> {
   const {
-    type,
-    category,
-    language,
     priceMin,
     priceMax,
     sort = "newest",
@@ -41,18 +30,6 @@ export async function fetchListings(
       { count: "exact" }
     )
     .eq("status", "active");
-
-  if (type) {
-    query = query.eq("type", type);
-  }
-
-  if (category) {
-    query = query.eq("category", category);
-  }
-
-  if (language) {
-    query = query.eq("language", language);
-  }
 
   if (priceMin !== undefined) {
     query = query.gte("price", priceMin);
