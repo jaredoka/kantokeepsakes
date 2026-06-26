@@ -22,7 +22,7 @@ Built as a solo developer project using **Claude Code (Opus 4.6 by Anthropic)** 
 | Anti-abuse | **Cloudflare Turnstile** | CAPTCHA on signup and listing creation |
 | Rate Limiting | **Custom in-memory** | IP-based request throttling on API routes |
 | Hosting | **Vercel** | Serverless deployment with cron jobs |
-| Card Data | **pokemontcg.io API** | Pokemon TCG card images and set data (planned) |
+| Card Data | **TCGdex API** | Pokemon TCG card images, set logos, and series data (EN + JA) |
 | UI Library | **React 19** | Component-based UI with server and client components |
 
 ---
@@ -39,13 +39,13 @@ Built as a solo developer project using **Claude Code (Opus 4.6 by Anthropic)** 
 ### Marketplace
 - **User accounts** — email/password signup with Cloudflare Turnstile CAPTCHA, login, forgot/reset password
 - **WTB / WTS listings** — create, edit, bump (24h cooldown), relist expired, auto-expire after 30 days (Vercel cron)
-- **Pokemon TCG stock images** — card search via pokemontcg.io API for singles/graded, set logos for sealed products, manual upload for accessories (planned)
-- **Graded slab overlay** — CSS-rendered PSA/CGC/BGS slab frames on graded card images (planned)
+- **Pokemon TCG stock images** — card search via TCGdex API for singles/graded (EN + JA), set logos for sealed products, manual upload for accessories
+- **Graded slab overlay** — PSA slab template image + CSS-rendered CGC/BGS slab frames on graded card images
 - **Browse & search** — text search, category/language/type filters, sort options, pagination
 - **Offers** — make offers on WTS listings, offer to sell on WTB listings, accept/decline with auto-decline of other pending offers
 - **Real-time messaging** — instant chat between traders using Supabase Realtime, contextual timestamps (today/yesterday/date)
 - **Live notifications** — unread message count in header badge updates in real-time via Supabase Realtime channel
-- **Trade confirmations** — two-step flow: both parties confirm trade completion, then rate each other (1-5 stars), reputation system with trader badges (planned)
+- **Trade confirmations** — two-step flow: both parties confirm trade completion, then rate each other (1-5 stars), reputation system with trader badges
 - **User profiles** — public profile with listing history, sold archive, inline bio/username editing
 - **Saved listings** — bookmark/watchlist functionality
 - **Moderation** — report users/listings, admin panel for banning users and resolving reports
@@ -98,9 +98,9 @@ src/
       offers/                       # Create + accept/decline
       conversations/                # Create + messages (with rate limit)
       reports/route.ts              # Submit report
-      trade-completions/            # Both-parties-complete step (planned)
+      trade-completions/            # Both-parties-complete step
       trade-confirmations/          # Create + read (gated behind completions)
-      pokemon-tcg/                  # Card search + sets proxy (planned)
+      pokemon-tcg/                  # Card search + sets + series proxy to TCGdex
       admin/                        # Ban + report resolution
       cron/expire-listings/         # Daily auto-expire (Vercel cron)
   components/
@@ -111,9 +111,9 @@ src/
     OfferList.tsx                   # Accept/decline offers (listing owner)
     ProfileEditForm.tsx             # Inline bio + username edit
     ImageUploader.tsx               # Drag-drop + canvas compression (accessories only)
-    CardSearch.tsx                  # Pokemon TCG card search (planned)
-    SetSearch.tsx                   # Pokemon TCG set search (planned)
-    GradedCardImage.tsx             # CSS slab overlay for graded cards (planned)
+    CardSearch.tsx                  # TCGdex card search for singles/graded (EN + JA)
+    SetSearch.tsx                   # TCGdex set search for sealed (EN + JA)
+    GradedCardImage.tsx             # Slab overlay for graded cards (PSA/CGC/BGS)
     ImageGallery.tsx                # Lightbox image viewer
     SaveButton.tsx                  # Bookmark toggle
     BumpButton.tsx                  # 24h cooldown bump
@@ -133,7 +133,7 @@ src/
       types.ts                      # TypeScript types + enums + constants
       dates.ts                      # Expiry date helpers
       validation.ts                 # Field validators (listings, offers, images)
-      grading.ts                    # Grading tag parser (planned)
+      grading.ts                    # Grading tag parser (PSA/CGC/BGS)
     turnstile.ts                    # Server-side CAPTCHA verification
     rate-limit.ts                   # IP-based rate limiter (Map, 60s cleanup)
   proxy.ts                          # Next.js 16 proxy (session, security headers, password gate)
@@ -157,7 +157,7 @@ All tables have Row Level Security (RLS) enabled.
 | `offers` | Offers on listings — message, front/back card images, status (pending/accepted/declined) |
 | `conversations` | DMs — participant_1 (listing owner), participant_2 (other user), linked listing |
 | `messages` | Chat messages — body, is_read, sender_id, conversation_id |
-| `trade_completions` | Both-parties-complete step — listing_id, user_id (planned) |
+| `trade_completions` | Both-parties-complete step — listing_id, user_id |
 | `trade_confirmations` | Ratings — 1-5 stars, comment, confirmer_id, confirmed_id (gated behind completions) |
 | `reports` | User/listing reports — reason, description, status (pending/resolved/dismissed) |
 | `saved_listings` | Bookmarks — user_id + listing_id |
@@ -187,7 +187,7 @@ All tables have Row Level Security (RLS) enabled.
    TURNSTILE_SECRET_KEY=your_turnstile_secret_key
    CRON_SECRET=your_cron_secret
    SITE_PASSWORD=your_staging_password   # Remove to make the site public
-   POKEMON_TCG_API_KEY=your_api_key     # Optional — higher rate limits on pokemontcg.io
+   POKEMON_TCG_API_KEY=your_api_key     # Unused — codebase uses TCGdex (no key needed)
    ```
 
 4. **Run database migrations:** Apply the SQL files in `supabase/migrations/` to your Supabase project.
@@ -304,15 +304,15 @@ This project started as a static HTML/CSS/JS site and evolved into a full-stack 
 | — | Password gate for pre-launch staging | Done |
 | — | Vercel deployment + Cloudflare DNS setup | Done |
 
-### Website Polish & Features (Planned)
+### Website Polish & Features (Complete)
 | Phase | Description | Status |
 |-------|-------------|--------|
-| W13 | Match WTB/WTS pill colors on listing detail page | Planned |
-| W14 | Standardize page titles (single-word + template pattern) | Planned |
-| W15 | Favicon from logo (favicon.ico, icon.png, apple-icon.png) | Planned |
-| W16 | Two-step trade completion — both parties confirm before rating | Planned |
-| W17 | Pokemon TCG stock images via pokemontcg.io API (replace user uploads) | Planned |
-| W18 | Graded slab overlay (CSS-only PSA/CGC/BGS frames on card images) | Planned |
+| W13 | Match WTB/WTS pill colors on listing detail page | Done |
+| W14 | Standardize page titles (single-word + template pattern) | Done |
+| W15 | Favicon from logo (favicon.ico, icon.png, apple-icon.png) | Done |
+| W16 | Two-step trade completion — both parties confirm before rating | Done |
+| W17 | Pokemon TCG stock images via TCGdex API (replace user uploads) | Done |
+| W18 | Graded slab overlay (PSA template + CSS CGC/BGS frames on card images) | Done |
 
 ---
 

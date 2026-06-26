@@ -114,11 +114,10 @@ export default async function BrowsePage({
                   {total} listing{total !== 1 ? "s" : ""}
                 </p>
                 <div className={styles.grid}>
-                  {listings.map((listing: ListingWithProfile, index: number) => (
+                  {listings.map((listing: ListingWithProfile) => (
                     <ListingCard
                       key={listing.id}
                       listing={listing}
-                      tone={index % 2 === 0 ? "yellow" : "blue"}
                     />
                   ))}
                 </div>

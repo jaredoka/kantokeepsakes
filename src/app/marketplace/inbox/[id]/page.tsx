@@ -233,13 +233,16 @@ export default function ChatPage({
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
           </Link>
+          <span className={styles.chatAvatar}>
+            {(otherUsername || "?")[0].toUpperCase()}
+          </span>
           <div className={styles.chatHeaderInfo}>
             <span className={styles.chatHeaderUser}>{otherUsername}</span>
             <Link
               href={`/marketplace/${meta!.listing_id}`}
               className={styles.chatHeaderListing}
             >
-              {meta!.listings.type}: {meta!.listings.title}
+              Re: {meta!.listings.title}
             </Link>
           </div>
         </div>

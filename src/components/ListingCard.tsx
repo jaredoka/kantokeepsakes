@@ -15,7 +15,6 @@ interface ListingCardProps {
   listing: Listing | ListingWithProfile;
   showStatus?: boolean;
   showActions?: boolean;
-  tone?: "yellow" | "blue";
 }
 
 function formatRelativeTime(dateStr: string): string {
@@ -34,13 +33,12 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 /** Max visible images before showing "+N" overflow */
-const MAX_VISIBLE_IMAGES = 6;
+const MAX_VISIBLE_IMAGES = 4;
 
 export default function ListingCard({
   listing,
   showStatus = false,
   showActions = false,
-  tone = "yellow",
 }: ListingCardProps) {
   const hasProfile = "profiles" in listing && listing.profiles;
   const profile = hasProfile
@@ -54,7 +52,7 @@ export default function ListingCard({
   const hasSealed = listing.wants_sealed;
   const showFallback = !hasCash && !hasOffers && !hasSingles && !hasGraded && !hasSealed;
 
-  const bodyClass = tone === "blue" ? styles.bodyBlue : styles.bodyYellow;
+  const bodyClass = listing.type === "WTB" ? styles.bodyBlue : styles.bodyYellow;
 
   // Parse grading info for graded listings
   const grading =
@@ -63,6 +61,13 @@ export default function ListingCard({
   // Images to show, with overflow indicator
   const visibleImages = listing.images.slice(0, MAX_VISIBLE_IMAGES);
   const overflowCount = listing.images.length - MAX_VISIBLE_IMAGES;
+
+  // Cell sizing class based on category
+  const cellSizeClass = grading
+    ? styles.imageCellGraded
+    : listing.category === "singles"
+      ? styles.imageCellSingles
+      : styles.imageCellDefault;
 
   // Collect want pills
   const wantPills: { label: string; value?: string }[] = [];
@@ -140,16 +145,16 @@ export default function ListingCard({
               {visibleImages.length > 0 ? (
                 visibleImages.map((url, i) =>
                   grading ? (
-                    <GradedCardImage
-                      key={i}
-                      src={url}
-                      alt={`Card ${i + 1}`}
-                      grading={grading}
-                      size="sm"
-                      className={styles.imageCell}
-                    />
+                    <div key={i} className={`${styles.imageCell} ${cellSizeClass}`}>
+                      <GradedCardImage
+                        src={url}
+                        alt={`Card ${i + 1}`}
+                        grading={grading}
+                        size="sm"
+                      />
+                    </div>
                   ) : (
-                    <div key={i} className={styles.imageCell}>
+                    <div key={i} className={`${styles.imageCell} ${cellSizeClass}`}>
                       <img
                         src={url}
                         alt={`Card ${i + 1}`}
@@ -160,7 +165,7 @@ export default function ListingCard({
                   )
                 )
               ) : (
-                <div className={styles.imageCell}>
+                <div className={`${styles.imageCell} ${styles.imageCellDefault}`}>
                   <svg
                     width="24"
                     height="24"

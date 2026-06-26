@@ -93,7 +93,14 @@ export default function InboxPage() {
   return (
     <main className={styles.main}>
       <div className={styles.container}>
-        <h1 className={styles.title}>Inbox</h1>
+        <div className={styles.titleSection}>
+          <h1 className={styles.title}>Inbox</h1>
+          {conversations.length > 0 && (
+            <p className={styles.unreadSummary}>
+              {conversations.filter((c) => c.unreadCount > 0).length} unread
+            </p>
+          )}
+        </div>
 
         {conversations.length === 0 ? (
           <div className={styles.empty}>
@@ -126,36 +133,32 @@ export default function InboxPage() {
                   href={`/marketplace/inbox/${conv.id}`}
                   className={`${styles.convItem} ${conv.unreadCount > 0 ? styles.convUnread : ""}`}
                 >
-                  <div className={styles.convLeft}>
-                    {conv.listings.images.length > 0 ? (
-                      <img
-                        src={conv.listings.images[0]}
-                        alt={conv.listings.title}
-                        className={styles.convImage}
-                      />
-                    ) : (
-                      <div className={styles.convImagePlaceholder}>
-                        {conv.listings.type}
-                      </div>
-                    )}
-                  </div>
+                  <span className={styles.convAvatar}>
+                    {(otherUser || "?")[0].toUpperCase()}
+                  </span>
                   <div className={styles.convBody}>
                     <div className={styles.convHeader}>
-                      <span className={styles.convUser}>{otherUser}</span>
-                      {timeAgo && (
-                        <span className={styles.convTime}>{timeAgo}</span>
-                      )}
+                      <span className={`${styles.convUser} ${conv.unreadCount > 0 ? styles.convUserUnread : ""}`}>
+                        {otherUser}
+                      </span>
+                      <div className={styles.convHeaderRight}>
+                        {timeAgo && (
+                          <span className={styles.convTime}>{timeAgo}</span>
+                        )}
+                        {conv.unreadCount > 0 && (
+                          <span className={styles.unreadBadge}>
+                            {conv.unreadCount}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <span className={styles.convListing}>
-                      {conv.listings.title}
+                      Re: {conv.listings.title}
                     </span>
-                    <span className={styles.convPreview}>{preview}</span>
+                    <span className={`${styles.convPreview} ${conv.unreadCount > 0 ? styles.convPreviewUnread : ""}`}>
+                      {preview}
+                    </span>
                   </div>
-                  {conv.unreadCount > 0 && (
-                    <span className={styles.unreadBadge}>
-                      {conv.unreadCount}
-                    </span>
-                  )}
                 </Link>
               );
             })}

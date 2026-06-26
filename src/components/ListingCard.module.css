@@ -177,19 +177,37 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  max-height: 180px;
-  overflow: hidden;
+  align-items: flex-end;
 }
 
 .imageCell {
-  width: 72px;
-  border-radius: var(--border-radius);
+  flex-shrink: 0;
+  border-radius: var(--border-radius-sm);
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid var(--color-gray-200);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Singles: 54 × 75 */
+.imageCellSingles {
+  width: 54px;
+  height: 75px;
+}
+
+/* Graded: 56 × 94 — no border/bg, the slab component provides its own */
+.imageCellGraded {
+  width: 56px;
+  height: 94px;
+  border: none;
+  background: none;
+}
+
+/* Sealed / other: 56 wide, auto height */
+.imageCellDefault {
+  width: 56px;
 }
 
 .cardImg {
@@ -199,15 +217,15 @@
 }
 
 .overflowCell {
-  width: 72px;
-  height: 72px;
+  width: 60px;
+  height: 60px;
   border-radius: var(--border-radius);
   background: var(--color-gray-100);
   border: 1px solid var(--color-gray-200);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--font-size-sm);
+  font-size: 13px;
   font-weight: 700;
   color: var(--color-gray-500);
 }
@@ -289,12 +307,22 @@
     border-bottom: 1px solid var(--color-gray-200);
   }
 
-  .imageCell {
-    width: 60px;
+  .imageCellSingles {
+    width: 44px;
+    height: 62px;
+  }
+
+  .imageCellGraded {
+    width: 46px;
+    height: 78px;
+  }
+
+  .imageCellDefault {
+    width: 48px;
   }
 
   .overflowCell {
-    width: 60px;
-    height: 60px;
+    width: 48px;
+    height: 48px;
   }
 }

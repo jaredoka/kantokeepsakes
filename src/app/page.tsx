@@ -68,6 +68,12 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <div className={styles.ctaSection}>
+        <Link href="/marketplace" className={styles.ctaButton}>
+          Browse Marketplace
+        </Link>
+      </div>
     </main>
   );
 }

@@ -1,97 +1,307 @@
-/* GradedCardImage — CSS-only slab frame overlay for graded cards */
+/* GradedCardImage — realistic graded-card slab overlay */
 
 .slab {
   position: relative;
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
-  border-radius: 6px;
+  width: 100%;
+  border-radius: 10px;
   overflow: hidden;
-  background: #e5e7eb;
+  background: linear-gradient(
+    180deg,
+    #e8eaed 0%,
+    #dfe1e4 40%,
+    #d6d8db 100%
+  );
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.12),
+    0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-/* Company-specific border colors */
+/* Gloss / reflection on the plastic case */
+.slab::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.08) 35%,
+    transparent 55%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ========== Company slab borders ========== */
+
 .slabPSA {
-  border: 2px solid #cc2229;
+  border: 3px solid #b8bcc0;
 }
 
 .slabCGC {
-  border: 2px solid #1a6fb5;
+  border: 3px solid #a8bdd0;
 }
 
 .slabBGS {
-  border: 2px solid #1a1a1a;
+  border: 3px solid #3a3a3a;
+  background: linear-gradient(180deg, #2a2a2a 0%, #222 100%);
 }
 
-/* Label bar at top of slab */
+/* ========== Label header ========== */
+
 .label {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  z-index: 1;
   gap: 4px;
-  padding: 2px 6px;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  line-height: 1.2;
-  white-space: nowrap;
 }
 
-.labelPSA {
-  background: #cc2229;
-  color: #fff;
+.companyName {
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  line-height: 1;
 }
 
-.labelCGC {
-  background: #1a6fb5;
-  color: #fff;
+.labelPSA .companyName {
+  color: #cc2229;
+}
+
+.labelCGC .companyName {
+  color: #1a6fb5;
 }
 
 .labelBGS {
   background: #1a1a1a;
+  border-bottom-color: #333;
+}
+
+.labelBGS .companyName {
   color: #d4a843;
 }
 
-/* Grade number */
-.grade {
-  font-weight: 900;
-  font-size: 10px;
+/* ========== Grade badge ========== */
+
+.gradeBadge {
+  font-weight: 800;
+  font-size: 8px;
+  padding: 1px 5px;
+  border-radius: 2px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1.3;
 }
 
-/* Image container */
-.imageWrap {
+.badgePSA {
+  background: #cc2229;
+  color: #fff;
+}
+
+.badgeCGC {
+  background: #1a6fb5;
+  color: #fff;
+}
+
+.badgeBGS {
+  background: #333;
+  color: #d4a843;
+  border: 1px solid #555;
+}
+
+/* ========== Card holder (dark inner frame) ========== */
+
+.cardHolder {
+  background: #2d2d2d;
+  margin: 3px;
+  padding: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
-.imageWrap img {
+.cardHolder img {
+  max-width: 100%;
+  max-height: 100%;
   width: 100%;
   height: auto;
   display: block;
+  object-fit: contain;
 }
 
-/* --- Size variants --- */
+/* ========== Bottom certification bar ========== */
 
-/* Thumbnail size (listing cards, gallery thumbnails) */
+.footer {
+  height: 8px;
+  background: #fff;
+  border-top: 1px solid #e0e0e0;
+  position: relative;
+}
+
+/* Simulated barcode lines */
+.footer::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 40%;
+  height: 60%;
+  background: repeating-linear-gradient(
+    90deg,
+    #999 0px,
+    #999 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.4;
+}
+
+/* BGS dark footer */
+.slabBGS .footer {
+  background: #1a1a1a;
+  border-top-color: #333;
+}
+
+.slabBGS .footer::before {
+  background: repeating-linear-gradient(
+    90deg,
+    #666 0px,
+    #666 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* ================== Size variants ================== */
+
+/* ---- Small: listing card thumbnails ---- */
+.slabSm {
+  border-width: 2px;
+  border-radius: 6px;
+}
+
 .slabSm .label {
-  padding: 1px 4px;
-  font-size: 7px;
+  padding: 1px 3px;
   gap: 2px;
 }
 
-.slabSm .grade {
-  font-size: 8px;
+.slabSm .companyName {
+  font-size: 6px;
 }
 
-/* Large size (gallery main image) */
+.slabSm .gradeBadge {
+  font-size: 5px;
+  padding: 0 2px;
+  border-radius: 1px;
+}
+
+.slabSm .cardHolder {
+  margin: 2px;
+  padding: 3px;
+}
+
+.slabSm .footer {
+  height: 4px;
+}
+
+.slabSm .footer::before {
+  width: 30%;
+}
+
+/* ---- Large: gallery main image ---- */
+.slabLg {
+  border-width: 5px;
+  border-radius: 14px;
+}
+
 .slabLg .label {
-  padding: 4px 10px;
-  font-size: 12px;
-  gap: 5px;
+  padding: 8px 14px;
+  gap: 6px;
 }
 
-.slabLg .grade {
-  font-size: 13px;
+.slabLg .companyName {
+  font-size: 16px;
+}
+
+.slabLg .gradeBadge {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 3px;
+}
+
+.slabLg .cardHolder {
+  margin: 5px;
+  padding: 10px;
+}
+
+.slabLg .footer {
+  height: 14px;
+}
+
+/* ================== PSA real template (small only) ================== */
+
+.psaSlab {
+  position: relative;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.psaTemplate {
+  width: 100%;
+  display: block;
+  border-radius: 4px;
+}
+
+/* PSA + grade text overlaid on the red header bar */
+.psaLabelOverlay {
+  position: absolute;
+  top: 5.88%;
+  left: 10%;
+  right: 9.3%;
+  height: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+
+.psaCompany {
+  font-size: 7px;
+  font-weight: 500;
+  color: #1a1a1a;
+  line-height: 1;
+}
+
+.psaGrade {
+  font-size: 8px;
+  font-weight: 500;
+  color: #1a1a1a;
+  line-height: 1;
+}
+
+/* Card image positioned inside the slab window */
+.psaCardWindow {
+  position: absolute;
+  top: 26.75%;
+  left: 10.8%;
+  right: 10.8%;
+  bottom: 8.29%;
+  overflow: hidden;
+}
+
+.psaCardImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }

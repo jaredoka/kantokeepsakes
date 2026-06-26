@@ -1,17 +1,29 @@
 .main {
   min-height: calc(100vh - var(--header-height) - 60px);
-  padding: var(--space-xl) var(--space-md);
 }
 
 .container {
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
+  min-height: calc(100vh - var(--header-height));
+}
+
+.titleSection {
+  padding: 20px 20px 12px;
+  border-bottom: 1px solid var(--color-gray-200);
 }
 
 .title {
-  font-size: var(--font-size-2xl);
-  margin-bottom: var(--space-lg);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-gray-900);
+}
+
+.unreadSummary {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+  margin-top: 2px;
 }
 
 .loadingText {
@@ -72,16 +84,13 @@
 .list {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--color-gray-200);
-  border-radius: var(--border-radius-lg);
-  overflow: hidden;
+  background-color: var(--color-white);
 }
 
 .convItem {
   display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-md);
+  gap: 12px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--color-gray-100);
   transition: background-color var(--transition-fast);
 }
@@ -95,31 +104,22 @@
 }
 
 .convUnread {
-  background-color: #fffbeb;
+  background-color: #fef9e7;
 }
 
-.convLeft {
-  flex-shrink: 0;
-}
-
-.convImage {
-  width: 48px;
-  height: 48px;
-  object-fit: cover;
-  border-radius: var(--border-radius);
-}
-
-.convImagePlaceholder {
-  width: 48px;
-  height: 48px;
-  display: flex;
+/* Avatar initials circle */
+.convAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--color-gray-900);
+  color: var(--color-white);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--color-gray-100);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-xs);
   font-weight: 700;
-  color: var(--color-gray-500);
+  font-size: 15px;
+  flex-shrink: 0;
 }
 
 .convBody {
@@ -135,12 +135,23 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-sm);
+  margin-bottom: 3px;
+}
+
+.convHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }
 
 .convUser {
-  font-size: var(--font-size-sm);
-  font-weight: 700;
+  font-size: 0.9375rem;
+  font-weight: 600;
   color: var(--color-gray-900);
+}
+
+.convUserUnread {
+  font-weight: 700;
 }
 
 .convTime {
@@ -151,19 +162,25 @@
 
 .convListing {
   font-size: var(--font-size-xs);
-  color: var(--color-yellow-dark);
+  color: var(--color-gray-500);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 2px;
+  margin-bottom: 2px;
 }
 
 .convPreview {
   font-size: var(--font-size-sm);
-  color: var(--color-gray-700);
+  color: var(--color-gray-500);
+  font-weight: 400;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.convPreviewUnread {
+  color: var(--color-gray-700);
+  font-weight: 500;
 }
 
 .unreadBadge {
@@ -171,19 +188,23 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
-  font-size: var(--font-size-xs);
-  font-weight: 600;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--color-black);
   background-color: var(--color-yellow);
-  border-radius: 11px;
+  border-radius: 10px;
 }
 
 @media (max-width: 640px) {
   .main {
-    padding: 16px var(--space-md);
+    padding: 0;
+  }
+
+  .titleSection {
+    padding: 16px 16px 12px;
   }
 
   .title {
@@ -192,5 +213,9 @@
 
   .container {
     max-width: 100%;
+  }
+
+  .convItem {
+    padding: 14px 16px;
   }
 }

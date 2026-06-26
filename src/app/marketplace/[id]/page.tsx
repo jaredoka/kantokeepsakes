@@ -19,8 +19,26 @@ import {
 } from "@/lib/marketplace/types";
 import type { Profile } from "@/lib/marketplace/types";
 import { getExpiryWarning, getExpiryUrgency } from "@/lib/marketplace/dates";
-import { parseGradingTag } from "@/lib/marketplace/grading";
 import styles from "./page.module.css";
+
+function formatTimeAgo(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+
+  if (diffMin < 1) return "Just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+
+  const diffDays = Math.floor(diffHr / 24);
+  if (diffDays < 30) return `${diffDays}d ago`;
+
+  const diffMonths = Math.floor(diffDays / 30);
+  return `${diffMonths}mo ago`;
+}
 
 /** Parse a leading [TAG] from a title, e.g. "[PSA10] Charizard …" */
 function parseConditionTag(title: string): { tag: string | null; rest: string } {
@@ -134,9 +152,6 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
   if (listing.wants_graded) wantTypes.push("Any Graded");
   if (listing.wants_sealed) wantTypes.push("Any Sealed");
 
-  const grading =
-    listing.category === "graded" ? parseGradingTag(listing.title) : null;
-
   const backPath = listing.type === "WTB" ? "/marketplace/wtb" : "/marketplace/wts";
 
   return (
@@ -168,11 +183,10 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
                 >
                   {LISTING_TYPE_LABELS[listing.type]}
                 </span>
-                <span className={styles.meta}>
+                <span className={styles.categoryPill}>
                   {CATEGORY_LABELS[listing.category]}
                 </span>
-                <span className={styles.metaDot}>&middot;</span>
-                <span className={styles.meta}>
+                <span className={styles.categoryPill}>
                   {LANGUAGE_LABELS[listing.language]}
                 </span>
               </div>
@@ -203,13 +217,19 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
                 )}
               </div>
 
-              <div className={styles.postedDate}>
-                Listed{" "}
-                {new Date(listing.created_at).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
+              <div className={styles.statusRow}>
+                <svg className={styles.clockIcon} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                </svg>
+                <span className={styles.postedDate}>
+                  {formatTimeAgo(listing.created_at)}
+                </span>
+                {listing.status === "active" && (
+                  <>
+                    <span className={styles.statusDot} />
+                    <span className={styles.statusActive}>Active</span>
+                  </>
+                )}
               </div>
             </div>
 
@@ -218,23 +238,39 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
               <h2 className={styles.sectionHeading}>
                 {listing.type === "WTS" ? "For Sale" : "Want to Buy"}
               </h2>
-              <ImageGallery images={listing.images} alt={listing.title} grading={grading} />
+              <ImageGallery images={listing.images} alt={listing.title} />
             </div>
 
             {/* Description */}
-            <div className={styles.description}>
-              {listing.description.split("\n").map((line, i) => (
-                <p key={i}>{line}</p>
-              ))}
+            <div className={styles.descriptionBox}>
+              <div className={styles.descriptionBoxLabel}>Description</div>
+              <div className={styles.description}>
+                {listing.description.split("\n").map((line, i) => (
+                  <p key={i}>{line}</p>
+                ))}
+              </div>
             </div>
 
             {/* Wants section */}
             {wantTypes.length > 0 && (
-              <div className={styles.section}>
-                <h2 className={styles.sectionHeading}>Looking For</h2>
+              <div className={styles.wantsBox}>
+                <div className={styles.wantsBoxLabel}>
+                  {listing.type === "WTS" ? "Asking" : "Looking for"}
+                </div>
                 <div className={styles.wantsPills}>
                   {wantTypes.map((w) => (
-                    <span key={w} className={styles.wantPill}>{w}</span>
+                    <span key={w} className={styles.wantPill}>
+                      {w}
+                      {w === "Cash" && listing.price !== null && (
+                        <strong className={styles.wantPillValue}>
+                          {CURRENCY_SYMBOLS[listing.currency]}
+                          {listing.price.toLocaleString(undefined, {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 2,
+                          })}
+                        </strong>
+                      )}
+                    </span>
                   ))}
                 </div>
               </div>
@@ -332,6 +368,11 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
               hasAcceptedOffer={hasAcceptedOffer}
               bothCompleted={bothCompleted}
             />
+
+            {/* Safe trading tip */}
+            <div className={styles.tradingTip}>
+              <strong>Safe trading tip:</strong> Always meet in a public place and verify the card before completing the trade.
+            </div>
           </div>
         </div>
       </div>

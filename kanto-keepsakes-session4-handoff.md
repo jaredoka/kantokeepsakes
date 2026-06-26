@@ -1,4 +1,4 @@
-# Kanto Keepsakes — Session 7 Handoff
+# Kanto Keepsakes — Session 8 Handoff
 
 ## Project Overview
 
@@ -18,7 +18,7 @@ Stack: **Next.js 16.2.7** · **React 19** · **TypeScript** · **Supabase** (Pos
 | `TURNSTILE_SECRET_KEY` | Turnstile server secret |
 | `CRON_SECRET` | Bearer token for `/api/cron/expire-listings` |
 | `SITE_PASSWORD` | Site-wide password gate (remove to go public) |
-| `POKEMON_TCG_API_KEY` | (Optional) pokemontcg.io API key for higher rate limits |
+| `POKEMON_TCG_API_KEY` | (Unused) Legacy pokemontcg.io key — codebase uses TCGdex (no key needed) |
 
 Copy from `.env.local.example` → `.env.local` if the file is missing.
 
@@ -115,12 +115,12 @@ Copy from `.env.local.example` → `.env.local` if the file is missing.
 | OG image + social metadata | Done S7 | `src/app/layout.tsx`, `public/og-image.png` |
 | Supabase remote image patterns | Done S7 | `next.config.ts` |
 | Site-wide password gate | Done S7 | `src/proxy.ts` (controlled by `SITE_PASSWORD` env var) |
-| WTB/WTS pill color matching | Planned S8 | `src/app/marketplace/[id]/page.module.css` |
-| Standardized page titles | Planned S8 | `src/app/layout.tsx` + all page files |
-| Favicon from logo | Planned S8 | `src/app/favicon.ico`, `icon.png`, `apple-icon.png` |
-| Two-step trade completion | Planned S8 | `trade_completions` table, `/api/trade-completions`, `TradeConfirmation.tsx` |
-| Pokemon TCG stock images | Planned S8 | `CardSearch.tsx`, `SetSearch.tsx`, `/api/pokemon-tcg/*` |
-| Graded slab overlay | Planned S8 | `GradedCardImage.tsx`, `grading.ts` |
+| WTB/WTS pill color matching | Done S8 | `src/app/marketplace/[id]/page.module.css`, `src/components/ListingCard.module.css` |
+| Standardized page titles | Done S8 | `src/app/layout.tsx` + all page files |
+| Favicon from logo | Done S8 | `src/app/favicon.ico`, `icon.png`, `apple-icon.png` |
+| Two-step trade completion | Done S8 | `trade_completions` table, `/api/trade-completions`, `TradeConfirmation.tsx` |
+| Pokemon TCG stock images (TCGdex) | Done S8 | `CardSearch.tsx`, `SetSearch.tsx`, `/api/pokemon-tcg/*` |
+| Graded slab overlay | Done S8 | `GradedCardImage.tsx`, `GradedCardImage.module.css`, `grading.ts` |
 
 ---
 
@@ -158,9 +158,9 @@ src/
       offers/             <- create + accept/decline
       conversations/      <- create + messages
       reports/            <- submit
-      trade-completions/  <- both-parties-complete step (planned S8)
+      trade-completions/  <- both-parties-complete step
       trade-confirmations/
-      pokemon-tcg/        <- search + sets proxy to pokemontcg.io (planned S8)
+      pokemon-tcg/        <- search + sets + series proxy to TCGdex API
       admin/              <- ban + report resolution
       cron/               <- expire-listings
       signup/             <- registration
@@ -172,10 +172,10 @@ src/
     OfferList.tsx         <- accept / decline for owner
     ProfileEditForm.tsx   <- inline edit bio + username (own profile only)
     SaveButton.tsx        <- bookmark toggle
-    ImageUploader.tsx     <- drag-drop + canvas compression (accessories only after S8)
-    CardSearch.tsx        <- pokemontcg.io card search for singles/graded (planned S8)
-    SetSearch.tsx         <- pokemontcg.io set search for sealed (planned S8)
-    GradedCardImage.tsx   <- CSS slab overlay for graded cards (planned S8)
+    ImageUploader.tsx     <- drag-drop + canvas compression (accessories only)
+    CardSearch.tsx        <- TCGdex card search for singles/graded
+    SetSearch.tsx         <- TCGdex set search for sealed
+    GradedCardImage.tsx   <- CSS slab overlay for graded cards
   lib/
     supabase/
       client.ts           <- browser client (createBrowserClient)
@@ -186,7 +186,7 @@ src/
       types.ts            <- all TypeScript types + enums
       dates.ts            <- expiry helpers
       validation.ts       <- field validators for listings, offers, images
-      grading.ts          <- parseGradingTag() utility (planned S8)
+      grading.ts          <- parseGradingTag() utility
     turnstile.ts          <- Cloudflare Turnstile server-side verify
     rate-limit.ts         <- in-memory rate limiter (Map-based, 60s cleanup)
   proxy.ts                <- Next.js 16 proxy (replaces middleware.ts)
@@ -196,11 +196,11 @@ src/
 | Table | RLS | Purpose |
 |---|---|---|
 | `profiles` | Yes | Users — username, bio, avatar_url, reputation, is_banned, is_admin |
-| `listings` | Yes | WTS/WTB listings — type, title, price, images, status, expiry |
+| `listings` | Yes | WTS/WTB listings — type, title, price, images, status, expiry, wants_cash/wants_singles/wants_graded/wants_sealed flags |
 | `offers` | Yes | Offers on listings — message, card images, status |
 | `conversations` | Yes | DMs — participant_1 (owner), participant_2 (other), listing |
 | `messages` | Yes | Chat messages — body, is_read, sender_id |
-| `trade_completions` | Yes | Both-parties-complete step — listing_id, user_id (planned S8) |
+| `trade_completions` | Yes | Both-parties-complete step — listing_id, user_id |
 | `trade_confirmations` | Yes | Ratings — 1-5 stars, comment, confirmer/confirmed (gated behind completions in S8) |
 | `reports` | Yes | User/listing reports — reason, description, status |
 | `saved_listings` | Yes | Bookmarks — user_id + listing_id |
@@ -244,23 +244,27 @@ src/
 
 ---
 
-## Session 8 Plan (Not Yet Implemented)
+## Session 8 Changes
 
-1. **W13 — Match WTB/WTS pill colors** — Listing detail page uses green/cyan for WTS/WTB pills; should match browse page gold (#c49010) / blue (#1565a8). Change in `src/app/marketplace/[id]/page.module.css`.
-2. **W14 — Standardize page titles** — All pages use single-word title + ` | Kanto Keepsakes` via Next.js `title.template` in root layout. E.g., "WTS | Kanto Keepsakes", "About | Kanto Keepsakes".
-3. **W15 — Favicon from logo** — Generate favicon.ico (32x32), icon.png (32x32), apple-icon.png (180x180) from Kanto Keepsakes logo using sharp.
-4. **W16 — Two-step trade completion** — Separate "Complete Trade" step from rating. Both parties must click "Complete" before either can rate. New `trade_completions` table + API route. Listing marked sold when both complete.
-5. **W17 — Pokemon TCG stock images** — Replace user image uploads with pokemontcg.io API card search (singles/graded), set search (sealed), keep manual upload (accessories). New `CardSearch`, `SetSearch` components. New `/api/pokemon-tcg/search` and `/api/pokemon-tcg/sets` proxy routes. Update CSP and `next.config.ts` for `images.pokemontcg.io`.
-6. **W18 — Graded slab overlay** — CSS-only slab frame component (`GradedCardImage`) wrapping card images for graded listings. PSA=red, CGC=blue, BGS=black/gold. Shows grade number in label bar. Used on listing cards and detail pages.
+1. **W13 — WTB/WTS pill color matching** — Updated listing detail page pill colors to match browse page: WTS gold (#c49010), WTB blue (#1565a8). Changed in `src/app/marketplace/[id]/page.module.css` and `src/components/ListingCard.module.css`.
+2. **W14 — Standardized page titles** — All pages use single-word title + ` | Kanto Keepsakes` via Next.js `title.template` in root layout.
+3. **W15 — Favicon from logo** — Generated favicon.ico (32x32), icon.png (32x32), apple-icon.png (180x180) from Kanto Keepsakes logo.
+4. **W16 — Two-step trade completion** — Separated "Complete Trade" step from rating. Both parties must click "Complete" before either can rate. New `trade_completions` table + `POST /api/trade-completions` route. Listing marked sold when both complete. Anti-abuse protections included.
+5. **W17 — Pokemon TCG stock images** — Replaced user image uploads with TCGdex API card search (singles/graded) and set search (sealed); kept manual upload for accessories. New `CardSearch.tsx`, `SetSearch.tsx` components. New `/api/pokemon-tcg/search`, `/api/pokemon-tcg/sets`, `/api/pokemon-tcg/series` proxy routes. Updated CSP and `next.config.ts` for `assets.tcgdex.net`. EN/JA dual-language support with image fallback.
+6. **W18 — Graded slab overlay** — `GradedCardImage` component with CSS slab frame wrapping card images for graded listings. PSA uses real slab template image (`/images/psa-slab-template.webp`); CGC=blue, BGS=black/gold use CSS-only frames. Grade number in label bar. Used on listing cards and detail pages. New `parseGradingTag()` utility in `grading.ts`.
+7. **Wants type flags migration** — Added `wants_cash`, `wants_singles`, `wants_graded`, `wants_sealed` boolean columns to `listings` table (`supabase/migrations/00016_wants_type_flags.sql`). Backfill: listings with prices get `wants_cash = true`.
+8. **Seed script** — New `scripts/seed.ts` creating 5 test users and 30 test listings with real TCGdex card images, grading tags, and wants flags.
+9. **ListingCard redesign** — Two-column body layout: Haves (images) + Wants (pills). Graded card images use `GradedCardImage` component. Want pills show Cash/Singles/Graded/Sealed/Any Offers.
+10. **Inbox UI refresh** — Updated inbox conversation list and chat page styling with avatar initials circles, unread badges, and improved layout.
 
 ### Key decisions
 
 | Decision | Choice | Reasoning |
 |---|---|---|
-| Card image source | **pokemontcg.io API** (not bulk download) | Always up-to-date with new sets, no storage costs, free tier (~20K req/day), works well for both web and future iOS app |
-| Sealed product images | **Set logos from pokemontcg.io** | API provides set logos/symbols; no product photos exist in the API |
-| Graded overlay style | **CSS-only slab frame** | No PNG assets to maintain; colored border + label bar per grading company |
-| Card search UX | **Search with filters** | Name search + optional set, type, rarity filters for the most powerful discovery |
+| Card image source | **TCGdex API** (`api.tcgdex.net/v2`) | Free, no auth needed, 14-language support (EN + JA), always up-to-date, no storage costs |
+| Sealed product images | **Set logos from TCGdex** | API provides set logos/symbols; no booster box product photos exist in any free API |
+| Graded overlay style | **CSS slab frame + PSA template image** | PSA uses real slab template for realism; CGC/BGS use CSS-only frames |
+| Card search UX | **Search with filters** | Name search + series/era + set + promo-only filters; dual-language search |
 | Trade flow | **Two-step: complete then rate** | Prevents premature ratings; both parties must agree trade happened |
 
 ---
@@ -294,18 +298,18 @@ Not hard blockers but important for a professional launch.
 | W10 | Add OG image to root layout | Social media link previews show a branded image | Modify: `src/app/layout.tsx`, add image to `public/` |
 | W11 | Configure `images.remotePatterns` | Next.js `<Image>` component works with Supabase storage URLs | Modify: `next.config.ts` |
 
-### Website Phase 3 — Pre-Launch Polish & Features (Session 8)
+### Website Phase 3 — Pre-Launch Polish & Features (Session 8) ✓
 
-UI consistency, trade flow improvement, and Pokemon TCG stock images.
+UI consistency, trade flow improvement, and Pokemon TCG stock images. All complete.
 
-| # | Task | Benefit | Files to create/modify |
+| # | Task | Status | Files |
 |---|---|---|---|
-| W13 | Match WTB/WTS pill colors on detail page | Visual consistency with browse page | Modify: `src/app/marketplace/[id]/page.module.css` |
-| W14 | Standardize page titles (template pattern) | Clean, consistent browser tab titles | Modify: `src/app/layout.tsx` + ~20 page files |
-| W15 | Favicon from logo | Branded favicon and apple-touch-icon | Replace: `src/app/favicon.ico`, New: `icon.png`, `apple-icon.png` |
-| W16 | Two-step trade completion (complete → rate) | Safer trade flow; both parties must confirm | New: `trade_completions` table, `/api/trade-completions`. Modify: `TradeConfirmation.tsx`, `/api/trade-confirmations` |
-| W17 | Pokemon TCG stock images (replace uploads) | No user photos needed; consistent card images via pokemontcg.io API | New: `CardSearch.tsx`, `SetSearch.tsx`, `/api/pokemon-tcg/*`. Modify: listing forms, `OfferModal`, CSP, `next.config.ts` |
-| W18 | Graded slab overlay on card images | Graded cards visually show PSA/CGC/BGS slab frame | New: `GradedCardImage.tsx`, `grading.ts`. Modify: `ListingCard.tsx`, `ImageGallery.tsx` |
+| W13 | Match WTB/WTS pill colors on detail page | Done | `src/app/marketplace/[id]/page.module.css`, `src/components/ListingCard.module.css` |
+| W14 | Standardize page titles (template pattern) | Done | `src/app/layout.tsx` + all page files |
+| W15 | Favicon from logo | Done | `src/app/favicon.ico`, `icon.png`, `apple-icon.png` |
+| W16 | Two-step trade completion (complete → rate) | Done | `trade_completions` table, `/api/trade-completions`, `TradeConfirmation.tsx` |
+| W17 | Pokemon TCG stock images via TCGdex API | Done | `CardSearch.tsx`, `SetSearch.tsx`, `/api/pokemon-tcg/*`, CSP, `next.config.ts` |
+| W18 | Graded slab overlay on card images | Done | `GradedCardImage.tsx`, `GradedCardImage.module.css`, `grading.ts`, `ListingCard.tsx` |
 
 ### Website Phase 4 — Post-Launch Improvements
 
@@ -528,13 +532,25 @@ export async function getAuthUser(request: NextRequest) {
 | GET | `/api/conversations/[id]/messages` | Participant | Cursor pagination, marks read |
 | POST | `/api/conversations/[id]/messages` | Participant | 30/min rate limit |
 
+### Trade
+| Method | Route | Auth | Rate Limit |
+|---|---|---|---|
+| POST | `/api/trade-completions` | User | — |
+| POST | `/api/trade-confirmations` | User | — |
+| GET | `/api/trade-confirmations` | Public | — |
+
+### Pokemon TCG (TCGdex proxy)
+| Method | Route | Auth | Rate Limit |
+|---|---|---|---|
+| GET | `/api/pokemon-tcg/search` | Public | 30/min per IP |
+| GET | `/api/pokemon-tcg/sets` | Public | 20/min per IP |
+| GET | `/api/pokemon-tcg/series` | Public | 20/min per IP |
+
 ### Profile + Reports + Admin
 | Method | Route | Auth |
 |---|---|---|
 | PATCH | `/api/profile` | User |
 | POST | `/api/reports` | User |
-| POST | `/api/trade-confirmations` | User |
-| GET | `/api/trade-confirmations` | Public |
 | POST | `/api/admin/ban` | Admin |
 | PATCH | `/api/admin/reports/[id]` | Admin |
 | GET | `/api/cron/expire-listings` | CRON_SECRET |

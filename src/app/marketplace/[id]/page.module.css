@@ -100,13 +100,14 @@
   color: white;
 }
 
-.meta {
-  font-size: var(--font-size-sm);
-  color: var(--color-gray-500);
-}
-
-.metaDot {
-  color: var(--color-gray-300);
+.categoryPill {
+  padding: 2px 10px;
+  border-radius: var(--border-radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-200);
 }
 
 .title {
@@ -138,9 +139,34 @@
   color: var(--color-yellow-dark);
 }
 
-.postedDate {
-  font-size: var(--font-size-xs);
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-sm);
   color: var(--color-gray-500);
+}
+
+.clockIcon {
+  flex-shrink: 0;
+}
+
+.postedDate {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--color-success-fg);
+  margin-left: var(--space-xs);
+}
+
+.statusActive {
+  color: var(--color-success-fg);
+  font-weight: 600;
 }
 
 /* Content sections */
@@ -158,8 +184,24 @@
   border-bottom: 2px solid var(--color-gray-200);
 }
 
+.descriptionBox {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-md) 20px;
+}
+
+.descriptionBoxLabel {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-gray-500);
+  margin-bottom: 10px;
+}
+
 .description {
-  font-size: var(--font-size-base);
+  font-size: 0.9375rem;
   color: var(--color-gray-700);
   line-height: 1.6;
 }
@@ -172,6 +214,23 @@
   margin-bottom: 0;
 }
 
+/* Wants box */
+.wantsBox {
+  background-color: var(--color-off-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-md) 20px;
+}
+
+.wantsBoxLabel {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-gray-500);
+  margin-bottom: 10px;
+}
+
 /* Wants pills */
 .wantsPills {
   display: flex;
@@ -180,14 +239,21 @@
 }
 
 .wantPill {
-  display: inline-block;
-  padding: 4px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
   border-radius: 999px;
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   font-weight: 600;
-  background-color: var(--color-gray-100);
+  background-color: var(--color-white);
   color: var(--color-gray-700);
   border: 1px solid var(--color-gray-200);
+}
+
+.wantPillValue {
+  color: var(--color-black);
+  margin-left: 2px;
 }
 
 /* Expiry & owner actions */
@@ -229,6 +295,17 @@
 .editLink:hover {
   color: var(--color-black);
   text-decoration: underline;
+}
+
+/* Safe trading tip */
+.tradingTip {
+  background-color: var(--color-info-bg);
+  border: 1px solid #bfdbfe;
+  border-radius: var(--border-radius);
+  padding: 12px var(--space-md);
+  font-size: 0.8125rem;
+  color: var(--color-info-fg);
+  line-height: 1.5;
 }
 
 @media (max-width: 900px) {

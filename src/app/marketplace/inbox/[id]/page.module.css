@@ -42,8 +42,8 @@
 .chatHeader {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-md);
+  gap: 12px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--color-gray-200);
   background-color: var(--color-white);
   flex-shrink: 0;
@@ -59,6 +59,20 @@
 
 .backLink:hover {
   color: var(--color-black);
+}
+
+.chatAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--color-gray-900);
+  color: var(--color-white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
 }
 
 .chatHeaderInfo {
@@ -90,10 +104,11 @@
 .messagesContainer {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-md);
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 12px;
+  background-color: var(--color-off-white);
 }
 
 .noMessages {
@@ -104,37 +119,43 @@
 }
 
 .bubble {
-  max-width: 75%;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--border-radius-lg);
-  word-break: break-word;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .bubbleMine {
-  align-self: flex-end;
-  background-color: var(--color-yellow);
-  color: var(--color-black);
-  border-bottom-right-radius: 4px;
+  align-items: flex-end;
 }
 
 .bubbleTheirs {
-  align-self: flex-start;
-  background-color: var(--color-gray-100);
-  color: var(--color-gray-900);
-  border-bottom-left-radius: 4px;
+  align-items: flex-start;
 }
 
 .bubbleText {
-  font-size: var(--font-size-sm);
+  max-width: 65%;
+  padding: 10px 14px;
+  font-size: 0.9375rem;
   line-height: 1.5;
+  word-break: break-word;
+}
+
+.bubbleMine .bubbleText {
+  background-color: var(--color-yellow);
+  color: var(--color-black);
+  border-radius: 12px 12px 4px 12px;
+}
+
+.bubbleTheirs .bubbleText {
+  background-color: var(--color-white);
+  color: var(--color-black);
+  border: 1px solid var(--color-gray-200);
+  border-radius: 12px 12px 12px 4px;
 }
 
 .bubbleTime {
-  display: block;
-  font-size: 0.65rem;
-  margin-top: 2px;
-  opacity: 0.6;
-  text-align: right;
+  font-size: 0.6875rem;
+  color: #9ca3af;
 }
 
 .sendError {
