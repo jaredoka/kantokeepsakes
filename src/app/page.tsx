@@ -3,77 +3,68 @@ import styles from "./page.module.css";
 
 export default function Home() {
   return (
-    <main className={styles.mainContent}>
+    <main className={styles.main}>
+      {/* Hero */}
       <section className={styles.hero}>
-        <h1>Welcome to Kanto Keepsakes</h1>
-        <p>Your source for Pokemon TCG products in Brunei</p>
-      </section>
-
-      <section className={`${styles.categories} container`}>
-        <div className={styles.categoryGroup}>
-          <Link href="/japanese" className={`${styles.categoryCard} ${styles.categoryCardLarge} ${styles.categoryJapanese}`}>
-            <div>
-              <h2 className={styles.categoryCardTitleLarge}>Japanese</h2>
-              <p className={styles.categoryCardSubtitleLarge}>Browse all Japanese products</p>
-            </div>
+        <h1 className={styles.heroTitle}>
+          Trade Pok&eacute;mon cards with hobbyists{" "}
+          <span className={styles.heroAccent}>around the world</span>
+        </h1>
+        <p className={styles.heroSubtitle}>
+          Post what you <strong>have</strong> and what you <strong>want</strong>.
+          Find your trade match, negotiate offers in real time, and build your
+          reputation — the golden days of trade listings, minus the gambling.
+        </p>
+        <div className={styles.heroActions}>
+          <Link href="/marketplace/wts" className={styles.primaryBtn}>
+            Browse the marketplace
           </Link>
-          <div className={styles.subcategoryGrid}>
-            <Link href="/japanese-sealed" className={`${styles.categoryCard} ${styles.categoryCardSmall}`}>
-              <div className={styles.categoryCardSmallContent}>
-                <h3 className={styles.categoryCardTitleSmall}>Sealed</h3>
-                <p className={styles.categoryCardSubtitleSmall}>Booster boxes, ETBs &amp; more</p>
-              </div>
-            </Link>
-            <Link href="/japanese-singles" className={`${styles.categoryCard} ${styles.categoryCardSmall}`}>
-              <div className={styles.categoryCardSmallContent}>
-                <h3 className={styles.categoryCardTitleSmall}>Singles</h3>
-                <p className={styles.categoryCardSubtitleSmall}>Individual cards</p>
-              </div>
-            </Link>
-            <Link href="/japanese-graded" className={`${styles.categoryCard} ${styles.categoryCardSmall}`}>
-              <div className={styles.categoryCardSmallContent}>
-                <h3 className={styles.categoryCardTitleSmall}>Graded</h3>
-                <p className={styles.categoryCardSubtitleSmall}>PSA, CGC &amp; more</p>
-              </div>
-            </Link>
-          </div>
-        </div>
-
-        <div className={styles.categoryGroup}>
-          <Link href="/english" className={`${styles.categoryCard} ${styles.categoryCardLarge} ${styles.categoryEnglish}`}>
-            <div>
-              <h2 className={styles.categoryCardTitleLarge}>English</h2>
-              <p className={styles.categoryCardSubtitleLarge}>Browse all English products</p>
-            </div>
+          <Link href="/marketplace/new" className={styles.secondaryBtn}>
+            Post a listing
           </Link>
-          <div className={styles.subcategoryGrid}>
-            <Link href="/english-sealed" className={`${styles.categoryCard} ${styles.categoryCardSmall}`}>
-              <div className={styles.categoryCardSmallContent}>
-                <h3 className={styles.categoryCardTitleSmall}>Sealed</h3>
-                <p className={styles.categoryCardSubtitleSmall}>Booster boxes, ETBs &amp; more</p>
-              </div>
-            </Link>
-            <Link href="/english-singles" className={`${styles.categoryCard} ${styles.categoryCardSmall}`}>
-              <div className={styles.categoryCardSmallContent}>
-                <h3 className={styles.categoryCardTitleSmall}>Singles</h3>
-                <p className={styles.categoryCardSubtitleSmall}>Individual cards</p>
-              </div>
-            </Link>
-            <Link href="/english-graded" className={`${styles.categoryCard} ${styles.categoryCardSmall}`}>
-              <div className={styles.categoryCardSmallContent}>
-                <h3 className={styles.categoryCardTitleSmall}>Graded</h3>
-                <p className={styles.categoryCardSubtitleSmall}>PSA, CGC &amp; more</p>
-              </div>
-            </Link>
-          </div>
         </div>
       </section>
 
-      <div className={styles.ctaSection}>
-        <Link href="/marketplace" className={styles.ctaButton}>
-          Browse Marketplace
+      {/* How it works */}
+      <section className={styles.features}>
+        <div className={styles.featureCard}>
+          <div className={styles.featureIcon}>&#128451;</div>
+          <h2 className={styles.featureTitle}>Have / Want listings</h2>
+          <p className={styles.featureText}>
+            Build your listing from real card data — English and Japanese sets,
+            promos, graded slabs — and flag whether you want cash, singles,
+            graded, or sealed in return.
+          </p>
+        </div>
+        <div className={styles.featureCard}>
+          <div className={styles.featureIcon}>&#8646;</div>
+          <h2 className={styles.featureTitle}>Matches &amp; offers</h2>
+          <p className={styles.featureText}>
+            The Matches page finds traders who have what you want — and want
+            what you have. Negotiate with offers, counteroffers, and real-time
+            chat.
+          </p>
+        </div>
+        <div className={styles.featureCard}>
+          <div className={styles.featureIcon}>&#11088;</div>
+          <h2 className={styles.featureTitle}>Community trust</h2>
+          <p className={styles.featureText}>
+            Two-step trade confirmations, star ratings, and trader reputation.
+            Public comments let the community vouch for traders and vet trades.
+          </p>
+        </div>
+      </section>
+
+      {/* Principles strip */}
+      <section className={styles.principles}>
+        <p className={styles.principlesText}>
+          No fees. No gambling. No middleman — payment and the exchange are
+          arranged between traders, the way trading should be.
+        </p>
+        <Link href="/safe-trading" className={styles.principlesLink}>
+          Read the safe trading guide
         </Link>
-      </div>
+      </section>
     </main>
   );
 }

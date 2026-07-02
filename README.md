@@ -2,7 +2,7 @@
 
 **Kanto Keepsakes** is an online **peer-to-peer marketplace for Pokemon TCG hobbyists around the world** — a have/want trade listing board in the spirit of the golden days of CSGOLounge, minus the gambling. Traders post what they **have** and what they **want** (cards, graded slabs, sealed product, or cash), negotiate through offers and real-time chat, and build reputation through confirmed trades.
 
-The marketplace is the sole product: the original Brunei retail catalog is being retired (roadmap item G5).
+The marketplace is the sole product: the original Brunei retail catalog was retired in Session 19.
 
 Built as a solo developer project using **Claude Code by Anthropic** as an AI-assisted development tool.
 
@@ -40,9 +40,6 @@ An open, worldwide trading board where the platform provides **discovery, negoti
 
 ## Features
 
-### Product Catalog (Shop) — being retired
-The original Brunei retail catalog (category browsing, cart with WhatsApp checkout) still exists in the codebase but is scheduled for removal per the marketplace-only decision (roadmap item G5).
-
 ### Marketplace
 - **User accounts** — email/password signup with Cloudflare Turnstile CAPTCHA, login, forgot/reset password
 - **WTB / WTS listings** — create, edit, bump (24h cooldown), relist expired, auto-expire after 30 days (Vercel cron)
@@ -57,6 +54,7 @@ The original Brunei retail catalog (category browsing, cart with WhatsApp checko
 - **Trade confirmations** — two-step flow: both parties confirm trade completion, then rate each other (1-5 stars), reputation system with trader badges
 - **User profiles** — public profile with listing history, sold archive, inline bio/username editing
 - **Saved listings** — bookmark/watchlist functionality
+- **Listing comments** — public comment threads on listings for community vetting; authors can delete their own comments, listing owners cannot silence others, admins moderate
 - **Moderation** — report users/listings, admin panel for banning users and resolving reports
 - **Auth gate** — marketplace pages redirect unauthenticated users to login with `?next=` parameter to return them to the original page after login/signup
 - **SEO** — OpenGraph metadata on listing detail pages, dynamic sitemap, robots.txt, OG image for social media previews
@@ -341,7 +339,7 @@ This project started as a static HTML/CSS/JS site and evolved into a full-stack 
 
 ## Build Progress
 
-### Shop (Complete — scheduled for removal per G5)
+### Shop (Retired in S19 — history below)
 | # | Task | Status |
 |---|------|--------|
 | 1 | README (living document) | Done |
@@ -424,8 +422,8 @@ The remaining work to serve Pokemon TCG hobbyists worldwide, in rough priority o
 | G1 | ~~Email notifications~~ **Done** — Resend-backed emails for offers, messages, and trade updates with per-user preference toggles | Traders in different timezones can't rely on being online together |
 | G2 | ~~Have/Want matching~~ **Done** — Matches page surfaces listings whose haves match your wants and vice versa, with two-way badges | The killer feature of golden-era trading sites |
 | G3 | ~~Counteroffers~~ **Done** — either party can counter a pending offer; turns thread into a negotiation | Accept/decline alone kills trades that a counter would save |
-| G4 | Listing comment threads | Public community vetting of trades, CSGOLounge-style |
-| G5 | Retire the shop (remove catalog, cart, WhatsApp checkout; marketplace landing page) | Marketplace-only identity |
+| G4 | ~~Listing comment threads~~ **Done** — public comments on listings; authors delete their own, owners cannot silence others | Public community vetting of trades, CSGOLounge-style |
+| G5 | ~~Retire the shop~~ **Done** — catalog, cart, WhatsApp checkout and legacy static site removed; home page is now a marketplace landing | Marketplace-only identity |
 | G6 | Country UX polish (stop defaulting to Brunei) | Serve a worldwide audience; country is a trader-location signal, nothing more |
 | G7 | Public launch — remove `SITE_PASSWORD` only when both the website and the iOS app are ready | Website and app launch together |
 

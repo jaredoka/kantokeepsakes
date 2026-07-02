@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import CartToast from "@/components/CartToast";
 import "./globals.css";
 
 const inter = Inter({
@@ -16,11 +15,11 @@ export const metadata: Metadata = {
     template: "%s | Kanto Keepsakes",
   },
   description:
-    "Kanto Keepsakes — Pokemon TCG retailer based in Brunei. Shop Japanese and English sealed products, singles, graded cards, and accessories.",
+    "Kanto Keepsakes — the peer-to-peer Pokemon TCG marketplace. Post what you have and what you want, negotiate trades, and build your trader reputation.",
   openGraph: {
     title: "Kanto Keepsakes — Pokemon TCG",
     description:
-      "Brunei's peer-to-peer Pokemon TCG marketplace. Buy, sell, and trade cards with local collectors.",
+      "The peer-to-peer Pokemon TCG marketplace. Post what you have and what you want, negotiate trades, and build your trader reputation.",
     url: "https://kantokeepsakes.com",
     siteName: "Kanto Keepsakes",
     images: [
@@ -38,7 +37,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Kanto Keepsakes — Pokemon TCG",
     description:
-      "Brunei's peer-to-peer Pokemon TCG marketplace. Buy, sell, and trade cards with local collectors.",
+      "The peer-to-peer Pokemon TCG marketplace. Post what you have and what you want, negotiate trades, and build your trader reputation.",
     images: ["/og-image.png"],
   },
 };
@@ -54,7 +53,6 @@ export default function RootLayout({
         <Header />
         {children}
         <Footer />
-        <CartToast />
       </body>
     </html>
   );
