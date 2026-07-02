@@ -90,6 +90,7 @@ src/
       inbox/[id]/page.tsx           # Chat with realtime
       user/[username]/page.tsx      # Public profile + edit (own)
       saved/page.tsx                # Watchlist
+      matches/page.tsx              # Have/Want matching (find trades for me)
       my-listings/page.tsx          # Own listings
     login/                          # Login + ?next= redirect
     signup/                         # Signup + Turnstile + ?next= redirect
@@ -107,6 +108,7 @@ src/
       reports/route.ts              # Submit report
       trade-completions/            # Both-parties-complete step
       trade-confirmations/          # Create + read (gated behind completions)
+      comments/                     # Delete comment (author/admin)
       pokemon-tcg/                  # Card search + sets + series proxy to TCGdex
       admin/                        # Ban + report resolution
       cron/expire-listings/         # Daily auto-expire (Vercel cron)
@@ -137,6 +139,7 @@ src/
       middleware.ts                 # Session refresh (called by proxy.ts)
     marketplace/
       queries.ts                    # fetchListings() with filters, sort, pagination
+      matching.ts                   # Have/want matching (card keys from image URLs)
       types.ts                      # TypeScript types + enums + constants
       dates.ts                      # Expiry date helpers
       validation.ts                 # Field validators (listings, offers, images)
@@ -425,9 +428,12 @@ The remaining work to serve Pokemon TCG hobbyists worldwide, in rough priority o
 | G4 | ~~Listing comment threads~~ **Done** — public comments on listings; authors delete their own, owners cannot silence others | Public community vetting of trades, CSGOLounge-style |
 | G5 | ~~Retire the shop~~ **Done** — catalog, cart, WhatsApp checkout and legacy static site removed; home page is now a marketplace landing | Marketplace-only identity |
 | G6 | ~~Country UX polish~~ **Done** — country flags on cards, location on detail pages, no more Brunei DB default, server-validated country, create-form prefill | Serve a worldwide audience; country is a trader-location signal, nothing more |
-| G7 | Public launch — remove `SITE_PASSWORD` only when both the website and the iOS app are ready | Website and app launch together |
+| G7 | Public launch — remove `SITE_PASSWORD` only when both the website and the mobile app are ready | Joint launch after a closed beta (TestFlight + Play internal) |
 
 The platform deliberately builds **no** payment, escrow, pricing, shipping, or gambling features — traders handle settlement and the exchange themselves.
+### Mobile App (Planned — React Native / Expo)
+
+One TypeScript codebase shipping to **both** the App Store and Play Store (owner decisions D6–D9, Session 21). Hybrid architecture: supabase-js direct reads + Realtime on the client, validated writes through the existing API routes with Bearer tokens. V1 is the lean trading core (auth, browse, listing detail with offer threads, create listing, chat, push notifications), followed by parity fast-follows (Matches, comments, saved, profiles). A closed beta (TestFlight + Play internal) with the Brunei/SEA community precedes the joint public launch (G7). Backend prep first: Bearer-token auth helper, Turnstile bypass for token auth, a new /api/matches endpoint, Expo push infrastructure, and the App Store-required account deletion + user blocking. Full plan in the handoff document.
 
 ---
 
