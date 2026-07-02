@@ -1,4 +1,4 @@
-# Kanto Keepsakes — Session 22 Handoff
+# Kanto Keepsakes — Session 23 Handoff
 
 ## Project Overview
 
@@ -547,6 +547,22 @@ The migration `00017_add_country_state.sql` must be run on the Supabase database
 
 ---
 
+## Session 23 Changes — M1 Mobile App Bootstrap
+
+The Expo app lives at **`mobile/`** in this repo (D10): own `package.json` and `node_modules`, no npm workspaces (Metro dislikes hoisted deps). Expo SDK 57 / RN 0.86 / expo-router, TypeScript strict. `mobile/.env` (gitignored, see `.env.example`) carries `EXPO_PUBLIC_SUPABASE_URL/ANON_KEY`, `EXPO_PUBLIC_API_URL` (localhost:3001 in dev), `EXPO_PUBLIC_MOBILE_CLIENT_KEY`.
+
+Built this session: `lib/supabase.ts` (AsyncStorage-backed session — SecureStore's 2 KB limit can't hold Supabase sessions), `lib/api.ts` (`apiFetch` attaching the Bearer token, network-error safe), `lib/theme.ts` (website design tokens), `context/session.tsx` provider, auth screens (login/signup via `/api/signup` with the mobile client key), tab shell (Browse/Matches/Inbox/Profile), RN `ListingCard`, Browse with WTS/WTB toggle over direct SDK reads, Matches over `/api/matches`, Inbox conversation list, Profile with logout.
+
+**Website change:** `proxy.ts` now answers CORS preflight and adds wildcard CORS headers on `/api/*` — safe because browsers never send cookies on wildcard CORS (cookie auth stays same-origin); needed for Bearer clients on web origins, which is also the local dev loop (Expo web) on this Windows machine (no simulators).
+
+**Verified (S23)** by driving the real app via Expo web + Playwright against live Supabase and the local API: login screen → real sign-in as ash → Browse renders 23 live listing cards with card images → WTB toggle → Matches tab calls `/api/matches` through CORS (correct empty state) → Inbox lists real conversations → Profile shows AshK_trainer → logout returns to login.
+
+**Dev loop on this machine:** `cd mobile && npx expo start --web` (plus the website dev server for API routes). Native builds/testing happen via Expo Go on a phone or EAS Build — not possible on this box.
+
+**Next (M1 continuation):** listing detail screen with offer threads, create-listing flow (RN CardPicker), realtime chat, my-listings, push notification registration (expo-notifications is installed), forgot-password, then the M1-8 compliance items in-app (account deletion, block).
+
+---
+
 ## Session 22 Changes — M0 Mobile Backend Prep (B1–B6)
 
 All backend work the mobile app needs, in the website repo. Full Bearer-token API access verified end-to-end by driving the API exactly as the app will (raw `Authorization: Bearer` header, no cookies).
@@ -920,6 +936,7 @@ Goal: **the app everyone uses for trading Pokemon TCG** — which means both sto
 | D7 | V1 scope | **Lean trading core**: auth, browse, listing detail (offers + counteroffers + chat), create listing, my listings, push — then fast-follow parity | Real trader feedback earliest |
 | D8 | Push notifications | **Foundational, phase M1** (was parked at old I23) | Retention backbone for cross-timezone trading; Expo Push makes it cheap |
 | D9 | Beta path | **Closed beta first** (TestFlight + Play internal track) with the Brunei/SEA community while the password gate stays; then joint public launch = G7 | Real trades + store-review teething solved quietly |
+| D10 | App repo location | **`mobile/` folder inside the kantokeepsakes repo** (own package.json/node_modules, no workspaces — Metro dislikes hoisting) | One PR flow, atomic API+app changes, shared code without publishing packages; Expo/EAS support subdirectories natively |
 
 Architecture stays **hybrid** (unchanged in spirit from the original Option A): supabase-js direct reads + Realtime subscriptions on the client, all validated writes through the existing Next.js API routes with `Authorization: Bearer <token>`. Session storage via expo-secure-store; store pipelines via EAS Build/Submit. Shared code (types, validation, cardData) starts as copied modules, graduating to a workspace package if drift hurts.
 
@@ -939,9 +956,9 @@ Architecture stays **hybrid** (unchanged in spirit from the original Option A): 
 
 | # | Task | Data source |
 |---|---|---|
-| M1-1 | Expo project setup (TS, EAS, expo-router), Supabase client + secure session | |
-| M1-2 | Auth: login, signup (`POST /api/signup`, Turnstile-skipped), forgot password | |
-| M1-3 | Browse WTS/WTB with filters + search + country | Direct SDK query |
+| M1-1 | Expo project setup (TS, expo-router), Supabase client + session persistence | **Done S23** — SDK 57/RN 0.86; AsyncStorage (not SecureStore: sessions exceed its 2 KB limit, per the official Supabase RN guide) |
+| M1-2 | Auth: login, signup (`POST /api/signup` + `x-mobile-client`), session provider, logout | **Done S23** (forgot-password screen pending) |
+| M1-3 | Browse WTS/WTB with filters + search + country | **Started S23** — WTS/WTB toggle + listing cards live; filters/search/country pending |
 | M1-4 | Listing detail: haves/wants, seller card, offer threads (accept/decline/counter), comments read, report | SDK reads + existing APIs |
 | M1-5 | Create listing: 5-section form incl. RN CardPicker (era/set/search reusing cardData + TCGdex/pokemontcg.io) | `POST /api/listings` |
 | M1-6 | Inbox + realtime chat | SDK + Realtime + messages API |

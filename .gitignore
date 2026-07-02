@@ -46,3 +46,9 @@ next-env.d.ts
 design_ref_temp/
 scripts/apply-migration.ts
 scripts/check-columns.ts
+
+# Mobile app (mobile/ package)
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/.env
