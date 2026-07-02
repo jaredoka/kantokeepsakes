@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import ListingCard from "@/components/ListingCard";
 import StarRating from "@/components/StarRating";
 import ProfileEditForm from "@/components/ProfileEditForm";
+import BlockButton from "@/components/BlockButton";
 import {
   getReputationTier,
   formatAccountAge,
@@ -103,6 +104,18 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     getUserReviews(profile.id),
   ]);
 
+  // Whether the viewer has blocked this user (B6); RLS scopes to own blocks
+  let viewerBlocked = false;
+  if (user && !isOwnProfile) {
+    const { data: blockRow } = await supabase
+      .from("blocks")
+      .select("blocked_id")
+      .eq("blocker_id", user.id)
+      .eq("blocked_id", profile.id)
+      .maybeSingle();
+    viewerBlocked = !!blockRow;
+  }
+
   const tier = getReputationTier(profile.completed_trades);
   const ratingDisplay =
     profile.reputation_score > 0
@@ -167,6 +180,14 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
               currentNotifyOffers={profile.notify_offers ?? true}
               currentNotifyMessages={profile.notify_messages ?? true}
               currentNotifyTrades={profile.notify_trades ?? true}
+            />
+          )}
+
+          {!isOwnProfile && !!user && (
+            <BlockButton
+              userId={profile.id}
+              username={profile.username}
+              initialBlocked={viewerBlocked}
             />
           )}
         </div>

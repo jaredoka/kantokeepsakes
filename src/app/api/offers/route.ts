@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse, after } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/api-auth";
+import { isBlockedEitherWay } from "@/lib/marketplace/blocks";
 import { validateOfferMessage } from "@/lib/marketplace/validation";
 import { notifyUser } from "@/lib/email";
 
 // POST — create a new offer on a listing
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, supabase } = await getAuthUser(request);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -94,6 +92,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (await isBlockedEitherWay(user.id, listing.user_id)) {
+    return NextResponse.json(
+      { error: "You cannot make an offer on this listing." },
+      { status: 403 }
+    );
+  }
+
   // Check for existing pending offer from this user
   const { data: existingOffer } = await supabase
     .from("offers")
@@ -149,10 +154,7 @@ export async function POST(request: NextRequest) {
 
 // GET — list offers for a listing or by the current user
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, supabase } = await getAuthUser(request);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });

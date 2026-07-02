@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/api-auth";
 import { notifyUser } from "@/lib/email";
 
 const RATING_WINDOW_DAYS = 14;
@@ -7,10 +8,7 @@ const RATING_WINDOW_DAYS = 14;
 // POST — create a trade confirmation (rating + optional comment)
 // Gated behind both trade completions
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, supabase } = await getAuthUser(request);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });

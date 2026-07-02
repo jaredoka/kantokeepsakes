@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/api-auth";
+import { isBlockedEitherWay } from "@/lib/marketplace/blocks";
 
 // GET — list user's conversations with last message preview
-export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export async function GET(request: NextRequest) {
+  const { user, supabase } = await getAuthUser(request);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -63,10 +61,7 @@ export async function GET() {
 
 // POST — create or find existing conversation for a listing
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, supabase } = await getAuthUser(request);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -119,6 +114,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "You cannot message yourself." },
       { status: 400 }
+    );
+  }
+
+  if (await isBlockedEitherWay(user.id, listing.user_id)) {
+    return NextResponse.json(
+      { error: "You cannot message this user." },
+      { status: 403 }
     );
   }
 

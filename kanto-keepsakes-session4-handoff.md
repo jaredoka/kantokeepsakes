@@ -1,4 +1,4 @@
-# Kanto Keepsakes — Session 21 Handoff
+# Kanto Keepsakes — Session 22 Handoff
 
 ## Project Overview
 
@@ -8,7 +8,7 @@ Started as a Brunei-focused retail site; per owner decision (D1) the shop is **r
 
 Stack: **Next.js 16.2.7** · **React 19** · **TypeScript** · **Supabase** (Postgres + Auth + Storage + Realtime) · **Tailwind v4** · **CSS Modules**
 
-**Current status (S21):** Website Phase 5 is complete — G1 email notifications, G2 have/want matching, G3 counteroffers, G4 listing comments, G5 shop retired, G6 country UX. G7 (public launch — remove `SITE_PASSWORD`) is gated until the mobile app is ready (D5). **Next milestone: the mobile app (React Native/Expo, both stores — see Mobile App Roadmap, decisions D6–D9).** Migrations applied through 00021.
+**Current status (S21):** Website Phase 5 is complete — G1 email notifications, G2 have/want matching, G3 counteroffers, G4 listing comments, G5 shop retired, G6 country UX. G7 (public launch — remove `SITE_PASSWORD`) is gated until the mobile app is ready (D5). **Next milestone: the mobile app (React Native/Expo, both stores — see Mobile App Roadmap, decisions D6–D9).** Phase M0 backend prep is done (S22); migrations applied through 00021 — **00022 (push_tokens) and 00023 (blocks) still need running**.
 
 ### Product decision log (Session 14 — resolved by owner)
 
@@ -38,6 +38,7 @@ Known code-level implications: ~~retiring the shop~~ (**done S19**); `currency` 
 | `POKEMON_TCG_API_KEY` | pokemontcg.io key — used by `scripts/update-card-data.ts` (image-fallback set matching) |
 | `RESEND_API_KEY` | Resend API key for email notifications (G1). Unset = sends are logged and skipped |
 | `EMAIL_FROM` | From address for notification emails (default `Kanto Keepsakes <notifications@kantokeepsakes.com>`) |
+| `MOBILE_CLIENT_KEY` | Shared key embedded in the mobile app; signup requests carrying it skip Turnstile (B2). Unset = mobile signup path disabled |
 
 Copy from `.env.local.example` → `.env.local` if the file is missing.
 
@@ -546,6 +547,23 @@ The migration `00017_add_country_state.sql` must be run on the Supabase database
 
 ---
 
+## Session 22 Changes — M0 Mobile Backend Prep (B1–B6)
+
+All backend work the mobile app needs, in the website repo. Full Bearer-token API access verified end-to-end by driving the API exactly as the app will (raw `Authorization: Bearer` header, no cookies).
+
+- **B1** — `src/lib/supabase/api-auth.ts`: `getAuthUser(request)` tries cookies then Bearer. **Key correctness detail:** for Bearer auth it returns a fresh client with the token bound as the Authorization header, so RLS evaluates as that user (the original handoff snippet reused the cookie client — RLS would have run as anon). Rolled out across all 15 auth-required routes via codemod; public GET handlers keep the plain server client.
+- **B2** — Turnstile skipped for Bearer-authenticated listing creation (5/h per-user rate limit instead). Mobile signup (no token exists yet) sends `x-mobile-client: $MOBILE_CLIENT_KEY` to skip CAPTCHA with a 2/24h-per-IP limit — app-extractable secrets only raise the bar; the rate limit does the real work.
+- **B3** — `GET /api/matches` mirrors the matches page for mobile.
+- **B4** — `push_tokens` table (migration 00022), `/api/push-tokens` register/unregister (admin-client writes so a device switching accounts can re-own its token), and `notifyUser()` now sends Expo Push (`exp.host/--/api/v2/push/send`) alongside email with the same pref gating, pruning tokens Expo reports as DeviceNotRegistered.
+- **B5** — `DELETE /api/account` (requires `{ "confirm": "DELETE" }`), cleans the user's storage folder, deletes the auth user (cascades through profiles → everything). Danger-zone button in ProfileEditForm. Required by App Store Guideline 5.1.1(v).
+- **B6** — `blocks` table (migration 00023, blocker-only RLS), `/api/blocks` GET/POST/DELETE, `isBlockedEitherWay()` (service-role, fails open pre-migration) enforced in conversations POST, messages POST, offers POST, and comments POST. BlockButton on public profiles.
+
+**Verified (S22):** Bearer GETs (offers/conversations/matches) 200 with correct RLS scoping; no/garbage token → 401; listing created via Bearer with no Turnstile then deleted via Bearer; delete-account confirm guard → 400, real deletion verified gone; push/blocks routes fail gracefully pre-migration; cookie-path regression green (offers/conversations/matches all 200 from a browser session).
+
+**To activate:** run migrations `00022_push_tokens.sql` and `00023_blocks.sql` in the SQL Editor; set `MOBILE_CLIENT_KEY` in Vercel env when the app ships.
+
+---
+
 ## Session 20 Changes — G6 Country UX Polish
 
 Roadmap item **G6**: country is now a visible, validated trader-location signal with no Brunei assumptions.
@@ -909,13 +927,13 @@ Architecture stays **hybrid** (unchanged in spirit from the original Option A): 
 
 | # | Task | Notes |
 |---|---|---|
-| B1 | `src/lib/supabase/api-auth.ts` — `getAuthUser(request)` cookie→Bearer helper; roll out to every API route | Snippet below still applies |
-| B2 | Turnstile optional when a valid Bearer token is present; stricter rate limits on token-auth requests | |
-| B3 | **New `/api/matches` endpoint** — matching currently lives inside the server component only | Wraps `matchListing()` |
-| B4 | **Push infra**: `push_tokens` table + register/unregister route; extend `notifyUser()` to send Expo Push alongside email, same pref gating | |
-| B5 | **Account deletion** (App Store Guideline 5.1.1(v) — required): in-app + web, deletes auth user and cascades profile data | Platform has no delete-account today |
-| B6 | **Block a user** (UGC guideline): `blocks` table; filter conversations/offers/comments from blocked users | Report exists; block does not |
-| B7 | (pre-beta, scale) W20 Redis rate limiting — in-memory limiter resets per serverless instance; mobile traffic multiplies instances | |
+| B1 | `getAuthUser(request)` cookie→Bearer helper, rolled out to all 15 auth routes | **Done S22** — the returned client is token-bound so RLS applies as the user (the old snippet's cookie-client reuse would have evaluated RLS as anon) |
+| B2 | Turnstile optional under Bearer auth + stricter rate limits | **Done S22** — listings POST: bearer skips CAPTCHA, 5/h per user; signup: `x-mobile-client` header vs `MOBILE_CLIENT_KEY` env, 2/24h per IP |
+| B3 | `/api/matches` GET endpoint | **Done S22** — mirrors the matches page for mobile clients |
+| B4 | Push infra: `push_tokens` table, `/api/push-tokens` POST/DELETE, `notifyUser()` sends Expo Push alongside email with dead-token pruning | **Done S22** — needs migration 00022 |
+| B5 | Account deletion: `DELETE /api/account` (confirm-guarded) + danger-zone button in ProfileEditForm; storage cleanup + auth-user delete cascades everything | **Done S22** — verified live with a throwaway user |
+| B6 | Block a user: `blocks` table (00023), `/api/blocks`, `isBlockedEitherWay()` enforced in conversations/messages/offers/comments POST (fails open pre-migration), BlockButton on profiles | **Done S22** — needs migration 00023 |
+| B7 | (pre-beta, scale) W20 Redis rate limiting | Deferred — do before the beta opens |
 
 ### Phase M1 — Lean trading core (first beta build)
 

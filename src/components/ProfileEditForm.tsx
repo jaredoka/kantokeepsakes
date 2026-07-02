@@ -29,6 +29,33 @@ export default function ProfileEditForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDeleteAccount() {
+    const typed = window.prompt(
+      "This permanently deletes your account, listings, offers, and messages. Type DELETE to confirm."
+    );
+    if (typed !== "DELETE") return;
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "DELETE" }),
+      });
+      if (res.ok) {
+        window.location.href = "/";
+      } else {
+        const data = await res.json();
+        setError(data.error || "Failed to delete account.");
+        setDeleting(false);
+      }
+    } catch {
+      setError("Something went wrong.");
+      setDeleting(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -166,6 +193,20 @@ export default function ProfileEditForm({
           <button type="submit" className={styles.saveBtn} disabled={loading}>
             {loading ? "Saving..." : "Save"}
           </button>
+        </div>
+
+        <div className={styles.dangerZone}>
+          <button
+            type="button"
+            className={styles.deleteAccountBtn}
+            onClick={handleDeleteAccount}
+            disabled={deleting}
+          >
+            {deleting ? "Deleting account..." : "Delete account"}
+          </button>
+          <span className={styles.dangerHint}>
+            Permanently removes your account and all your data.
+          </span>
         </div>
       </form>
     </div>

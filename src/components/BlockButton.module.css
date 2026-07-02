@@ -1,0 +1,23 @@
+/* Block/unblock a user (M0/B6) */
+
+.blockBtn {
+  padding: var(--space-xs) var(--space-md);
+  background: transparent;
+  border: 1px solid var(--color-gray-300);
+  color: var(--color-gray-600);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.blockBtn:hover:not(:disabled) {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.blocked {
+  border-color: #dc2626;
+  color: #dc2626;
+}

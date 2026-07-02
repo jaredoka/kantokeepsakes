@@ -64,19 +64,41 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!turnstileToken) {
-    return NextResponse.json(
-      { error: "CAPTCHA verification is required." },
-      { status: 400 }
-    );
-  }
+  // Turnstile has no mobile SDK. Signup requests carrying the mobile client
+  // key (embedded in the app, checked against MOBILE_CLIENT_KEY) skip the
+  // CAPTCHA and get a stricter rate limit instead (B2). App-extractable
+  // secrets only raise the bar — the rate limit does the real work.
+  const mobileKey = process.env.MOBILE_CLIENT_KEY;
+  const isMobileClient =
+    !!mobileKey && request.headers.get("x-mobile-client") === mobileKey;
 
-  const turnstileValid = await verifyTurnstileToken(turnstileToken);
-  if (!turnstileValid) {
-    return NextResponse.json(
-      { error: "CAPTCHA verification failed. Please try again." },
-      { status: 400 }
+  if (isMobileClient) {
+    const { success: mobileWithinLimit } = rateLimit(
+      `signup-mobile:${ip}`,
+      2,
+      SIGNUP_WINDOW_MS
     );
+    if (!mobileWithinLimit) {
+      return NextResponse.json(
+        { error: "Too many signup attempts. Please try again later." },
+        { status: 429 }
+      );
+    }
+  } else {
+    if (!turnstileToken) {
+      return NextResponse.json(
+        { error: "CAPTCHA verification is required." },
+        { status: 400 }
+      );
+    }
+
+    const turnstileValid = await verifyTurnstileToken(turnstileToken);
+    if (!turnstileValid) {
+      return NextResponse.json(
+        { error: "CAPTCHA verification failed. Please try again." },
+        { status: 400 }
+      );
+    }
   }
 
   const { data: existingUser } = await supabaseAdmin

@@ -179,3 +179,34 @@
   width: 15px;
   height: 15px;
 }
+
+/* Danger zone — account deletion (M0/B5) */
+.dangerZone {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-gray-200);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.deleteAccountBtn {
+  padding: var(--space-xs) var(--space-md);
+  background: transparent;
+  border: 1px solid #dc2626;
+  color: #dc2626;
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.deleteAccountBtn:hover:not(:disabled) {
+  background: #dc2626;
+  color: #fff;
+}
+
+.dangerHint {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+}
