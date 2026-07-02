@@ -1,4 +1,4 @@
-# Kanto Keepsakes — Session 20 Handoff
+# Kanto Keepsakes — Session 21 Handoff
 
 ## Project Overview
 
@@ -7,6 +7,8 @@
 Started as a Brunei-focused retail site; per owner decision (D1) the shop is **retired** and Kanto Keepsakes is now a pure peer-to-peer trading platform. The platform also stays out of shipping entirely (D3) — traders arrange the exchange themselves.
 
 Stack: **Next.js 16.2.7** · **React 19** · **TypeScript** · **Supabase** (Postgres + Auth + Storage + Realtime) · **Tailwind v4** · **CSS Modules**
+
+**Current status (S21):** Website Phase 5 is complete — G1 email notifications, G2 have/want matching, G3 counteroffers, G4 listing comments, G5 shop retired, G6 country UX. G7 (public launch — remove `SITE_PASSWORD`) is gated until the iOS app is ready (D5). **Next milestone: the iOS app.** Migrations applied through 00021.
 
 ### Product decision log (Session 14 — resolved by owner)
 
@@ -132,6 +134,10 @@ Branch protection on `main` has been configured in GitHub UI (require PR before 
 | Profile edit (bio + username) | Done S5 | `ProfileEditForm.tsx` + `PATCH /api/profile` |
 | Sold-listing archive on profile | Done | Same page, `getSoldListings()` |
 | Saved listings / watchlist | Done | `SaveButton.tsx`, `/marketplace/saved`, `saved_listings` table |
+| Have/Want matching (Matches page) | Done S16 | `/marketplace/matches`, `matching.ts` — card identity from image URLs, two-way badges |
+| Listing comments (community vetting) | Done S18 | `ListingComments.tsx`, `/api/listings/[id]/comments`, migration 00020 |
+| Country display (flags on cards + detail) | Done S20 | `ListingCard.tsx`, detail status row, `countryFlag()` |
+| Marketplace landing home page | Done S19 | `src/app/page.tsx` — hero, feature cards, principles strip |
 
 ### Offers
 | Feature | Status | Files |
@@ -141,6 +147,8 @@ Branch protection on `main` has been configured in GitHub UI (require PR before 
 | View offers on listing | Done | `OfferList.tsx` |
 | Accept offer (auto-declines others) | Done | `OfferList.tsx` → `PATCH /api/offers/[id]` |
 | Decline offer | Done | `OfferList.tsx` → `PATCH /api/offers/[id]` |
+| Counteroffers (negotiation threads) | Done S17 | Same route, `parent_offer_id`/`author_id`, migration 00019 |
+| Email notifications (offers/messages/trades + prefs) | Done S15 | `src/lib/email.ts` (Resend), migration 00018, `ProfileEditForm` toggles |
 | Trade confirmation + reputation | Done | `TradeConfirmation.tsx` + `/api/trade-confirmations` |
 
 ### Inbox / Messaging
@@ -197,6 +205,7 @@ src/
       inbox/              <- conversations
       user/[username]/    <- public profile + edit (own only)
       saved/              <- watchlist
+      matches/            <- have/want matching page (S16)
       my-listings/        <- own listings
     login/                <- login + ?next= redirect
     signup/               <- signup + ?next= redirect
@@ -242,12 +251,14 @@ src/
       middleware.ts       <- updateSession (called by proxy.ts)
     marketplace/
       queries.ts          <- fetchListings() with filters, sort, pagination
+      matching.ts         <- card-key derivation from image URLs + matchListing() (S16)
       types.ts            <- all TypeScript types + enums
       dates.ts            <- expiry helpers
       validation.ts       <- field validators for listings, offers, images
       grading.ts          <- parseGradingTag() utility
       cardData.ts         <- ERA_DATA (from generated JSON), JA_SET_MAP, PTCGIO_SET_MAP, TRANSLATION_MAP, expandQuery, COUNTRIES, STATES_BY_COUNTRY
       cardData.generated.json <- era/set taxonomy + pokemontcg.io map; rebuild with `npm run update-cards` (S13)
+    email.ts              <- Resend sendEmail() + notifyUser() with pref gating (S15)
     turnstile.ts          <- Cloudflare Turnstile server-side verify
     rate-limit.ts         <- in-memory rate limiter (Map-based, 60s cleanup)
   proxy.ts                <- Next.js 16 proxy (replaces middleware.ts)
@@ -1076,7 +1087,7 @@ export async function getAuthUser(request: NextRequest) {
 |---|---|---|---|
 | POST | `/api/offers` | User | Cannot offer on own listing |
 | GET | `/api/offers?listingId=` | User | Owner sees all; others see own |
-| PATCH | `/api/offers/[id]` | Listing owner | Accept auto-declines others |
+| PATCH | `/api/offers/[id]` | Either trade party (turn-based) | accept / decline / counter; accept auto-declines others |
 
 ### Conversations
 | Method | Route | Auth | Notes |
@@ -1099,6 +1110,13 @@ export async function getAuthUser(request: NextRequest) {
 | GET | `/api/pokemon-tcg/search` | Public | 30/min per IP |
 | GET | `/api/pokemon-tcg/sets` | Public | 20/min per IP |
 | GET | `/api/pokemon-tcg/series` | Public | 20/min per IP |
+
+### Comments
+| Method | Route | Auth | Notes |
+|---|---|---|---|
+| GET | `/api/listings/[id]/comments` | Public | Oldest first, limit 200 |
+| POST | `/api/listings/[id]/comments` | User | 10/min rate limit, 500 chars |
+| DELETE | `/api/comments/[id]` | Author or admin | RLS-enforced |
 
 ### Profile + Reports + Admin
 | Method | Route | Auth |

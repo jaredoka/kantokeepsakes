@@ -90,6 +90,7 @@ src/
       inbox/[id]/page.tsx           # Chat with realtime
       user/[username]/page.tsx      # Public profile + edit (own)
       saved/page.tsx                # Watchlist
+      matches/page.tsx              # Have/Want matching (find trades for me)
       my-listings/page.tsx          # Own listings
     login/                          # Login + ?next= redirect
     signup/                         # Signup + Turnstile + ?next= redirect
@@ -107,6 +108,7 @@ src/
       reports/route.ts              # Submit report
       trade-completions/            # Both-parties-complete step
       trade-confirmations/          # Create + read (gated behind completions)
+      comments/                     # Delete comment (author/admin)
       pokemon-tcg/                  # Card search + sets + series proxy to TCGdex
       admin/                        # Ban + report resolution
       cron/expire-listings/         # Daily auto-expire (Vercel cron)
@@ -137,6 +139,7 @@ src/
       middleware.ts                 # Session refresh (called by proxy.ts)
     marketplace/
       queries.ts                    # fetchListings() with filters, sort, pagination
+      matching.ts                   # Have/want matching (card keys from image URLs)
       types.ts                      # TypeScript types + enums + constants
       dates.ts                      # Expiry date helpers
       validation.ts                 # Field validators (listings, offers, images)
