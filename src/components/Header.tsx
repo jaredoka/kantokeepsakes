@@ -179,10 +179,18 @@ export default function Header() {
         {/* Marketplace — only inline nav link */}
         <Link
           href="/marketplace"
-          className={`${styles.marketplaceLink} ${isMarketplace ? styles.marketplaceLinkActive : ""}`}
+          className={`${styles.marketplaceLink} ${isMarketplace && pathname !== "/marketplace/matches" ? styles.marketplaceLinkActive : ""}`}
         >
           Marketplace
         </Link>
+        {authLoaded && username && (
+          <Link
+            href="/marketplace/matches"
+            className={`${styles.marketplaceLink} ${pathname === "/marketplace/matches" ? styles.marketplaceLinkActive : ""}`}
+          >
+            Matches
+          </Link>
+        )}
 
         {/* Right: Avatar → Bell → Hamburger */}
         <div className={styles.rightActions}>
@@ -322,6 +330,15 @@ export default function Header() {
               onClick={() => setMenuOpen(false)}
             >
               Marketplace
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/marketplace/matches"
+              className={styles.navLink}
+              onClick={() => setMenuOpen(false)}
+            >
+              Matches
             </Link>
           </li>
           <li>
