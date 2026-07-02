@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyUser } from "@/lib/email";
 
 // POST — complete or dispute a trade
 export async function POST(request: NextRequest) {
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
   // Get the listing
   const { data: listing } = await supabase
     .from("listings")
-    .select("id, user_id, status")
+    .select("id, user_id, status, title")
     .eq("id", listingId)
     .single();
 
@@ -176,6 +177,7 @@ export async function POST(request: NextRequest) {
   }
 
   // If both parties have now completed, mark listing as sold
+  let bothCompleted = false;
   if (action === "complete") {
     const { count } = await supabase
       .from("trade_completions")
@@ -184,11 +186,38 @@ export async function POST(request: NextRequest) {
       .in("status", ["completed", "auto_completed"]);
 
     if (count && count >= 2) {
+      bothCompleted = true;
       await supabase
         .from("listings")
         .update({ status: "sold" })
         .eq("id", listingId);
     }
+  }
+
+  // Email the trade progress (after the response is sent)
+  if (action === "complete") {
+    after(async () => {
+      const otherPartyId = isOwner
+        ? acceptedOffer.offerer_id
+        : listing.user_id;
+      const { data: actor } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", user.id)
+        .single();
+      const data = {
+        fromUsername: actor?.username,
+        listingTitle: listing.title,
+        listingId: listing.id,
+      };
+      if (bothCompleted) {
+        // Both sides done — invite both parties to rate each other
+        await notifyUser(otherPartyId, "trade_ready_to_rate", data);
+        await notifyUser(user.id, "trade_ready_to_rate", data);
+      } else {
+        await notifyUser(otherPartyId, "trade_partner_completed", data);
+      }
+    });
   }
 
   return NextResponse.json({ success: true, status }, { status: 201 });

@@ -7,16 +7,25 @@ import styles from "./ProfileEditForm.module.css";
 interface ProfileEditFormProps {
   currentUsername: string;
   currentBio: string | null;
+  currentNotifyOffers?: boolean;
+  currentNotifyMessages?: boolean;
+  currentNotifyTrades?: boolean;
 }
 
 export default function ProfileEditForm({
   currentUsername,
   currentBio,
+  currentNotifyOffers = true,
+  currentNotifyMessages = true,
+  currentNotifyTrades = true,
 }: ProfileEditFormProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [username, setUsername] = useState(currentUsername);
   const [bio, setBio] = useState(currentBio ?? "");
+  const [notifyOffers, setNotifyOffers] = useState(currentNotifyOffers);
+  const [notifyMessages, setNotifyMessages] = useState(currentNotifyMessages);
+  const [notifyTrades, setNotifyTrades] = useState(currentNotifyTrades);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -31,7 +40,15 @@ export default function ProfileEditForm({
       const res = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: username.trim(), bio: bio.trim() }),
+        body: JSON.stringify({
+          username: username.trim(),
+          bio: bio.trim(),
+          // Only send prefs that changed (keeps saves working until
+          // migration 00018 adds the notify_* columns)
+          ...(notifyOffers !== currentNotifyOffers && { notifyOffers }),
+          ...(notifyMessages !== currentNotifyMessages && { notifyMessages }),
+          ...(notifyTrades !== currentNotifyTrades && { notifyTrades }),
+        }),
       });
 
       const data = await res.json();
@@ -102,6 +119,34 @@ export default function ProfileEditForm({
           <span className={styles.charCount}>{bio.length}/500</span>
         </div>
 
+        <fieldset className={styles.notifyGroup}>
+          <legend className={styles.label}>Email notifications</legend>
+          <label className={styles.notifyOption}>
+            <input
+              type="checkbox"
+              checked={notifyOffers}
+              onChange={(e) => setNotifyOffers(e.target.checked)}
+            />
+            Offers on my listings and offer outcomes
+          </label>
+          <label className={styles.notifyOption}>
+            <input
+              type="checkbox"
+              checked={notifyMessages}
+              onChange={(e) => setNotifyMessages(e.target.checked)}
+            />
+            New messages while I&apos;m away
+          </label>
+          <label className={styles.notifyOption}>
+            <input
+              type="checkbox"
+              checked={notifyTrades}
+              onChange={(e) => setNotifyTrades(e.target.checked)}
+            />
+            Trade completions and ratings
+          </label>
+        </fieldset>
+
         <div className={styles.actions}>
           <button
             type="button"
@@ -110,6 +155,9 @@ export default function ProfileEditForm({
               setOpen(false);
               setUsername(currentUsername);
               setBio(currentBio ?? "");
+              setNotifyOffers(currentNotifyOffers);
+              setNotifyMessages(currentNotifyMessages);
+              setNotifyTrades(currentNotifyTrades);
               setError(null);
             }}
           >

@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyUser } from "@/lib/email";
 
 const RATING_WINDOW_DAYS = 14;
 
@@ -185,6 +186,19 @@ export async function POST(request: NextRequest) {
 
   // Update the confirmed user's reputation
   await updateReputation(supabase, confirmedUserId);
+
+  // Email the rated user (after the response is sent)
+  after(async () => {
+    const { data: confirmer } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .single();
+    await notifyUser(confirmedUserId, "rating_received", {
+      fromUsername: confirmer?.username,
+      rating,
+    });
+  });
 
   return NextResponse.json({ success: true }, { status: 201 });
 }

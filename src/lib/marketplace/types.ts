@@ -83,6 +83,10 @@ export interface Profile {
   created_at: string;
   is_banned: boolean;
   last_active_at: string;
+  // Email notification preferences (00018); optional until migration applied
+  notify_offers?: boolean;
+  notify_messages?: boolean;
+  notify_trades?: boolean;
 }
 
 export interface Listing {

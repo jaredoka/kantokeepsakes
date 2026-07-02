@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyUser } from "@/lib/email";
 
 // PATCH — accept or decline an offer (listing owner only)
 export async function PATCH(
@@ -50,7 +51,7 @@ export async function PATCH(
   // Get the offer with listing info
   const { data: offer } = await supabase
     .from("offers")
-    .select("id, listing_id, offerer_id, status, listings(user_id)")
+    .select("id, listing_id, offerer_id, status, listings(user_id, title)")
     .eq("id", id)
     .single();
 
@@ -62,7 +63,7 @@ export async function PATCH(
   }
 
   // Only the listing owner can accept/decline
-  const listing = offer.listings as unknown as { user_id: string };
+  const listing = offer.listings as unknown as { user_id: string; title: string };
   if (listing.user_id !== user.id) {
     return NextResponse.json(
       { error: "Only the listing owner can respond to offers." },
@@ -99,6 +100,24 @@ export async function PATCH(
       .neq("id", id)
       .eq("status", "pending");
   }
+
+  // Email the offerer with the outcome (after the response is sent)
+  after(async () => {
+    const { data: owner } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .single();
+    await notifyUser(
+      offer.offerer_id,
+      status === "accepted" ? "offer_accepted" : "offer_declined",
+      {
+        fromUsername: owner?.username,
+        listingTitle: listing.title,
+        listingId: offer.listing_id,
+      }
+    );
+  });
 
   return NextResponse.json({ success: true });
 }

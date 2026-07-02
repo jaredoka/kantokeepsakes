@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { notifyUser } from "@/lib/email";
 
 const MESSAGE_LIMIT = 30; // max messages per minute per user
 const MESSAGE_WINDOW_MS = 60 * 1000;
@@ -189,6 +190,35 @@ export async function POST(
     .from("conversations")
     .update({ last_message_at: new Date().toISOString() })
     .eq("id", conversationId);
+
+  // Email the other participant — only for the first unread message, so an
+  // active chat doesn't generate an email per message. Reading the chat
+  // marks messages read and re-arms the notification.
+  after(async () => {
+    const recipientId =
+      conversation.participant_1 === user.id
+        ? conversation.participant_2
+        : conversation.participant_1;
+
+    const { count } = await supabase
+      .from("messages")
+      .select("*", { count: "exact", head: true })
+      .eq("conversation_id", conversationId)
+      .eq("sender_id", user.id)
+      .eq("is_read", false)
+      .neq("id", message.id);
+    if (count && count > 0) return; // already has unread from us — no email
+
+    const { data: sender } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .single();
+    await notifyUser(recipientId, "new_message", {
+      fromUsername: sender?.username,
+      conversationId,
+    });
+  });
 
   return NextResponse.json(message, { status: 201 });
 }
