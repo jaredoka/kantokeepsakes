@@ -188,6 +188,20 @@ export interface OfferWithProfile extends Offer {
   profiles: Pick<Profile, "username" | "avatar_url" | "reputation_score" | "completed_trades">;
 }
 
+// Listing comments (00020)
+
+export interface ListingComment {
+  id: string;
+  listing_id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+}
+
+export interface ListingCommentWithProfile extends ListingComment {
+  profiles: Pick<Profile, "username" | "reputation_score" | "completed_trades"> | null;
+}
+
 // Grading
 
 export const GRADING_COMPANIES = ["RAW", "PSA", "CGC", "BGS", "SEALED"] as const;
