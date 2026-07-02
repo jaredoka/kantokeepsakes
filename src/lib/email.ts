@@ -5,7 +5,10 @@
  * and notifyUser() never throws — callers fire-and-forget from route handlers
  * (wrapped in next/server `after()` so sends never delay the response).
  */
-import { createClient as createAdminClient } from "@supabase/supabase-js";
+import {
+  createClient as createAdminClient,
+  type SupabaseClient,
+} from "@supabase/supabase-js";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://kantokeepsakes.com";
@@ -215,7 +218,55 @@ export async function sendEmail(opts: {
 }
 
 /**
- * Send a notification email to a user, honoring their notification
+ * Send Expo push notifications to a user's registered devices (B4).
+ * Invalid/expired tokens reported by Expo are pruned.
+ */
+async function sendExpoPush(
+  admin: SupabaseClient,
+  userId: string,
+  content: EmailContent
+): Promise<void> {
+  const { data } = await admin
+    .from("push_tokens")
+    .select("token")
+    .eq("user_id", userId);
+  const tokens = (data ?? []) as { token: string }[];
+  if (tokens.length === 0) return;
+
+  const messages = tokens.map((t) => ({
+    to: t.token,
+    title: content.heading,
+    body: content.lines[0] || content.subject,
+    data: { url: content.ctaUrl },
+  }));
+
+  const res = await fetch("https://exp.host/--/api/v2/push/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(messages),
+  });
+  if (!res.ok) {
+    console.error(`[push] Expo push failed (${res.status})`);
+    return;
+  }
+  // Prune tokens Expo says are no longer registered
+  const result = (await res.json()) as {
+    data?: { status: string; details?: { error?: string } }[];
+  };
+  const dead = (result.data || [])
+    .map((r, i) =>
+      r.status === "error" && r.details?.error === "DeviceNotRegistered"
+        ? tokens[i].token
+        : null
+    )
+    .filter((t): t is string => !!t);
+  if (dead.length > 0) {
+    await admin.from("push_tokens").delete().in("token", dead);
+  }
+}
+
+/**
+ * Notify a user by email and push, honoring their notification
  * preferences. Never throws — route handlers fire-and-forget this.
  */
 export async function notifyUser(
@@ -238,14 +289,20 @@ export async function notifyUser(
     // Missing columns (migration 00018 not yet applied) default to enabled
     if (profile[PREF_COLUMN[kind]] === false) return;
 
-    const { data: userRes } = await admin.auth.admin.getUserById(userId);
-    const email = userRes?.user?.email;
-    if (!email) return;
-
     const content = buildContent(kind, {
       ...data,
       recipientUsername: profile.username || undefined,
     });
+
+    // Push to registered mobile devices (no-op until tokens exist)
+    await sendExpoPush(admin, userId, content).catch((e) =>
+      console.error("[push] failed:", e)
+    );
+
+    const { data: userRes } = await admin.auth.admin.getUserById(userId);
+    const email = userRes?.user?.email;
+    if (!email) return;
+
     await sendEmail({
       to: email,
       subject: content.subject,

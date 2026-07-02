@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse, after } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/api-auth";
+import { isBlockedEitherWay } from "@/lib/marketplace/blocks";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { notifyUser } from "@/lib/email";
 
@@ -12,10 +13,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: conversationId } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, supabase } = await getAuthUser(request);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -88,10 +86,7 @@ export async function POST(
 ) {
   const { id: conversationId } = await params;
   const ip = getClientIp(request.headers);
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, supabase } = await getAuthUser(request);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -129,6 +124,17 @@ export async function POST(
     conversation.participant_2 !== user.id
   ) {
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
+
+  const otherParticipant =
+    conversation.participant_1 === user.id
+      ? conversation.participant_2
+      : conversation.participant_1;
+  if (await isBlockedEitherWay(user.id, otherParticipant)) {
+    return NextResponse.json(
+      { error: "You cannot message this user." },
+      { status: 403 }
+    );
   }
 
   // Check ban status

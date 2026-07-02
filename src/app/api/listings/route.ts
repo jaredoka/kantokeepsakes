@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/api-auth";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateListing } from "@/lib/marketplace/validation";
@@ -24,10 +24,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, supabase, via } = await getAuthUser(request);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -89,20 +86,35 @@ export async function POST(request: NextRequest) {
     turnstileToken,
   } = body;
 
-  // Validate Turnstile
-  if (!turnstileToken) {
-    return NextResponse.json(
-      { error: "CAPTCHA verification is required." },
-      { status: 400 }
+  // Validate Turnstile — skipped for Bearer-authenticated (mobile) requests,
+  // which get a stricter per-user rate limit instead (B2)
+  if (via === "bearer") {
+    const { success: mobileWithinLimit } = rateLimit(
+      `listing-mobile:${user.id}`,
+      5,
+      60 * 60 * 1000
     );
-  }
+    if (!mobileWithinLimit) {
+      return NextResponse.json(
+        { error: "Too many listings. Please try again later." },
+        { status: 429 }
+      );
+    }
+  } else {
+    if (!turnstileToken) {
+      return NextResponse.json(
+        { error: "CAPTCHA verification is required." },
+        { status: 400 }
+      );
+    }
 
-  const turnstileValid = await verifyTurnstileToken(turnstileToken);
-  if (!turnstileValid) {
-    return NextResponse.json(
-      { error: "CAPTCHA verification failed. Please try again." },
-      { status: 400 }
-    );
+    const turnstileValid = await verifyTurnstileToken(turnstileToken);
+    if (!turnstileValid) {
+      return NextResponse.json(
+        { error: "CAPTCHA verification failed. Please try again." },
+        { status: 400 }
+      );
+    }
   }
 
   // Normalise images to HaveImage[] / WantItem[] for validation

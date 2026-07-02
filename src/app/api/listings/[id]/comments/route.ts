@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/api-auth";
+import { isBlockedEitherWay } from "@/lib/marketplace/blocks";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 const COMMENT_LIMIT = 10; // max comments per minute per user
@@ -39,10 +41,7 @@ export async function POST(
 ) {
   const { id: listingId } = await params;
   const ip = getClientIp(request.headers);
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, supabase } = await getAuthUser(request);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -108,6 +107,22 @@ export async function POST(
     return NextResponse.json(
       { error: "Listing not found." },
       { status: 404 }
+    );
+  }
+
+  const { data: commentListing } = await supabase
+    .from("listings")
+    .select("user_id")
+    .eq("id", listingId)
+    .single();
+  if (
+    commentListing &&
+    commentListing.user_id !== user.id &&
+    (await isBlockedEitherWay(user.id, commentListing.user_id))
+  ) {
+    return NextResponse.json(
+      { error: "You cannot comment on this listing." },
+      { status: 403 }
     );
   }
 
