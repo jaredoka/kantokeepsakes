@@ -1,0 +1,21 @@
+/** Kanto Keepsakes design tokens — mirrors the website's globals.css */
+export const colors = {
+  yellow: "#f5c518",
+  yellowDark: "#c49010",
+  yellowLight: "#fdeeb3",
+  black: "#111111",
+  white: "#ffffff",
+  cream: "#fffdf0",
+  gray100: "#f3f4f6",
+  gray200: "#e5e7eb",
+  gray300: "#d1d5db",
+  gray400: "#9ca3af",
+  gray500: "#6b7280",
+  gray600: "#4b5563",
+  gray700: "#374151",
+  gray900: "#111827",
+  red: "#dc2626",
+  green: "#16a34a",
+  wtsGold: "#c49010",
+  wtbBlue: "#1565a8",
+};

@@ -144,7 +144,25 @@ async function handlePasswordSubmit(request: NextRequest): Promise<NextResponse 
 /*  Main proxy                                                         */
 /* ------------------------------------------------------------------ */
 
+// CORS for API routes (M1): lets Bearer-token clients (the mobile app's web
+// builds and local Expo dev) call /api/*. Safe with a wildcard origin because
+// browsers never send cookies on wildcard CORS — cookie-authed requests stay
+// same-origin only; cross-origin callers must present a Bearer token.
+const corsHeaders: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, content-type, x-mobile-client",
+  "Access-Control-Max-Age": "86400",
+};
+
 export async function proxy(request: NextRequest) {
+  const isApi = request.nextUrl.pathname.startsWith("/api/");
+
+  // CORS preflight for API routes
+  if (isApi && request.method === "OPTIONS") {
+    return new NextResponse(null, { status: 204, headers: corsHeaders });
+  }
+
   // Password gate — check before anything else
   const submitResponse = await handlePasswordSubmit(request);
   if (submitResponse) return submitResponse;
@@ -165,6 +183,12 @@ export async function proxy(request: NextRequest) {
 
   for (const [key, value] of Object.entries(securityHeaders)) {
     response.headers.set(key, value);
+  }
+
+  if (isApi) {
+    for (const [key, value] of Object.entries(corsHeaders)) {
+      response.headers.set(key, value);
+    }
   }
 
   return response;
