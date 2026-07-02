@@ -8,7 +8,7 @@ Started as a Brunei-focused retail site; per owner decision (D1) the shop is **r
 
 Stack: **Next.js 16.2.7** · **React 19** · **TypeScript** · **Supabase** (Postgres + Auth + Storage + Realtime) · **Tailwind v4** · **CSS Modules**
 
-**Current status (S21):** Website Phase 5 is complete — G1 email notifications, G2 have/want matching, G3 counteroffers, G4 listing comments, G5 shop retired, G6 country UX. G7 (public launch — remove `SITE_PASSWORD`) is gated until the iOS app is ready (D5). **Next milestone: the iOS app.** Migrations applied through 00021.
+**Current status (S21):** Website Phase 5 is complete — G1 email notifications, G2 have/want matching, G3 counteroffers, G4 listing comments, G5 shop retired, G6 country UX. G7 (public launch — remove `SITE_PASSWORD`) is gated until the mobile app is ready (D5). **Next milestone: the mobile app (React Native/Expo, both stores — see Mobile App Roadmap, decisions D6–D9).** Migrations applied through 00021.
 
 ### Product decision log (Session 14 — resolved by owner)
 
@@ -18,7 +18,7 @@ Stack: **Next.js 16.2.7** · **React 19** · **TypeScript** · **Supabase** (Pos
 | D2 | Money model | **Trade-first**: no price field, cash negotiated in chat, platform never touches payments (recommended default, accepted) |
 | D3 | Shipping / cross-border trust | **No shipping features at all** — users handle trades themselves. No tracking, no shipping-proof step, no ships-to fields. Trust = reputation + two-step completion + moderation, global from day one (owner decision) |
 | D4 | CSGOLounge-era features | **All four**: have/want matching, counteroffers, listing comments, email notifications (recommended default, accepted) |
-| D5 | Public launch gating | **Password gate stays until both the website (Phase 5) and the iOS app are ready** to launch together (owner decision) |
+| D5 | Public launch gating | **Password gate stays until both the website (Phase 5) and the mobile app are ready** to launch together (owner decision) |
 
 Known code-level implications: ~~retiring the shop~~ (**done S19**); `currency` is hardcoded to `"BND"` in the create flow and is meaningless under D2; existing listings were backfilled to `country = 'Brunei'` and the browse default should not assume Brunei; UI is English-only (JA localization is a candidate later phase).
 
@@ -764,7 +764,7 @@ Playwright (headless Edge) against `next dev`, logged in as devtest: era-wide se
 
 ## Website Roadmap
 
-All website work should be completed before beginning iOS app development.
+Website Phase 5 is complete; mobile app development (see Mobile App Roadmap below) is the current milestone.
 
 ### Website Phase 1 — Pre-Launch Blockers (Must Fix) ✓
 
@@ -869,7 +869,7 @@ The work that turns the current site into the worldwide trading board described 
 | G4 | Listing comment threads | Public community vetting, CSGOLounge-style | **Done S18** — listing_comments table (migration 00020), comments on listing detail pages |
 | G5 | Retire the shop | Marketplace-only identity (D1) | **Done S19** — catalog/cart/checkout and legacy static site removed; home page is a marketplace landing |
 | G6 | Country UX polish | Don't assume Brunei for a worldwide audience | **Done S20** — country displayed on cards/detail, DB default dropped (migration 00021), server-side validation, create-page prefill |
-| G7 | Public launch | Site is staging-gated | Remove `SITE_PASSWORD` **only when both the website and the iOS app are ready** (D5); launch together |
+| G7 | Public launch | Site is staging-gated | Remove `SITE_PASSWORD` **only when both the website and the mobile app are ready** (D5); launch together after the closed beta (D9) |
 
 **Deliberately out of scope (per D2/D3):** on-platform payments, escrow, per-listing prices/currencies, any shipping features (tracking, shipping-proof, ships-to — users handle trades themselves), and gambling/raffle mechanics of any kind.
 
@@ -890,114 +890,65 @@ General polish, lower priority than Phase 5.
 
 ---
 
-## iOS App Roadmap
+## Mobile App Roadmap — React Native / Expo (revised S21)
 
-Begin after Website Phase 5 items G1–G6 are complete. **Public launch (G7) happens only when both the website and the iOS app are ready** — the password gate stays until then (D5). The iOS app covers marketplace features only (the shop is retired per D1).
+Goal: **the app everyone uses for trading Pokemon TCG** — which means both stores. Begin after Website Phase 5 (done). Public launch (G7) happens only when the website and the mobile app are ready to launch together (D5); a closed beta runs first (D9).
 
-### Decision Log
+### Decision Log (S21 — owner decisions)
 
-| Decision | Choice | Reasoning |
-|---|---|---|
-| Architecture | **Option A — Direct Supabase SDK (hybrid)** | iOS uses Supabase Swift SDK for direct reads + realtime. Server-validated writes (ban checks, rate limiting, Turnstile, auto-decline logic) still call the existing Next.js API routes. Avoids reworking all API routes for cookie-less auth. |
-| Turnstile (CAPTCHA) | **Option 2 — Skip Turnstile on iOS** | Cloudflare Turnstile has no native iOS SDK. Instead, make Turnstile optional in the API routes when a valid auth token is present. Rely on stricter server-side rate limiting for iOS requests (lower limits for requests without a Turnstile token). |
+| # | Decision | Choice | Reasoning |
+|---|---|---|---|
+| D6 | Platform | **React Native + Expo, one TypeScript codebase → App Store + Play Store** (supersedes the S-era Swift/iOS-only plan) | "Everyone" includes Android's ~70% global share, dominant in SEA/JP/LatAm TCG communities. Reuses TS skills/types; supabase-js works as-is; Expo Push unifies APNs+FCM |
+| D7 | V1 scope | **Lean trading core**: auth, browse, listing detail (offers + counteroffers + chat), create listing, my listings, push — then fast-follow parity | Real trader feedback earliest |
+| D8 | Push notifications | **Foundational, phase M1** (was parked at old I23) | Retention backbone for cross-timezone trading; Expo Push makes it cheap |
+| D9 | Beta path | **Closed beta first** (TestFlight + Play internal track) with the Brunei/SEA community while the password gate stays; then joint public launch = G7 | Real trades + store-review teething solved quietly |
 
-### Architecture Diagram
+Architecture stays **hybrid** (unchanged in spirit from the original Option A): supabase-js direct reads + Realtime subscriptions on the client, all validated writes through the existing Next.js API routes with `Authorization: Bearer <token>`. Session storage via expo-secure-store; store pipelines via EAS Build/Submit. Shared code (types, validation, cardData) starts as copied modules, graduating to a workspace package if drift hurts.
 
-```
-                    +-----------+
-                    | Supabase  |
-                    | (Postgres |
-                    |  Auth     |
-                    |  Storage  |
-                    |  Realtime)|
-                    +-----+-----+
-                          |
-              +-----------+-----------+
-              |                       |
-    +---------+--------+    +---------+--------+
-    | Next.js Website  |    |   iOS App        |
-    | (cookie auth)    |    | (token auth)     |
-    |                  |    |                  |
-    | Browser client   |    | Supabase Swift   |
-    | Server client    |    | SDK (direct)     |
-    | API routes       |    |                  |
-    +------------------+    | Calls /api/*     |
-                            | for validated    |
-                            | writes           |
-                            +------------------+
-```
-
-### What the iOS app shares with the website
-
-| Layer | Shared | Notes |
-|---|---|---|
-| Supabase project | Same | Same URL, anon key, database |
-| Auth (users table) | Same | Supabase Auth works cross-platform |
-| RLS policies | Same | Identical security on both clients |
-| Database schema | Same | All tables, enums, relationships |
-| Realtime channels | Same | Messages, unread counts |
-| Storage bucket | Same | `listing-images` bucket with public URLs |
-| Validation rules | Must replicate | havesText/wantsText 2-40 chars, desc optional max 2000, etc. |
-| Server-side logic | API calls | Ban checks, Turnstile, rate limiting, auto-decline on accept |
-
-### iOS Phase 1 — Foundation + Backend Prep
-
-Backend changes (web side) that must happen before the iOS app can call API routes:
+### Phase M0 — Backend prep (website repo, before app code)
 
 | # | Task | Notes |
 |---|---|---|
-| I1 | Create `src/lib/supabase/api-auth.ts` | Shared `getAuthUser(request)` helper: tries cookies first, then `Authorization: Bearer <token>` header |
-| I2 | Update all API routes to use `getAuthUser(request)` | Replace the current `createClient()` + `getUser()` pattern in every route |
-| I3 | Make Turnstile optional in `POST /api/signup` and `POST /api/listings` | Skip Turnstile verification when a valid Bearer token is present; apply stricter rate limits instead |
-| I4 | Add CORS headers if using a custom API domain | Not needed if iOS calls the same Vercel domain |
+| B1 | `src/lib/supabase/api-auth.ts` — `getAuthUser(request)` cookie→Bearer helper; roll out to every API route | Snippet below still applies |
+| B2 | Turnstile optional when a valid Bearer token is present; stricter rate limits on token-auth requests | |
+| B3 | **New `/api/matches` endpoint** — matching currently lives inside the server component only | Wraps `matchListing()` |
+| B4 | **Push infra**: `push_tokens` table + register/unregister route; extend `notifyUser()` to send Expo Push alongside email, same pref gating | |
+| B5 | **Account deletion** (App Store Guideline 5.1.1(v) — required): in-app + web, deletes auth user and cascades profile data | Platform has no delete-account today |
+| B6 | **Block a user** (UGC guideline): `blocks` table; filter conversations/offers/comments from blocked users | Report exists; block does not |
+| B7 | (pre-beta, scale) W20 Redis rate limiting — in-memory limiter resets per serverless instance; mobile traffic multiplies instances | |
 
-iOS app setup:
-
-| # | Task | Notes |
-|---|---|---|
-| I5 | Xcode project setup | SwiftUI, iOS 17+, Swift Package Manager |
-| I6 | Supabase Swift SDK integration | Auth, database, storage, realtime — using the same anon key |
-| I7 | Auth flow | Login, signup (calls `POST /api/signup`), forgot password, session persistence in Keychain |
-| I8 | Tab bar navigation | Browse, Inbox, Profile tabs |
-| I9 | API client helper | Sends `Authorization: Bearer <token>` on all API route calls |
-
-### iOS Phase 2 — Browse + Listings
+### Phase M1 — Lean trading core (first beta build)
 
 | # | Task | Data source |
 |---|---|---|
-| I10 | WTS/WTB browse with filters | Direct SDK query (search, category, language, sort, pagination) |
-| I11 | Listing detail screen | Direct SDK query (images, description, seller card, actions) |
-| I12 | Create listing form + image upload | `POST /api/listings` + `POST /api/listings/upload` |
-| I13 | Edit listing | `PATCH /api/listings/[id]` |
-| I14 | Bump + relist actions | `POST /api/listings/[id]/bump` and `/relist` |
-| I15 | My Listings tab | Direct SDK query |
-| I16 | Saved listings (bookmark toggle) | Direct SDK query + `POST/DELETE` to `saved_listings` via SDK |
+| M1-1 | Expo project setup (TS, EAS, expo-router), Supabase client + secure session | |
+| M1-2 | Auth: login, signup (`POST /api/signup`, Turnstile-skipped), forgot password | |
+| M1-3 | Browse WTS/WTB with filters + search + country | Direct SDK query |
+| M1-4 | Listing detail: haves/wants, seller card, offer threads (accept/decline/counter), comments read, report | SDK reads + existing APIs |
+| M1-5 | Create listing: 5-section form incl. RN CardPicker (era/set/search reusing cardData + TCGdex/pokemontcg.io) | `POST /api/listings` |
+| M1-6 | Inbox + realtime chat | SDK + Realtime + messages API |
+| M1-7 | My listings (bump, relist, edit basics) | Existing APIs |
+| M1-8 | **Push notifications** for offers/counters/messages/trade updates + account deletion + block (compliance set) | B4/B5/B6 |
 
-### iOS Phase 3 — Messaging + Offers
+### Phase M2 — Parity fast-follows
 
-| # | Task | Data source |
-|---|---|---|
-| I17 | Inbox conversation list | Direct SDK query (with last message preview + unread count) |
-| I18 | Chat view with live messages | Direct SDK query + Supabase Realtime channel |
-| I19 | Send messages | `POST /api/conversations/[id]/messages` |
-| I20 | Start conversation from listing | `POST /api/conversations` |
-| I21 | Make offer modal | `POST /api/offers` (WTS: "Make Offer", WTB: "Offer to Sell") |
-| I22 | Offer list on listing detail | Direct SDK query + `PATCH /api/offers/[id]` for accept/decline |
-| I23 | Push notifications (APNs) | Requires Supabase Edge Function or webhook to trigger APNs |
+| # | Task |
+|---|---|
+| M2-1 | Matches screen (`/api/matches`) |
+| M2-2 | Post comments + delete own |
+| M2-3 | Saved listings, profile view/edit, notification prefs |
+| M2-4 | Trade completion + ratings flows |
+| M2-5 | Pull-to-refresh, infinite scroll, offline/error states |
 
-### iOS Phase 4 — Profile + Polish
+### Phase M3 — Beta → joint public launch (G7)
 
-| # | Task | Notes |
-|---|---|---|
-| I24 | User profile view | Direct SDK query |
-| I25 | Profile edit (bio, username) | `PATCH /api/profile` |
-| I26 | Trade confirmation + star rating | `POST /api/trade-confirmations` |
-| I27 | Report user/listing | `POST /api/reports` |
-| I28 | Pull-to-refresh, infinite scroll | Standard iOS UX patterns |
-| I29 | Offline handling + error states | Graceful degradation when network is unavailable |
-| I30 | App Store submission | Screenshots, metadata, review guidelines compliance |
-
-### iOS Screen-to-Website Mapping
+| # | Task |
+|---|---|
+| M3-1 | TestFlight + Play internal beta with the Brunei/SEA community (password gate stays up) |
+| M3-2 | Store submission prep: screenshots, privacy labels/data-safety forms, UGC moderation contact, age rating |
+| M3-3 | Iterate on beta feedback; scale prep (B7 if not done) |
+| M3-4 | **G7: joint public launch** — remove `SITE_PASSWORD`, both store listings live |
+### Screen-to-Website Mapping (still valid; add Matches, Comments, Counteroffers screens)
 
 | iOS Screen | Website Page | Data Source |
 |---|---|---|
@@ -1019,7 +970,7 @@ iOS app setup:
 | Offer List | `OfferList` | Direct SDK query |
 | Report (modal) | `ReportModal` | `POST /api/reports` |
 
-### API routes the iOS app must call
+### API routes the app must call (add: /api/matches, comments routes, push register, account deletion)
 
 These routes contain server-side business logic that cannot be replicated via the Supabase SDK alone:
 
@@ -1040,7 +991,7 @@ These routes contain server-side business logic that cannot be replicated via th
 | `POST /api/reports` | Ban check, duplicate report check |
 | `POST /api/trade-confirmations` | Accepted offer check, party verification, reputation update, auto-mark-sold |
 
-### `getAuthUser` helper (to be created in iOS Phase 1)
+### `getAuthUser` helper (to be created in Phase M0/B1)
 
 ```typescript
 // src/lib/supabase/api-auth.ts
