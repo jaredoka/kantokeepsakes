@@ -42,7 +42,7 @@ export const REPORT_STATUSES = [
 ] as const;
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
-export const OFFER_STATUSES = ["pending", "accepted", "declined"] as const;
+export const OFFER_STATUSES = ["pending", "accepted", "declined", "countered"] as const;
 export type OfferStatus = (typeof OFFER_STATUSES)[number];
 
 // Display labels
@@ -182,6 +182,11 @@ export interface Offer {
   back_image: string | null;
   status: OfferStatus;
   created_at: string;
+  // Counteroffer threading (00019); optional until migration applied.
+  // offerer_id stays the non-owner party on every turn; author_id is who
+  // wrote the turn (null = the offerer).
+  parent_offer_id?: string | null;
+  author_id?: string | null;
 }
 
 export interface OfferWithProfile extends Offer {

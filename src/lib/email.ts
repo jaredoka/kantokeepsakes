@@ -16,6 +16,7 @@ export type NotificationKind =
   | "offer_received"
   | "offer_accepted"
   | "offer_declined"
+  | "offer_countered"
   | "new_message"
   | "trade_partner_completed"
   | "trade_ready_to_rate"
@@ -29,6 +30,7 @@ const PREF_COLUMN: Record<
   offer_received: "notify_offers",
   offer_accepted: "notify_offers",
   offer_declined: "notify_offers",
+  offer_countered: "notify_offers",
   new_message: "notify_messages",
   trade_partner_completed: "notify_trades",
   trade_ready_to_rate: "notify_trades",
@@ -91,6 +93,17 @@ function buildContent(
         ],
         ctaLabel: "Browse the marketplace",
         ctaUrl: `${SITE_URL}/marketplace/wts`,
+      };
+    case "offer_countered":
+      return {
+        subject: `New counteroffer on ${listing}`,
+        heading: "You have a counteroffer",
+        lines: [
+          `${from} sent a counteroffer on ${listing}.`,
+          "Accept it, decline it, or counter back.",
+        ],
+        ctaLabel: "View negotiation",
+        ctaUrl: listingUrl,
       };
     case "new_message":
       return {
