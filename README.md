@@ -1,10 +1,21 @@
 # Kanto Keepsakes
 
-A full-stack web application for **Kanto Keepsakes**, a Pokemon TCG retailer based in Brunei. The site combines an e-commerce product catalog with a community-driven **Marketplace** — a peer-to-peer WTB/WTS trade listing board for Pokemon TCG products, inspired by platforms like CSGOLounge.
+**Kanto Keepsakes** is an online **peer-to-peer marketplace for Pokemon TCG hobbyists around the world** — a have/want trade listing board in the spirit of the golden days of CSGOLounge, minus the gambling. Traders post what they **have** and what they **want** (cards, graded slabs, sealed product, or cash), negotiate through offers and real-time chat, and build reputation through confirmed trades.
 
-Built as a solo developer project using **Claude Code (Opus 4.6 by Anthropic)** as an AI-assisted development tool.
+The site also carries a small e-commerce catalog for the Kanto Keepsakes retail shop in Brunei; the marketplace is the flagship product.
+
+Built as a solo developer project using **Claude Code by Anthropic** as an AI-assisted development tool.
 
 **Live site:** [kantokeepsakes.com](https://kantokeepsakes.com) — hosted on Vercel with Cloudflare DNS
+
+## The Goal
+
+An open, worldwide trading board where the platform provides **discovery, negotiation, and trust** — and stays out of the money:
+
+- **Have/Want listings** — every listing is a trade proposition: card images picked from real TCG data (English + Japanese sets), plus cash/singles/graded/sealed preference flags
+- **Trade-first economy** — cash amounts and payment methods are negotiated between traders in chat; the platform never processes payments and hosts no gambling, jackpots, or betting of any kind
+- **Community trust** — reputation from confirmed two-step trade completions, star ratings, trader badges, reporting and admin moderation; community self-polices like the golden-days trading sites
+- **Global by default** — country/state on every listing and filterable browsing, with cross-timezone features (email notifications) and trade-matching on the roadmap
 
 ---
 
@@ -403,6 +414,20 @@ Improvements to the CardPicker component (sections 3 & 4 of the Create Listing p
 | S12-2 | Japanese language support — JP toggle shows English era/set names, card search works in English | Done S12 |
 | S12-3 | Promos fix — promo cards (e.g. "Pikachu with Grey Felt Hat") are discoverable through the same search flow | Done S12 |
 | S12-4 | Global search — searching with "All Eras" selected returns results from every era and set | Done S12 |
+
+### Global Marketplace Readiness (Planned)
+
+The remaining work to serve Pokemon TCG hobbyists worldwide, in rough priority order. See the handoff document for open product decisions.
+
+| # | Task | Why it matters globally |
+|---|------|------------------------|
+| G1 | Email notifications (offers, messages, trade confirmations) | Traders in different timezones can't rely on being online together |
+| G2 | Have/Want matching ("find trades for me") | The killer feature of golden-era trading sites — surface listings whose haves match your wants and vice versa |
+| G3 | Counteroffers with a short negotiation thread | Accept/decline alone kills trades that a counter would save |
+| G4 | Listing comment threads | Public community vetting of trades, CSGOLounge-style |
+| G5 | "Ships to" scope on listings + country UX polish (stop defaulting to Brunei) | International traders need to know who will actually ship to them |
+| G6 | Shipping-proof step in trade completion (tracking numbers, shipped/received states) | Cross-border trust beyond reputation alone |
+| G7 | Remove the site password gate and launch publicly | Currently staging-only behind `SITE_PASSWORD` |
 
 ---
 

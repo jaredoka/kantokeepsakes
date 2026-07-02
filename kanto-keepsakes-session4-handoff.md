@@ -2,8 +2,22 @@
 
 ## Project Overview
 
-Pokemon TCG peer-to-peer marketplace for Brunei.
+**Goal:** an online peer-to-peer marketplace for **Pokemon TCG hobbyists around the world** — a have/want trade listing board in the spirit of the golden days of CSGOLounge, without the gambling. The platform provides discovery (listings, filters, search), negotiation (offers, real-time chat), and trust (reputation, two-step trade completion, moderation) — and stays out of the money: payment is negotiated between traders in chat.
+
+Started as a Brunei-focused project; the Brunei retail shop (product catalog + WhatsApp checkout) remains as a secondary section while the global marketplace is the flagship.
+
 Stack: **Next.js 16.2.7** · **React 19** · **TypeScript** · **Supabase** (Postgres + Auth + Storage + Realtime) · **Tailwind v4** · **CSS Modules**
+
+### Open product decisions (Session 14 — owner was AFK; recommended defaults assumed, veto anytime)
+
+| # | Decision | Assumed answer | Alternatives considered |
+|---|---|---|---|
+| D1 | Shop's fate in the global vision | **Keep as secondary Brunei-local section; marketplace is flagship** | Retire the shop; take the shop global too |
+| D2 | Money model for a worldwide audience | **Trade-first: no price field, cash negotiated in chat, platform never touches payments** (matches current code: `price: null`, cash is a want-flag) | Optional price + per-listing currency; reference market prices via pokemontcg.io pricing data |
+| D3 | Cross-border trust at launch | **Rep-only, global from day one** (existing reputation + two-step completion + reports/admin); shipping-proof step is roadmap item G6, not a launch blocker | Build shipping-proof before launch; regional (SEA) rollout first |
+| D4 | CSGOLounge-era roadmap features | **All four: have/want matching, counteroffers, listing comments, email notifications** (prioritized in Phase 5 below) | Any subset |
+
+Known code-level implications of the global goal (roadmap items, not yet executed): `currency` is hardcoded to `"BND"` in the create flow and should become meaningless or explicit under D2; existing listings were backfilled to `country = 'Brunei'` and the browse default should not assume Brunei; UI is English-only (JA localization is a candidate later phase).
 
 ---
 
@@ -691,25 +705,42 @@ Implementation details in the "Session 13 Changes" section above. **Update proce
 
 **Database note:** Migrations 00013–00015 were made idempotent in Session 12 (PR #4) after a re-run of 00015 failed with "relation already exists". A combined idempotent SQL block covering 00013–00017 was provided in the Session 12 chat for the Supabase Dashboard → SQL Editor. If the live DB is still missing `wants_*`, `country`, or `state` columns (specific-country filtering or listing creation erroring), run that block — every statement is safe to re-run.
 
+### Website Phase 5 — Global Marketplace Readiness (Next Up)
+
+The work that turns the current site into the worldwide trading board described in the Project Overview. Rough priority order; each item is its own branch/PR.
+
+| # | Task | Why it matters globally | Notes |
+|---|---|---|---|
+| G1 | Email notifications (offers, messages, trade confirmations) | Traders in different timezones can't rely on being online together | Was W19. Resend or SendGrid; new API helper; per-user notification prefs |
+| G2 | Have/Want matching ("find trades for me") | The killer feature of golden-era trading sites | Match listings whose haves ∩ your wants (card names/sets from CardPicker data); needs card identity stored on listings, not just image URLs |
+| G3 | Counteroffers + short negotiation thread | Accept/decline alone kills trades a counter would save | Extend `offers` with parent_offer_id / status `countered` |
+| G4 | Listing comment threads | Public community vetting, CSGOLounge-style | New `listing_comments` table + RLS; moderation hooks into existing reports |
+| G5 | "Ships to" scope + country UX polish | International traders need to know who ships to them | `ships_to` on listings; stop defaulting browse to Brunei assumptions |
+| G6 | Shipping-proof step in trade completion | Cross-border trust beyond reputation | Tracking numbers, shipped/received states on `trade_completions` |
+| G7 | Public launch | Site is staging-gated | Remove `SITE_PASSWORD`, announce |
+
+**Deliberately out of scope (per D2/D3 decisions):** on-platform payments, escrow, per-listing prices/currencies, gambling/raffle mechanics of any kind.
+
 ### Website Phase 4 — Post-Launch Improvements
 
-To be done after the website is live and working.
+General polish, lower priority than Phase 5.
 
 | # | Task | Benefit | Notes |
 |---|---|---|---|
-| W19 | Email notifications | Users get notified of offers, messages, trade confirmations | Resend or SendGrid integration; new API helper |
+| W19 | ~~Email notifications~~ | Moved to **G1** (Phase 5) | — |
 | W20 | Replace in-memory rate limiting with Redis | Current rate limiter resets on every Vercel cold start | Only needed if scaling to multiple instances |
-| W21 | E2E tests with Playwright | Automated regression testing | New test suite; not blocking launch |
+| W21 | E2E tests with Playwright | Automated regression testing | Session 12/13 verification scripts are a starting point |
 | W22 | Avatar upload on profile edit | Users can set a profile picture | Needs new storage bucket for avatars |
 | W23 | Listing image reordering | Users can drag-and-drop to reorder images | Enhancement to `ImageUploader.tsx` |
 | W24 | Edit page alignment with new Create page | Edit page uses old form; should match new 5-section layout | Mirror S10 changes to `[id]/edit/page.tsx` |
 | W25 | Per-card grading overlays | Users can tag individual card thumbnails with PSA/CGC/BGS grades | Descoped from S10; overlay on ThumbContainer |
+| W26 | UI localization (Japanese first) | JP hobbyists are half the card market | Card data is already dual-language; UI strings are not |
 
 ---
 
 ## iOS App Roadmap
 
-Begin after the website is fully launched and stable. The iOS app covers **marketplace features only** (no shop/product catalog).
+Begin after **Website Phase 5 (Global Marketplace Readiness)** is complete and the site is publicly launched and stable. The iOS app covers **marketplace features only** (no shop/product catalog).
 
 ### Decision Log
 
