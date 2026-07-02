@@ -150,12 +150,41 @@ export default function NewListingPage() {
 
   const toggleW = (k: keyof typeof wPrefs) => setWPrefs((p) => ({ ...p, [k]: !p[k] }));
 
-  // Auth check
+  // Auth check + prefill country/state from the user's most recent listing
   useEffect(() => {
+    let cancelled = false;
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (cancelled) return;
       setAuthed(!!user);
+      if (!user) return;
+      const { data: last } = await supabase
+        .from("listings")
+        .select("country, state")
+        .eq("user_id", user.id)
+        .not("country", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (cancelled || !last?.country) return;
+      const match = COUNTRIES.find((c) => c.name === last.country);
+      if (match) {
+        setCountry((prev) => {
+          if (prev) return prev; // user already picked one
+          setCountryQuery(match.name);
+          if (
+            last.state &&
+            (STATES_BY_COUNTRY[match.name] || []).includes(last.state)
+          ) {
+            setState(last.state);
+          }
+          return match;
+        });
+      }
     });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const onVerify = useCallback((token: string) => {
