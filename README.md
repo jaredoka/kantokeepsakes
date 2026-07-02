@@ -49,10 +49,11 @@ The original Brunei retail catalog (category browsing, cart with WhatsApp checko
 - **Pokemon TCG stock images** — card search via TCGdex API for singles/graded (EN + JA), set logos for sealed products, manual upload for accessories
 - **Graded slab overlay** — PSA slab template image + CSS-rendered CGC/BGS slab frames on graded card images
 - **Browse & search** — text search, category/language/type filters, sort options, pagination
-- **Offers** — make offers on WTS listings, offer to sell on WTB listings, accept/decline with auto-decline of other pending offers
+- **Offers & counteroffers** — make offers on WTS listings, offer to sell on WTB listings; either party can counter a pending offer into a negotiation thread with alternating turns; accepting auto-declines other pending offers
+- **Have/Want matching** — the Matches page surfaces listings where another trader has a card you want or wants a card you have, with two-way badges and matched-card thumbnails per direction
 - **Real-time messaging** — instant chat between traders using Supabase Realtime, contextual timestamps (today/yesterday/date)
 - **Live notifications** — unread message count in header badge updates in real-time via Supabase Realtime channel
-- **Email notifications** — offers, offer outcomes, first unread message, trade completions, and ratings, sent via Resend with per-user preference toggles on the profile page
+- **Email notifications** — offers, offer outcomes, counteroffers, first unread message, trade completions, and ratings, sent via Resend with per-user preference toggles on the profile page
 - **Trade confirmations** — two-step flow: both parties confirm trade completion, then rate each other (1-5 stars), reputation system with trader badges
 - **User profiles** — public profile with listing history, sold archive, inline bio/username editing
 - **Saved listings** — bookmark/watchlist functionality
@@ -421,8 +422,8 @@ The remaining work to serve Pokemon TCG hobbyists worldwide, in rough priority o
 | # | Task | Why it matters globally |
 |---|------|------------------------|
 | G1 | ~~Email notifications~~ **Done** — Resend-backed emails for offers, messages, and trade updates with per-user preference toggles | Traders in different timezones can't rely on being online together |
-| G2 | Have/Want matching ("find trades for me") | The killer feature of golden-era trading sites — surface listings whose haves match your wants and vice versa |
-| G3 | Counteroffers with a short negotiation thread | Accept/decline alone kills trades that a counter would save |
+| G2 | ~~Have/Want matching~~ **Done** — Matches page surfaces listings whose haves match your wants and vice versa, with two-way badges | The killer feature of golden-era trading sites |
+| G3 | ~~Counteroffers~~ **Done** — either party can counter a pending offer; turns thread into a negotiation | Accept/decline alone kills trades that a counter would save |
 | G4 | Listing comment threads | Public community vetting of trades, CSGOLounge-style |
 | G5 | Retire the shop (remove catalog, cart, WhatsApp checkout; marketplace landing page) | Marketplace-only identity |
 | G6 | Country UX polish (stop defaulting to Brunei) | Serve a worldwide audience; country is a trader-location signal, nothing more |

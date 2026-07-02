@@ -11,31 +11,78 @@ interface OfferListProps {
   isOwner: boolean;
 }
 
+interface Thread {
+  root: OfferWithProfile;
+  turns: OfferWithProfile[]; // chronological
+  latest: OfferWithProfile;
+}
+
+/** A turn is owner-authored iff author_id is set and differs from the
+ *  offerer (offerer_id stays the non-owner party on every turn). */
+function authoredByOwner(o: OfferWithProfile): boolean {
+  return !!o.author_id && o.author_id !== o.offerer_id;
+}
+
+/** Group offer rows into negotiation threads via parent_offer_id chains. */
+function buildThreads(offers: OfferWithProfile[]): Thread[] {
+  const byId = new Map(offers.map((o) => [o.id, o]));
+  const childOf = new Map<string, OfferWithProfile>();
+  const roots: OfferWithProfile[] = [];
+  for (const o of offers) {
+    if (o.parent_offer_id && byId.has(o.parent_offer_id)) {
+      childOf.set(o.parent_offer_id, o);
+    } else {
+      roots.push(o);
+    }
+  }
+  return roots.map((root) => {
+    const turns = [root];
+    let cur = root;
+    while (childOf.has(cur.id)) {
+      cur = childOf.get(cur.id)!;
+      turns.push(cur);
+    }
+    return { root, turns, latest: turns[turns.length - 1] };
+  });
+}
+
 export default function OfferList({ listingId, isOwner }: OfferListProps) {
   const router = useRouter();
   const [offers, setOffers] = useState<OfferWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [respondingId, setRespondingId] = useState<string | null>(null);
+  const [counteringId, setCounteringId] = useState<string | null>(null);
+  const [counterText, setCounterText] = useState("");
   const [error, setError] = useState("");
 
+  const [refresh, setRefresh] = useState(0);
+
   useEffect(() => {
+    let cancelled = false;
     async function fetchOffers() {
       try {
         const res = await fetch(`/api/offers?listingId=${listingId}`);
         if (res.ok) {
           const data = await res.json();
-          setOffers(data);
+          if (!cancelled) setOffers(data);
         }
       } catch {
         // silent fail
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     fetchOffers();
-  }, [listingId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [listingId, refresh]);
 
-  async function handleRespond(offerId: string, status: "accepted" | "declined") {
+  async function respond(
+    offerId: string,
+    status: "accepted" | "declined" | "countered",
+    message?: string
+  ) {
     setRespondingId(offerId);
     setError("");
 
@@ -43,21 +90,13 @@ export default function OfferList({ listingId, isOwner }: OfferListProps) {
       const res = await fetch(`/api/offers/${offerId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(message ? { status, message } : { status }),
       });
 
       if (res.ok) {
-        // Update local state
-        setOffers((prev) =>
-          prev.map((o) => {
-            if (o.id === offerId) return { ...o, status };
-            // If accepting one, decline all other pending
-            if (status === "accepted" && o.status === "pending") {
-              return { ...o, status: "declined" };
-            }
-            return o;
-          })
-        );
+        setCounteringId(null);
+        setCounterText("");
+        setRefresh((r) => r + 1);
         router.refresh();
       } else {
         const data = await res.json();
@@ -73,31 +112,43 @@ export default function OfferList({ listingId, isOwner }: OfferListProps) {
   if (loading) return null;
   if (offers.length === 0 && !isOwner) return null;
 
+  const threads = buildThreads(offers);
   const hasAccepted = offers.some((o) => o.status === "accepted");
+
+  const authorLabel = (turn: OfferWithProfile, thread: Thread) => {
+    if (authoredByOwner(turn)) return isOwner ? "You" : "Listing owner";
+    return isOwner ? thread.root.profiles?.username || "Trader" : "You";
+  };
 
   return (
     <div className={styles.wrapper}>
       <h3 className={styles.heading}>
-        Offers <span className={styles.offerCount}>({offers.length})</span>
+        Offers <span className={styles.offerCount}>({threads.length})</span>
       </h3>
 
       {error && <span className={styles.error}>{error}</span>}
 
-      {offers.length === 0 ? (
+      {threads.length === 0 ? (
         <div className={styles.empty}>No offers yet.</div>
       ) : (
         <div className={styles.list}>
-          {offers.map((offer) => {
-            const profile = offer.profiles;
+          {threads.map((thread) => {
+            const { root, turns, latest } = thread;
+            const profile = root.profiles;
             const statusClass =
-              offer.status === "accepted"
+              latest.status === "accepted"
                 ? styles.statusAccepted
-                : offer.status === "declined"
+                : latest.status === "declined"
                   ? styles.statusDeclined
                   : styles.statusPending;
+            const myTurn =
+              latest.status === "pending" &&
+              !hasAccepted &&
+              (isOwner ? !authoredByOwner(latest) : authoredByOwner(latest));
+            const waiting = latest.status === "pending" && !hasAccepted && !myTurn;
 
             return (
-              <div key={offer.id} className={styles.offerCard}>
+              <div key={root.id} className={styles.offerCard}>
                 <div className={styles.offerHeader}>
                   <div className={styles.offererInfo}>
                     <span className={styles.offererName}>
@@ -112,53 +163,119 @@ export default function OfferList({ listingId, isOwner }: OfferListProps) {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <span className={`${styles.statusBadge} ${statusClass}`}>
-                      {offer.status}
+                      {latest.status}
                     </span>
                     <span className={styles.offerDate}>
-                      {formatTimeAgo(offer.created_at)}
+                      {formatTimeAgo(latest.created_at)}
                     </span>
                   </div>
                 </div>
 
-                <div className={styles.offerMessage}>{offer.message}</div>
-
-                {(offer.front_image || offer.back_image) && (
-                  <div className={styles.offerImages}>
-                    {offer.front_image && (
-                      <div>
-                        <div className={styles.offerImage}>
-                          <img src={offer.front_image} alt="Front of card" />
-                        </div>
-                        <div className={styles.offerImageLabel}>Front</div>
+                {turns.map((turn, i) => (
+                  <div
+                    key={turn.id}
+                    className={`${styles.turn} ${authoredByOwner(turn) ? styles.turnOwner : ""}`}
+                  >
+                    {turns.length > 1 && (
+                      <div className={styles.turnMeta}>
+                        <span className={styles.turnAuthor}>
+                          {i === 0 ? "Offer" : "Counter"} &middot;{" "}
+                          {authorLabel(turn, thread)}
+                        </span>
+                        <span className={styles.turnDate}>
+                          {formatTimeAgo(turn.created_at)}
+                        </span>
                       </div>
                     )}
-                    {offer.back_image && (
-                      <div>
-                        <div className={styles.offerImage}>
-                          <img src={offer.back_image} alt="Back of card" />
-                        </div>
-                        <div className={styles.offerImageLabel}>Back</div>
+                    <div className={styles.offerMessage}>{turn.message}</div>
+                    {i === 0 && (turn.front_image || turn.back_image) && (
+                      <div className={styles.offerImages}>
+                        {turn.front_image && (
+                          <div>
+                            <div className={styles.offerImage}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={turn.front_image} alt="Front of card" />
+                            </div>
+                            <div className={styles.offerImageLabel}>Front</div>
+                          </div>
+                        )}
+                        {turn.back_image && (
+                          <div>
+                            <div className={styles.offerImage}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={turn.back_image} alt="Back of card" />
+                            </div>
+                            <div className={styles.offerImageLabel}>Back</div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
+                ))}
+
+                {waiting && (
+                  <div className={styles.waitingHint}>
+                    Waiting for {isOwner ? profile?.username || "the trader" : "the listing owner"} to
+                    respond.
+                  </div>
                 )}
 
-                {isOwner && offer.status === "pending" && !hasAccepted && (
+                {myTurn && counteringId !== latest.id && (
                   <div className={styles.offerActions}>
                     <button
                       className={styles.acceptBtn}
-                      onClick={() => handleRespond(offer.id, "accepted")}
-                      disabled={respondingId === offer.id}
+                      onClick={() => respond(latest.id, "accepted")}
+                      disabled={respondingId === latest.id}
                     >
-                      {respondingId === offer.id ? "..." : "Accept"}
+                      {respondingId === latest.id ? "..." : "Accept"}
                     </button>
                     <button
                       className={styles.declineBtn}
-                      onClick={() => handleRespond(offer.id, "declined")}
-                      disabled={respondingId === offer.id}
+                      onClick={() => respond(latest.id, "declined")}
+                      disabled={respondingId === latest.id}
                     >
                       Decline
                     </button>
+                    <button
+                      className={styles.counterBtn}
+                      onClick={() => {
+                        setCounteringId(latest.id);
+                        setCounterText("");
+                        setError("");
+                      }}
+                      disabled={respondingId === latest.id}
+                    >
+                      Counter
+                    </button>
+                  </div>
+                )}
+
+                {myTurn && counteringId === latest.id && (
+                  <div className={styles.counterForm}>
+                    <textarea
+                      className={styles.counterTextarea}
+                      value={counterText}
+                      onChange={(e) => setCounterText(e.target.value)}
+                      placeholder="Your counteroffer — e.g. add a card, adjust the cash amount..."
+                      maxLength={1000}
+                      rows={3}
+                    />
+                    <div className={styles.offerActions}>
+                      <button
+                        className={styles.acceptBtn}
+                        onClick={() => respond(latest.id, "countered", counterText.trim())}
+                        disabled={respondingId === latest.id || !counterText.trim()}
+                      >
+                        {respondingId === latest.id ? "..." : "Send counter"}
+                      </button>
+                      <button
+                        className={styles.declineBtn}
+                        onClick={() => setCounteringId(null)}
+                        disabled={respondingId === latest.id}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

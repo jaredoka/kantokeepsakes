@@ -1,4 +1,4 @@
-# Kanto Keepsakes — Session 15 Handoff
+# Kanto Keepsakes — Session 17 Handoff
 
 ## Project Overview
 
@@ -535,6 +535,51 @@ The migration `00017_add_country_state.sql` must be run on the Supabase database
 
 ---
 
+## Session 17 Changes — G3 Counteroffers
+
+Roadmap item **G3**: negotiation threads on offers. Either party can now respond to a pending offer turn with accept, decline, or a **counter** — countering marks the turn `countered` and appends a new turn to the thread. Turns alternate; only the party who didn't author the latest turn can act.
+
+### Data model (migration `00019_counteroffers.sql` — idempotent)
+
+- `offers.parent_offer_id` — chains turns into a thread
+- `offers.author_id` — who wrote the turn (`null` = the offerer, back-compat)
+- **`offerer_id` stays the non-owner party on every turn** — this keeps trade-completions (counterparty = `acceptedOffer.offerer_id`), the pending-offer duplicate check, offer queries, and existing RLS working unchanged
+- `offer_status` enum gains `'countered'`
+- Two new RLS policies: listing owners may **insert** counter turns on their own listings; offerers may **update** owner-authored turns (accept/decline a counter) but never their own turns
+
+### API — `PATCH /api/offers/[id]` rewritten
+
+- Accepts `{ status: "accepted" | "declined" | "countered", message? }`
+- Turn guard: responder must be a trade party and must NOT be the author of the turn (403 "Waiting for the other party..." otherwise)
+- Counter: inserts the child turn first, then marks the parent `countered` (child rolled back via admin client if the mark fails)
+- Accept: auto-decline of other pending offers now runs through the **admin client** — when the offerer accepts an owner's counter, RLS would block them from touching other buyers' offers
+- Reads use `select("*")` so accept/decline keeps working before migration 00019 is applied (counter fails gracefully with an error message pre-migration)
+- Emails: new `offer_countered` kind (gated by `notify_offers`); accepted/declined emails go to the author of the responded turn
+
+### UI — `OfferList.tsx` rewritten as threads
+
+Offer rows group into threads via `parent_offer_id`. Each thread card shows the offerer's profile, the latest-turn status badge, all turns chronologically (labeled "Offer" / "Counter · author", owner turns get a yellow left border), and for the actionable party: **Accept / Decline / Counter** buttons with an inline counter textarea. The non-actionable party sees "Waiting for … to respond."
+
+### Verification (S17, pre-migration)
+
+Playwright two-account run: misty (offerer) sees the waiting hint and no action buttons; her API self-accept attempt returned 403 with the turn-guard message; ash (owner) sees Accept/Decline/Counter; the counter form renders and pre-migration submission fails gracefully ("Failed to create counteroffer."); decline works through the rewritten route (regression) and fired the declined email. **Full counter flow needs migration 00019 run in Supabase SQL Editor first.** Test offer cleaned up.
+
+---
+
+## Session 16 Changes — G2 Have/Want Matching
+
+Roadmap item **G2**: the "find trades for me" page. New **Matches** nav link (header + mobile drawer) → `/marketplace/matches` shows, per active listing you own, other traders' listings where **they have a card you want** and/or **they want a card you have**, with the matched cards' thumbnails shown per direction and a "Two-way match" badge (ranked first, then by matched-card count).
+
+**Design: no migration needed.** Card identity is derived from the stored image URLs — both CDNs encode it in the path (`assets.tcgdex.net/{lang}/{serie}/{set}/{num}/high.webp`, `images.pokemontcg.io/{set}/{num}.png`), and pokemontcg.io set IDs normalize back to TCGdex IDs via `PTCGIO_SET_MAP`. Card key = `{lang}:{set}:{number}` (e.g. `en:svp:85`). Matching is exact-card, same-language. Every existing listing is matchable today.
+
+- `src/lib/marketplace/matching.ts` — `cardKeyFromUrl()`, `matchListing()` (pure functions)
+- `src/app/marketplace/matches/page.tsx` — server component; fetches your active listings + up to 500 active candidates, matches in-process; empty states for no-listings / no-matches
+- Future options (documented, not built): explicit card-identity columns for name-level fuzzy matching ("any Pikachu") or SQL-side array matching at scale; cash/type-flag matching (note: the create form's "haves cash" toggle isn't persisted today)
+
+Verified E2E with two complementary listings referencing the same card via **different CDNs** (cross-CDN normalization proven), two-way badge + direction chips correct, empty state for a user with no listings. Test listings cleaned up.
+
+---
+
 ## Session 15 Changes — G1 Email Notifications
 
 Roadmap item **G1** implemented: transactional notification emails via the **Resend** REST API (no SDK dependency), with per-user preferences. Everything fails soft — without `RESEND_API_KEY`, sends are logged and skipped, so dev and pre-configuration production behave normally.
@@ -757,8 +802,8 @@ The work that turns the current site into the worldwide trading board described 
 | # | Task | Why it matters globally | Notes |
 |---|---|---|---|
 | G1 | Email notifications (offers, messages, trade confirmations) | Traders in different timezones can't rely on being online together | **Done S15** — Resend + `src/lib/email.ts` + prefs (migration 00018). Needs RESEND_API_KEY + domain verification to activate |
-| G2 | Have/Want matching ("find trades for me") | The killer feature of golden-era trading sites | Match listings whose haves ∩ your wants (card names/sets from CardPicker data); needs card identity stored on listings, not just image URLs |
-| G3 | Counteroffers + short negotiation thread | Accept/decline alone kills trades a counter would save | Extend `offers` with parent_offer_id / status `countered` |
+| G2 | Have/Want matching ("find trades for me") | The killer feature of golden-era trading sites | **Done S16** — /marketplace/matches, card identity derived from image URLs (no migration) |
+| G3 | Counteroffers + short negotiation thread | Accept/decline alone kills trades a counter would save | **Done S17** — offer threads via parent_offer_id/author_id; requires migration 00019 |
 | G4 | Listing comment threads | Public community vetting, CSGOLounge-style | New `listing_comments` table + RLS; moderation hooks into existing reports |
 | G5 | Retire the shop | Marketplace-only identity (D1) | Remove product catalog pages, cart, WhatsApp checkout, `data/products.json`; home page becomes the marketplace landing |
 | G6 | Country UX polish | Don't assume Brunei for a worldwide audience | Stop defaulting browse/backfill assumptions to Brunei; country stays a trader-location signal only |
