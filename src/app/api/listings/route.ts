@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateListing } from "@/lib/marketplace/validation";
+import { COUNTRIES, STATES_BY_COUNTRY } from "@/lib/marketplace/cardData";
 import type { HaveImage, WantItem } from "@/lib/marketplace/types";
 
 const CREATE_LIMIT = 10; // max listings per hour per IP
@@ -135,6 +136,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: validation.error }, { status: 400 });
   }
 
+  // Country is required and must be a known country; state (optional) must
+  // belong to that country. Country is the trader-location signal on a
+  // worldwide marketplace — no more defaulting to Brunei (G6).
+  const trimmedCountry = (country || "").trim();
+  if (!trimmedCountry || !COUNTRIES.some((c) => c.name === trimmedCountry)) {
+    return NextResponse.json(
+      { error: "Please select your country." },
+      { status: 400 }
+    );
+  }
+  const trimmedState = (state || "").trim();
+  const validStates = STATES_BY_COUNTRY[trimmedCountry] || [];
+  if (trimmedState && !validStates.includes(trimmedState)) {
+    return NextResponse.json(
+      { error: "Please select a valid state for your country." },
+      { status: 400 }
+    );
+  }
+
   // Construct title from [H] and [W] text
   const title = `[H] ${(havesText || "").trim()} [W] ${(wantsText || "").trim()}`;
 
@@ -162,8 +182,8 @@ export async function POST(request: NextRequest) {
       currency: (currency as "BND" | "USD" | "MYR" | "SGD") || "BND",
       images: imageUrls,
       looking_for_images: wantImageUrls,
-      country: (country || "").trim() || null,
-      state: (state || "").trim() || null,
+      country: trimmedCountry,
+      state: trimmedState || null,
       wants_cash: !!wantsCash,
       wants_offers: !!wantsOffers,
       wants_singles: !!wantsSingles,

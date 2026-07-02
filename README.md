@@ -424,7 +424,7 @@ The remaining work to serve Pokemon TCG hobbyists worldwide, in rough priority o
 | G3 | ~~Counteroffers~~ **Done** — either party can counter a pending offer; turns thread into a negotiation | Accept/decline alone kills trades that a counter would save |
 | G4 | ~~Listing comment threads~~ **Done** — public comments on listings; authors delete their own, owners cannot silence others | Public community vetting of trades, CSGOLounge-style |
 | G5 | ~~Retire the shop~~ **Done** — catalog, cart, WhatsApp checkout and legacy static site removed; home page is now a marketplace landing | Marketplace-only identity |
-| G6 | Country UX polish (stop defaulting to Brunei) | Serve a worldwide audience; country is a trader-location signal, nothing more |
+| G6 | ~~Country UX polish~~ **Done** — country flags on cards, location on detail pages, no more Brunei DB default, server-validated country, create-form prefill | Serve a worldwide audience; country is a trader-location signal, nothing more |
 | G7 | Public launch — remove `SITE_PASSWORD` only when both the website and the iOS app are ready | Website and app launch together |
 
 The platform deliberately builds **no** payment, escrow, pricing, shipping, or gambling features — traders handle settlement and the exchange themselves.

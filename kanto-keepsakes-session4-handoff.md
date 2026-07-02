@@ -1,4 +1,4 @@
-# Kanto Keepsakes — Session 19 Handoff
+# Kanto Keepsakes — Session 20 Handoff
 
 ## Project Overview
 
@@ -535,6 +535,23 @@ The migration `00017_add_country_state.sql` must be run on the Supabase database
 
 ---
 
+## Session 20 Changes — G6 Country UX Polish
+
+Roadmap item **G6**: country is now a visible, validated trader-location signal with no Brunei assumptions.
+
+- **Migration `00021_drop_country_default.sql`** — drops the `DEFAULT 'Brunei'` on `listings.country` (a Brunei-era assumption that silently stamped countryless inserts). **Run in Supabase SQL Editor.**
+- **Server-side validation** — `POST /api/listings` now requires a country from the COUNTRIES list and validates state against STATES_BY_COUNTRY (the form marked country "Required" but the server never enforced it).
+- **Country is now displayed**: flag emoji on every ListingCard header (tooltip shows state + country) and a "🇧🇳 State, Country" tag in the listing detail status row — previously country was stored and filterable but invisible.
+- **Create-page prefill** — country/state prefill from the user's most recent listing (skipped if the user already picked one).
+- **About page copy** rewritten from "across Brunei" to the worldwide vision ("Started in Brunei, open to everyone"). Contact page's "based in Brunei Darussalam" kept — it's the operator's factual location.
+- New `countryFlag(name)` helper in `cardData.ts`.
+
+Verified E2E: 24 flags on browse cards, detail location tag renders, create page prefilled "Brunei" from ash's last listing, About copy updated. Server-side country validation is Turnstile-gated so it was code-reviewed rather than driven; the client requires a country selection and the server is now authoritative.
+
+Still open from the decision log: `currency` remains hardcoded to "BND" in the create flow (meaningless under D2 since price is always null) — cosmetic, cleanup candidate whenever the listings table gets its next migration.
+
+---
+
 ## Session 19 Changes — G5 Retire the Shop
 
 Roadmap item **G5** (owner decision D1): Kanto Keepsakes is now marketplace-only.
@@ -840,7 +857,7 @@ The work that turns the current site into the worldwide trading board described 
 | G3 | Counteroffers + short negotiation thread | Accept/decline alone kills trades a counter would save | **Done S17** — offer threads via parent_offer_id/author_id; requires migration 00019 |
 | G4 | Listing comment threads | Public community vetting, CSGOLounge-style | **Done S18** — listing_comments table (migration 00020), comments on listing detail pages |
 | G5 | Retire the shop | Marketplace-only identity (D1) | **Done S19** — catalog/cart/checkout and legacy static site removed; home page is a marketplace landing |
-| G6 | Country UX polish | Don't assume Brunei for a worldwide audience | Stop defaulting browse/backfill assumptions to Brunei; country stays a trader-location signal only |
+| G6 | Country UX polish | Don't assume Brunei for a worldwide audience | **Done S20** — country displayed on cards/detail, DB default dropped (migration 00021), server-side validation, create-page prefill |
 | G7 | Public launch | Site is staging-gated | Remove `SITE_PASSWORD` **only when both the website and the iOS app are ready** (D5); launch together |
 
 **Deliberately out of scope (per D2/D3):** on-platform payments, escrow, per-listing prices/currencies, any shipping features (tracking, shipping-proof, ships-to — users handle trades themselves), and gambling/raffle mechanics of any kind.

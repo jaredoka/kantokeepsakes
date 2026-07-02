@@ -8,6 +8,7 @@ import {
 } from "@/lib/marketplace/types";
 import { getExpiryWarning, getExpiryUrgency } from "@/lib/marketplace/dates";
 import { parseGradingTag } from "@/lib/marketplace/grading";
+import { countryFlag } from "@/lib/marketplace/cardData";
 import GradedCardImage from "./GradedCardImage";
 import styles from "./ListingCard.module.css";
 
@@ -94,6 +95,15 @@ export default function ListingCard({
                 · {profile.completed_trades} trade
                 {profile.completed_trades !== 1 ? "s" : ""}
               </span>
+            </span>
+          )}
+
+          {listing.country && (
+            <span
+              className={styles.countryTag}
+              title={listing.state ? `${listing.state}, ${listing.country}` : listing.country}
+            >
+              {countryFlag(listing.country)}
             </span>
           )}
 

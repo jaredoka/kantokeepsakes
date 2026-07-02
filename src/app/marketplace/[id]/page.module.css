@@ -330,3 +330,10 @@
     padding-bottom: 80px;
   }
 }
+
+/* Trader location in the status row (G6) */
+.locationTag {
+  margin-left: var(--space-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+}

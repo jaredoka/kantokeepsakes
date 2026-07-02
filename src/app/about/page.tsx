@@ -5,7 +5,7 @@ import styles from "./page.module.css";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Learn about Kanto Keepsakes, Brunei's peer-to-peer Pokemon TCG marketplace for buying, selling, and trading cards.",
+    "Learn about Kanto Keepsakes, the peer-to-peer Pokemon TCG marketplace where hobbyists worldwide post their haves and wants, negotiate trades, and build reputation.",
 };
 
 export default function AboutPage() {
@@ -14,17 +14,19 @@ export default function AboutPage() {
       <div className={styles.container}>
         <h1 className={styles.heading}>About Kanto Keepsakes</h1>
         <p className={styles.intro}>
-          Brunei&apos;s dedicated peer-to-peer marketplace for Pokemon TCG
-          collectors and players.
+          The peer-to-peer marketplace for Pokemon TCG hobbyists around the
+          world — a have/want trade board in the spirit of the golden days of
+          trading sites, minus the gambling.
         </p>
 
         <section className={styles.section}>
           <h2 className={styles.subheading}>What we do</h2>
           <p className={styles.text}>
-            Kanto Keepsakes connects Pokemon TCG enthusiasts across Brunei. Whether
-            you&apos;re looking to sell your collection, find that missing card for
-            your deck, or trade with fellow collectors, our platform makes it easy
-            and safe.
+            Kanto Keepsakes connects Pokemon TCG enthusiasts worldwide. Post
+            what you have and what you want, get matched with traders whose
+            haves fit your wants, and negotiate the deal yourselves — the
+            platform never touches your money and hosts no gambling of any
+            kind. Started in Brunei, open to everyone.
           </p>
         </section>
 

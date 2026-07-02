@@ -500,3 +500,9 @@ export const STATES_BY_COUNTRY: Record<string, string[]> = {
     "Tra Vinh", "Tuyen Quang", "Vinh Long", "Vinh Phuc", "Yen Bai",
   ],
 };
+
+/** Flag emoji for a country name (empty string when unknown). */
+export function countryFlag(name: string | null | undefined): string {
+  if (!name) return "";
+  return COUNTRIES.find((c) => c.name === name)?.flag ?? "";
+}

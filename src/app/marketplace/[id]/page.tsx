@@ -17,6 +17,7 @@ import {
 } from "@/lib/marketplace/types";
 import type { Profile } from "@/lib/marketplace/types";
 import { getExpiryWarning, getExpiryUrgency } from "@/lib/marketplace/dates";
+import { countryFlag } from "@/lib/marketplace/cardData";
 import styles from "./page.module.css";
 
 function formatTimeAgo(dateStr: string): string {
@@ -191,6 +192,14 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
                     <span className={styles.statusDot} />
                     <span className={styles.statusActive}>Active</span>
                   </>
+                )}
+                {listing.country && (
+                  <span className={styles.locationTag}>
+                    {countryFlag(listing.country)}{" "}
+                    {listing.state
+                      ? `${listing.state}, ${listing.country}`
+                      : listing.country}
+                  </span>
                 )}
               </div>
             </div>

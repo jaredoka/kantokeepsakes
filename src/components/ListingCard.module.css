@@ -330,3 +330,10 @@
     height: 48px;
   }
 }
+
+/* Trader country flag in the header bar (G6) */
+.countryTag {
+  font-size: 14px;
+  line-height: 1;
+  cursor: default;
+}
