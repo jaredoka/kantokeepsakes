@@ -10,6 +10,7 @@ import RelistButton from "@/components/RelistButton";
 import TradeCompletion from "@/components/TradeCompletion";
 import TradeConfirmation from "@/components/TradeConfirmation";
 import OfferList from "@/components/OfferList";
+import ListingComments from "@/components/ListingComments";
 import {
   CURRENCY_SYMBOLS,
   type ListingWithProfile,
@@ -290,6 +291,9 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
             {isOwner && isExpired && (
               <RelistButton listingId={listing.id} />
             )}
+
+            {/* Community comments */}
+            <ListingComments listingId={listing.id} currentUserId={user?.id} />
           </div>
 
           {/* RIGHT COLUMN: seller, actions, offers, trade confirmation */}
