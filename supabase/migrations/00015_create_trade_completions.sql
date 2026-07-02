@@ -1,5 +1,6 @@
 -- Trade completions: two-step trade flow (complete/dispute before rating)
-create table trade_completions (
+-- Idempotent: safe to re-run if already (or partially) applied.
+create table if not exists trade_completions (
   id uuid primary key default gen_random_uuid(),
   listing_id uuid not null references listings (id) on delete cascade,
   user_id uuid not null references profiles (id) on delete cascade,
@@ -8,21 +9,24 @@ create table trade_completions (
   constraint unique_trade_completion unique (listing_id, user_id)
 );
 
-create index idx_trade_completions_listing on trade_completions (listing_id);
-create index idx_trade_completions_user on trade_completions (user_id);
-create index idx_trade_completions_status on trade_completions (status);
+create index if not exists idx_trade_completions_listing on trade_completions (listing_id);
+create index if not exists idx_trade_completions_user on trade_completions (user_id);
+create index if not exists idx_trade_completions_status on trade_completions (status);
 
 alter table trade_completions enable row level security;
 
+drop policy if exists "Trade completions are viewable by everyone" on trade_completions;
 create policy "Trade completions are viewable by everyone"
   on trade_completions for select
   using (true);
 
+drop policy if exists "Authenticated users can create trade completions" on trade_completions;
 create policy "Authenticated users can create trade completions"
   on trade_completions for insert
   with check (auth.uid() = user_id);
 
 -- Admin can delete trade completions (for dispute resolution)
+drop policy if exists "Admins can delete trade completions" on trade_completions;
 create policy "Admins can delete trade completions"
   on trade_completions for delete
   using (

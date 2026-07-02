@@ -1,7 +1,7 @@
 -- Add wants_offers boolean to listings
 -- This explicitly tracks whether a lister is open to offers,
 -- separate from cash (price) and card trades (looking_for_*)
-ALTER TABLE listings ADD COLUMN wants_offers boolean NOT NULL DEFAULT false;
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS wants_offers boolean NOT NULL DEFAULT false;
 
 -- Backfill: set wants_offers = true for listings that have no price and no looking_for data
 UPDATE listings

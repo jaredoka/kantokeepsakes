@@ -1,4 +1,4 @@
-# Kanto Keepsakes — Session 8 Handoff
+# Kanto Keepsakes — Session 11 Handoff
 
 ## Project Overview
 
@@ -98,9 +98,11 @@ Branch protection on `main` has been configured in GitHub UI (require PR before 
 | Browse WTB listings | Done | `src/app/marketplace/wtb/page.tsx` |
 | Text search | Done | `SearchBar.tsx` + `queries.ts` `.ilike` |
 | Category / language / type filters | Done | `BrowsePage.tsx` sidebar |
+| Country filter (pill + dropdown) | Done S11 | `CountryPill.tsx`, `BrowsePage.tsx`, `queries.ts` |
+| State filter (sidebar dropdown) | Done S11 | `FilterBar.tsx` (only when country has states) |
 | Pagination | Done | `Pagination.tsx` + URL param |
 | Listing detail page | Done | `src/app/marketplace/[id]/page.tsx` |
-| Create listing (+ image upload) | Done | `src/app/marketplace/new/page.tsx` |
+| Create listing (5-section card UI + state dropdown) | Done S10/10b/11 | `src/app/marketplace/new/page.tsx`, `CardPicker.tsx`, `cardData.ts` |
 | Edit listing | Done | `src/app/marketplace/[id]/edit/page.tsx` |
 | Bump listing (24h cooldown) | Done | `BumpButton.tsx` + `/api/listings/[id]/bump` |
 | Relist expired listing | Done | `RelistButton.tsx` + `/api/listings/[id]/relist` |
@@ -171,7 +173,7 @@ src/
       layout.tsx          <- auth gate (redirects to /login?next=...)
       wts/                <- browse WTS
       wtb/                <- browse WTB
-      new/                <- create listing
+      new/                <- create listing (5-section card UI, S10)
       [id]/               <- listing detail + edit
       inbox/              <- conversations
       user/[username]/    <- public profile + edit (own only)
@@ -210,7 +212,8 @@ src/
     ProfileEditForm.tsx   <- inline edit bio + username (own profile only)
     SaveButton.tsx        <- bookmark toggle
     ImageUploader.tsx     <- drag-drop + canvas compression (accessories only)
-    CardSearch.tsx        <- TCGdex card search for singles/graded
+    CardSearch.tsx        <- TCGdex card search for singles/graded (edit page)
+    CardPicker.tsx        <- TCGdex card browser with ERA_DATA (create page, S10)
     SetSearch.tsx         <- TCGdex set search for sealed
     GradedCardImage.tsx   <- CSS slab overlay for graded cards
   lib/
@@ -224,6 +227,7 @@ src/
       dates.ts            <- expiry helpers
       validation.ts       <- field validators for listings, offers, images
       grading.ts          <- parseGradingTag() utility
+      cardData.ts         <- ERA_DATA, TRANSLATION_MAP, expandQuery, COUNTRIES, STATES_BY_COUNTRY (S10/10b)
     turnstile.ts          <- Cloudflare Turnstile server-side verify
     rate-limit.ts         <- in-memory rate limiter (Map-based, 60s cleanup)
   proxy.ts                <- Next.js 16 proxy (replaces middleware.ts)
@@ -233,7 +237,7 @@ src/
 | Table | RLS | Purpose |
 |---|---|---|
 | `profiles` | Yes | Users — username, bio, avatar_url, reputation, is_banned, is_admin |
-| `listings` | Yes | WTS/WTB listings — type, title, price, images, status, expiry, wants_cash/wants_singles/wants_graded/wants_sealed flags |
+| `listings` | Yes | WTS/WTB listings — type, title, price, images, looking_for_images, status, expiry, wants_cash/wants_singles/wants_graded/wants_sealed flags, country, state |
 | `offers` | Yes | Offers on listings — message, card images, status |
 | `conversations` | Yes | DMs — participant_1 (owner), participant_2 (other), listing |
 | `messages` | Yes | Chat messages — body, is_read, sender_id |
@@ -294,7 +298,7 @@ src/
 9. **ListingCard redesign** — Two-column body layout: Haves (images) + Wants (pills). Graded card images use `GradedCardImage` component. Want pills show Cash/Singles/Graded/Sealed/Any Offers.
 10. **Inbox UI refresh** — Updated inbox conversation list and chat page styling with avatar initials circles, unread badges, and improved layout.
 
-### Key decisions
+### Key decisions (S8)
 
 | Decision | Choice | Reasoning |
 |---|---|---|
@@ -306,47 +310,368 @@ src/
 
 ---
 
+## Session 10 Changes — Create Listing Page Overhaul
+
+Complete replacement of the Create Listing page (`/marketplace/new`) with a new 5-section card-based design. The old form (WTB/WTS toggle, category/language dropdowns, single-card search, top-level grading section) was replaced with a streamlined layout matching the reference files in `design_ref_temp/design_handoff_create_listing/`.
+
+### Files created
+
+**1. `src/lib/marketplace/cardData.ts`** — Static data module for the new Create page.
+- `ERA_DATA` — 10 eras with ~120 sets, each `{ id, en, ja, sets: [{ id, en, ja }] }`. Eras: Scarlet & Violet, Sword & Shield, Sun & Moon, XY, Black & White, HeartGold SoulSilver, Diamond & Pearl, EX, Classic, Pocket.
+- `TRANSLATION_MAP` — Bidirectional EN↔JA lookup for ~50 Pokemon names, set names, and common terms (e.g. "Pikachu" ↔ "ピカチュウ").
+- `expandQuery(q: string): string[]` — Returns equivalent search terms in both languages using `TRANSLATION_MAP`. Used by CardPicker for cross-language name search.
+- `COUNTRIES` — 195 entries with `{ name, flag }` for the country selector.
+- Exported interfaces: `CardItem { localId, name, img, set, lang }`, `Country`, `Era`, `EraSet`.
+
+**2. `src/components/CardPicker.tsx`** + **`src/components/CardPicker.module.css`** — New card browser component (separate from existing `CardSearch.tsx`).
+- Fetches directly from `https://api.tcgdex.net/v2/{lang}/sets/{setId}` — no internal API proxy.
+- Uses static `ERA_DATA` for era/set dropdowns (no fetch to `/api/pokemon-tcg/series`).
+- UI: yellow-bordered container (`#fffef7` bg), filter bar with EN/JP language toggle, era select, set select, All/Cards/Promos type pills, name search input.
+- Card grid: 54px tiles, max-height 230px scrollable area, yellow border on hover.
+- Props: `{ onSelectCard: (card: CardItem) => void }`.
+
+### Files rewritten
+
+**3. `src/app/marketplace/new/page.tsx`** — Complete replacement with 5-section card-based form.
+
+Page structure (5 numbered sections):
+- **Section 1 — Country**: Search input + scrollable dropdown (195 countries, max-height 114px), flag emoji in section header when selected. Country + state now sent to the API and stored in the database (added in S11).
+- **Section 2 — Title**: Live monospace preview bar (single-line desktop, two-line mobile at <768px), two `[H]`/`[W]` prefixed inputs with 40 char max, character counters.
+- **Section 3 — Haves**: ThumbContainer (72px card thumbnails with red × remove) + Cash PrefCard (72×92px toggle) + CardPicker. Desktop = side-by-side; mobile = stacked.
+- **Section 4 — Wants**: ThumbContainer + 4 PrefCards (Cash, Singles, Graded, Sealed with custom SVG icons) + CardPicker. Desktop = side-by-side; mobile = stacked.
+- **Section 5 — Description**: Optional textarea, 300 char max, character counter.
+
+Sub-components defined in-file: `SectionHead`, `CharCount`, `ThumbContainer`, `PrefCard`, `IconSingles`, `IconGraded`, `IconSealed`.
+
+State shape:
+```
+country, countryQuery, countryOpen         (UI only, not sent to API)
+havesText, wantsText                       (max 40 each)
+haveImages: CardItem[]                     (from CardPicker)
+havesCash: boolean                         (PrefCard toggle)
+wantImages: CardItem[]                     (from CardPicker)
+wPrefs: { cash, singles, graded, sealed }  (PrefCard toggles)
+description: string                        (max 300)
+isMobile: boolean                          (window.innerWidth < 768)
+```
+
+On submit, state transforms to API body shape:
+- `haveImages` → `haveImages: [{ url: card.img }]`
+- `wantImages` → `wantItems: [{ url: card.img }]`
+- `wPrefs.cash` → `wantsCash`, `wPrefs.singles` → `wantsSingles`, etc.
+- `price: null`, `currency: "BND"` (no price section in new design)
+- `wantsOffers: false` (hardcoded)
+
+Kept from existing page: client-side auth check via `supabase.auth.getUser()`, Turnstile CAPTCHA, loading/error states, `fetch('/api/listings', ...)` submission.
+
+**4. `src/app/marketplace/new/page.module.css`** — Complete replacement matching the reference spec.
+- White section cards on `#fafafa` background, 720px max-width, 12px gap between sections.
+- Section headers: black number badge + title + optional flag/note.
+- `[H]`/`[W]` input rows with gray-100 prefix badges.
+- 72×92px PrefCard toggles with yellow active state (`var(--color-yellow-dark)` border, `var(--color-yellow-light)` bg).
+- ThumbContainer: dashed border when empty, solid when filled.
+- Responsive at 767px: stacked layout, no side borders on section cards, `padding: 16px 0`.
+
+### Files modified
+
+**5. `src/lib/marketplace/validation.ts`**
+- `validateHavesText()` / `validateWantsText()` — max changed from 100 to **40** characters.
+- `validateDescription()` — already optional (empty returns valid), unchanged.
+- `validateListing()` — removed "at least one want type required" check, removed "price required when wantsCash" check. Now runs 7 basic validators (havesText, wantsText, description, price, currency, haveImages, wantItems).
+
+**6. `src/app/api/listings/route.ts`**
+- Body type widened: `haveImages` accepts `(HaveImage | { url: string })[]`, same for `wantItems`.
+- Normalization: converts simple `{ url }` objects to full `HaveImage` (with `grader: "RAW"`, `grade: ""`) and `WantItem` (with `type: "singles"`) before validation.
+- `description` null-safety: `(description || "").trim()` instead of `(description as string).trim()`.
+- `price` simplified: `price: price ?? null` (no longer conditionally null based on wantsCash).
+- Title auto-constructed server-side: `[H] ${havesText} [W] ${wantsText}`.
+- `images` column stores have image URLs; `looking_for_images` stores want item URLs.
+
+**7. `src/proxy.ts`**
+- Added `https://api.tcgdex.net` to CSP `connect-src` (for CardPicker API calls).
+- Added `https://assets.tcgdex.net` to CSP `img-src` (for card images).
+
+### Files NOT modified
+- `src/lib/marketplace/types.ts` — Existing `HaveImage`, `WantItem`, grading types unchanged. Used by API, edit page, listing display.
+- `src/components/CardSearch.tsx` + `.module.css` — Kept for the **edit page**. Not used by the new create page.
+- `src/app/marketplace/[id]/edit/page.tsx` — Edit page unchanged. Separate task.
+- `src/app/globals.css` — Design tokens already matched spec.
+
+### Key decisions (S10)
+
+| Decision | Choice | Reasoning |
+|---|---|---|
+| CardPicker vs CardSearch | **Separate component** | Avoids breaking the edit page while implementing the new design. CardPicker fetches TCGDex directly; CardSearch uses internal proxy routes. |
+| Card data source | **Static ERA_DATA + direct TCGDex fetch** | No internal API proxy needed for browsing. ERA_DATA provides the era/set taxonomy (~120 sets). TCGDex provides the individual cards. |
+| Cross-language search | **TRANSLATION_MAP + expandQuery()** | Bidirectional EN↔JA lookup for ~50 common terms. Allows searching "Pikachu" to find ピカチュウ and vice versa. |
+| Country field | **Persisted in DB (S11)** | Country selector now stores `country` and `state` in listings table. Backfilled to Brunei for existing listings. |
+| Price field | **Removed from form** | New design has no price section. Price is always null. Cash preference is a PrefCard toggle. |
+| Grading per card | **Descoped** | The original plan mentioned per-card PSA overlays on thumbnails. Cards are added as simple thumbnails. Grading can be described in the description field. |
+
+### Data flow (S10 Create page)
+```
+CardPicker (browse cards)
+  → onSelectCard(CardItem)
+  → page state (haveImages / wantImages)
+  → ThumbContainer (display 72px thumbnails)
+  → handleSubmit() transforms CardItem[] → {url}[]
+  → POST /api/listings (normalize + validate + DB insert)
+  → redirect to /marketplace/{id}
+```
+
+### Pending work from S10
+1. **Visual verification** — Auth redirect on `/marketplace/new` blocks preview. Log in to verify the rendered page.
+2. **Edit page alignment** — `/marketplace/[id]/edit/page.tsx` still uses the old form. Consider updating to match.
+3. ~~**Country persistence** — If country/state should be stored, add DB columns + API handling.~~ **Done in S11.**
+4. **Per-card grading** — Descoped from S10. Could be added as overlays on ThumbContainer thumbnails.
+
+---
+
+## Session 10b Changes — State Dropdown + PSA Slab Fix
+
+Three changes: state/province dropdown on Create Listing, country flag confirmation, and PSA slab overlay restoration.
+
+### 1. State/Province dropdown on Create Listing
+
+**`src/lib/marketplace/cardData.ts`** — Added `STATES_BY_COUNTRY: Record<string, string[]>` with subdivisions for 20 countries: Australia, Brazil, Brunei, Canada, China, Germany, India, Indonesia, Japan, Malaysia, Mexico, Philippines, South Korea, Taiwan, Thailand, United Kingdom, United States, Vietnam. Country names match the `COUNTRIES` array keys exactly.
+
+**`src/app/marketplace/new/page.tsx`** — Added `state` state variable (`string | null`). After country is selected, if `STATES_BY_COUNTRY[country.name]` has entries, a `<select>` dropdown appears below the country input labeled "State / Province / District (optional)" (label updated in S11). Changing the country resets state to null. Country + state now sent to the API (added in S11).
+
+**`src/app/marketplace/new/page.module.css`** — Added `.stateWrap`, `.stateLabel`, `.stateOptional`, `.stateSelect` styles matching the existing country input appearance.
+
+### 2. Country flag display
+
+Already implemented in S10. The flag emoji shows in the section header via `<SectionHead flag={country.flag}>` when a country is selected. No changes needed.
+
+### 3. PSA slab overlay fix on marketplace browse
+
+**Problem:** S10 commit `6ec7a18` accidentally removed grading detection and `GradedCardImage` rendering from `ListingCard.tsx`. All card images rendered as plain `<img>` tags. The CSS classes `.imageCellGraded` and `.imageCellSingles` existed but were unused.
+
+**Fix in `src/components/ListingCard.tsx`:**
+- Restored imports: `parseGradingTag` from `grading.ts`, `GradedCardImage` component
+- Added grading detection: `const grading = listing.category === "graded" ? parseGradingTag(listing.title) : null`
+- Added `cellSizeClass` logic: graded → `.imageCellGraded` (56x94), singles → `.imageCellSingles` (54x75), default → `.imageCellDefault` (56xauto)
+- Conditional rendering: graded cards wrapped with `<GradedCardImage size="sm">`, others render plain `<img>`
+
+**Listing detail page (`/marketplace/[id]`):** Already correct — does NOT pass `grading` to `ImageGallery`, so slab overlays do not appear on individual listing pages. No changes needed.
+
+---
+
+## Session 11 Changes — Country Filter, Wants Thumbnails, Label Fix
+
+Four changes: country/state filter on marketplace browse, wants thumbnails in listing cards, Create Listing label fix, and listing detail title format confirmation.
+
+### 1. Country/State Filter on Marketplace Browse
+
+**Database migration — `supabase/migrations/00017_add_country_state.sql`**
+- Adds `country` (text, default 'Brunei') and `state` (text) columns to `listings`
+- Backfills existing listings to `country = 'Brunei'`
+- Creates `idx_listings_country` index
+
+**`src/lib/marketplace/types.ts`** — Added `country: string | null` and `state: string | null` to the `Listing` interface.
+
+**`src/app/api/listings/route.ts`** — Accepts `country` and `state` in the POST body, saves them in the database insert. Country/state are now persisted (was UI-only in S10).
+
+**`src/lib/marketplace/queries.ts`** — Added `country` and `state` to `ListingFilters` interface. When provided, applies `.eq("country", country)` and `.eq("state", state)` filters.
+
+**`src/app/marketplace/_components/CountryPill.tsx`** (NEW) — Client component for country selection. Shows a pill with flag + country name (or "All Countries") next to the "Marketplace" heading. Clicking opens a searchable dropdown of 195 countries from `cardData.ts`. Selecting a country updates URL params (`?country=Name`); "All Countries" clears the filter. Uses `useRouter`/`useSearchParams`/`usePathname` for URL management.
+
+**`src/app/marketplace/_components/CountryPill.module.css`** (NEW) — Pill styling (inline-flex, border, flag + text, hover), dropdown (absolute positioning, 260px wide, 240px max-height scrollable list, search input, country option buttons).
+
+**`src/app/marketplace/_components/BrowsePage.tsx`** — Reads `country` and `state` from searchParams, passes to `fetchListings`. Renders `CountryPill` next to h1 in a new `.titleRow` wrapper. Passes `country` to FilterBar and MobileFilterSection. Updated `hasActiveFilters` and `countActiveFilters` to include country/state.
+
+**`src/app/marketplace/_components/BrowsePage.module.css`** — Added `.titleRow` class for heading + pill layout.
+
+**`src/app/marketplace/_components/MobileFilterSection.tsx`** — Added `country?: string` prop, passed through to FilterBar.
+
+**`src/components/FilterBar.tsx`** — Added `country?: string` prop. When country is set and `STATES_BY_COUNTRY[country]` has entries, renders a State `<select>` dropdown between Search and Sort.
+
+### 2. Wants Thumbnails in Marketplace ListingCard
+
+**`src/components/ListingCard.tsx`** — Changed `MAX_VISIBLE_IMAGES` from `4` to `10`. Added wants image support: reads `listing.looking_for_images`, shows up to 10 thumbnails as an image grid above the want pills in the Wants panel. Uses same `.imageCell` + `.imageCellSingles` styling as Haves. Includes overflow count (+N) when > 10 images.
+
+**`src/components/ListingCard.module.css`** — Added `.wantPillsWithImages` class (`margin-top: 6px`) for spacing between want thumbnails and pills when both are present.
+
+### 3. Create Listing Label Fix
+
+**`src/app/marketplace/new/page.tsx`** — Changed "State / Province" label to "State / Province / District".
+
+### 4. Listing Detail Title Format
+
+No changes needed. The API route already constructs titles as `[H] ... [W] ...` (line 135 of `route.ts`). The detail page renders `listing.title` as raw text. User confirmed this is the desired behavior.
+
+### Key decisions (S11)
+
+| Decision | Choice | Reasoning |
+|---|---|---|
+| Existing listings without country | **Backfill to Brunei** | User chose "Default to Brunei" since most users are in Brunei |
+| Country persistence | **Now stored in DB** | Was UI-only in S10; now `country` and `state` columns in `listings` table |
+| Country pill placement | **Next to heading** | Shows flag + country name, toggle-able via dropdown |
+| Title styling on detail page | **Raw text as-is** | No styled badges; keep `[H] ... [W] ...` format |
+
+### Migration note
+
+The migration `00017_add_country_state.sql` must be run on the Supabase database before the country filter will work. Until then, "All Countries" (no filter) works correctly; selecting a specific country triggers a "column listings.country does not exist" error from Supabase.
+
+---
+
+## Session 12 Changes — CardPicker Search & Filter Fixes
+
+All four S12 issues fixed in `CardPicker.tsx` + `cardData.ts`. Verified end-to-end with Playwright against the live dev server (login → Create Listing → drive the picker).
+
+### How the new search works
+
+The picker now has three data-loading modes (priority order):
+1. **Set browse** — a specific set is selected → fetch `GET /v2/{lang}/sets/{id}` (unchanged for EN; JP now fetches the mapped Japanese set(s)). Full set shown, no cap; search box narrows in-memory.
+2. **Name search** — no set selected but search text present → `GET /v2/{lang}/cards?name=like:{term}` (one request per `expandQuery()` term, deduped). Works with an era selected (results filtered to that era's sets + promos) or "All Eras" (everything). Capped at 100 results with a "Showing first 100 of N results" hint. Search input is debounced 350ms.
+3. **Promo browse** — era selected + "Promos" pill + no search → fetches the era's promo sets.
+
+Results across sets sort **newest era first** (ERA_DATA order), then by set order within the era, then numeric localId — via the `SET_RANK` map.
+
+### `src/lib/marketplace/cardData.ts` additions
+
+- `JA_SET_MAP: Record<string, string[]>` — EN set ID → Japanese TCGdex set ID(s), verified against the live `/v2/ja/sets` list. One EN set often bundles several JA sets (e.g. `sv04` Paradox Rift → `SV4K` + `SV4M` + `SV3a`). BW/DP eras and a few EN-exclusive sets (Champion's Path, Call of Legends, Base Set 2, Legendary Collection, EX Emerald, EX Power Keepers) have **no JA data on TCGdex** and are unmapped — the UI shows "No Japanese card data for this set yet."
+- `PROMO_SETS_BY_ERA` — all TCGdex promo sets per era: `svp`, `swshp`, `smp`, `xyp`, `bwp`, `hgssp`, `dpp`+`pop6-9`, `np`+`pop1-5`, `basep`+`wp`. TCGdex has **no Japanese promo sets**.
+- `ALL_PROMO_SET_IDS` — flat Set used by the Cards/Promos type pills.
+- `SET_RANK` — set ID → sort rank (era index × 1000 + set index; promos rank after their era's sets; JA IDs inherit their EN parent's rank).
+
+### `src/components/CardPicker.tsx` rewrite
+
+- Era/set dropdowns now **always display English names** (JP toggle no longer switches labels — it switches the card pool).
+- JP mode: selecting era/set fetches the mapped JA set(s); card names/tooltips show the **Japanese name** (user decision). English search terms reach Japanese cards via `expandQuery()` (~50-name translation map).
+- Cards with no scan on TCGdex (e.g. `svp-085` "Pikachu with Grey Felt Hat") render as **selectable name-text tiles**; selecting one stores `/images/card-placeholder.svg` (new file in `public/images/`) as the image URL.
+- State is derived, not duplicated: a `plan` memo (sets/search/notice + fetch key) drives one fetch effect; `loading`/`fetchErr`/`notice` are computed from the key, so type-pill toggles and within-set searches never refetch.
+- `loading="lazy"` on grid images (up to 100+ tiles per search).
+
+### Key decisions (S12)
+
+| Decision | Choice | Reasoning |
+|---|---|---|
+| Multi-set search transport | **TCGdex `?name=like:` filter endpoint** | One request per search term instead of fanning out ~120 per-set fetches; no rate-limit concern |
+| Cross-set/era ordering | **Newest era first** | User decision; matches what people trade most |
+| Broad-search result limit | **Cap 100 + hint** (search mode only; set browse uncapped) | User decision; keeps grid fast without pagination UI |
+| JP card names | **Japanese** | User decision; matches what's printed on the card |
+| Promo scope | **All promo sets, all eras** | User decision |
+| Imageless cards | **Name-tile + placeholder SVG** | TCGdex has no scan for some promos; hiding them would make e.g. "Pikachu with Grey Felt Hat" unfindable |
+
+### Verification (S12)
+
+Playwright (headless Edge) against `next dev`, logged in as devtest: era-wide search returned 41 Pikachus across 12 SWSH sets; All-Eras search returned 204 matches capped at 100 with hint; "grey felt" returned the imageless promo as a name tile and selecting it stored the placeholder; JP mode showed English set labels, loaded `SV2a` for "Pokémon 151", and found ピカチュウ from an English "pikachu" query; unmapped JP set (Champion's Path) showed the graceful notice; EN set browse (Evolving Skies) still renders all 237 cards uncapped.
+
+---
+
 ## Website Roadmap
 
 All website work should be completed before beginning iOS app development.
 
-### Website Phase 1 — Pre-Launch Blockers (Must Fix)
+### Website Phase 1 — Pre-Launch Blockers (Must Fix) ✓
 
-These are hard blockers — the website should not go live without them.
+All complete (Sessions 7-8).
 
-| # | Task | Why it's a blocker | Files to create/modify |
-|---|---|---|---|
-| W1 | Create `src/app/not-found.tsx` | Users see generic Next.js 404 | New: `src/app/not-found.tsx` |
-| W2 | Create `src/app/error.tsx` | Unhandled errors show raw stack traces | New: `src/app/error.tsx` |
-| W3 | Create `src/app/about/page.tsx` | Header links to `/about` which currently 404s | New: `src/app/about/page.tsx` |
-| W4 | Create `src/app/contact/page.tsx` | Header links to `/contact` which currently 404s | New: `src/app/contact/page.tsx` |
-| W5 | Add `CRON_SECRET` to `.env.local.example` | Undocumented env var; new deployments will break the cron job | Modify: `.env.local.example` |
-| W6 | Optimize logo PNGs | 250-462KB per image; causes slow page loads | Replace or compress PNGs in `public/images/` |
+| # | Task | Status |
+|---|---|---|
+| W1 | Custom 404 page | Done S7 |
+| W2 | Custom error boundary | Done S7 |
+| W3 | About page | Done S7 |
+| W4 | Contact page | Done S7 |
+| W5 | `CRON_SECRET` in `.env.local.example` | Done S7 |
+| W6 | Optimize logo PNGs | Done S7 |
 
-### Website Phase 2 — Pre-Launch Recommended (Should Fix)
+### Website Phase 2 — Pre-Launch Recommended (Should Fix) ✓
 
-Not hard blockers but important for a professional launch.
+All complete (Session 7).
 
-| # | Task | Benefit | Files to create/modify |
-|---|---|---|---|
-| W7 | Add security headers in proxy | CSP, X-Frame-Options, Referrer-Policy, X-Content-Type-Options | Modify: `src/proxy.ts` |
-| W8 | Add dynamic sitemap | Search engines can discover listing pages | New: `src/app/sitemap.ts` |
-| W9 | Add robots.txt | Controls search engine crawling, points to sitemap | New: `src/app/robots.ts` |
-| W10 | Add OG image to root layout | Social media link previews show a branded image | Modify: `src/app/layout.tsx`, add image to `public/` |
-| W11 | Configure `images.remotePatterns` | Next.js `<Image>` component works with Supabase storage URLs | Modify: `next.config.ts` |
+| # | Task | Status |
+|---|---|---|
+| W7 | Security headers in proxy | Done S7 |
+| W8 | Dynamic sitemap | Done S7 |
+| W9 | robots.txt | Done S7 |
+| W10 | OG image + social metadata | Done S7 |
+| W11 | `images.remotePatterns` for Supabase | Done S7 |
 
 ### Website Phase 3 — Pre-Launch Polish & Features (Session 8) ✓
 
-UI consistency, trade flow improvement, and Pokemon TCG stock images. All complete.
+All complete.
 
-| # | Task | Status | Files |
-|---|---|---|---|
-| W13 | Match WTB/WTS pill colors on detail page | Done | `src/app/marketplace/[id]/page.module.css`, `src/components/ListingCard.module.css` |
-| W14 | Standardize page titles (template pattern) | Done | `src/app/layout.tsx` + all page files |
-| W15 | Favicon from logo | Done | `src/app/favicon.ico`, `icon.png`, `apple-icon.png` |
-| W16 | Two-step trade completion (complete → rate) | Done | `trade_completions` table, `/api/trade-completions`, `TradeConfirmation.tsx` |
-| W17 | Pokemon TCG stock images via TCGdex API | Done | `CardSearch.tsx`, `SetSearch.tsx`, `/api/pokemon-tcg/*`, CSP, `next.config.ts` |
-| W18 | Graded slab overlay on card images | Done | `GradedCardImage.tsx`, `GradedCardImage.module.css`, `grading.ts`, `ListingCard.tsx` |
+| # | Task | Status |
+|---|---|---|
+| W13 | WTB/WTS pill color matching | Done S8 |
+| W14 | Standardized page titles | Done S8 |
+| W15 | Favicon from logo | Done S8 |
+| W16 | Two-step trade completion | Done S8 |
+| W17 | Pokemon TCG stock images (TCGdex) | Done S8 |
+| W18 | Graded slab overlay | Done S8 |
+
+### Website Phase 3.5 — Create Listing Overhaul (Session 10) ✓
+
+| # | Task | Status |
+|---|---|---|
+| S10-1 | 5-section card layout (Country, Title, Haves, Wants, Description) | Done S10 |
+| S10-2 | CardPicker component (ERA_DATA + direct TCGDex) | Done S10 |
+| S10-3 | Cross-language card search (TRANSLATION_MAP) | Done S10 |
+| S10-4 | PrefCards with SVG icons (Cash, Singles, Graded, Sealed) | Done S10 |
+| S10-5 | Validation updates (40 char title, optional description) | Done S10 |
+| S10-6 | API route updates (normalize simple {url} objects) | Done S10 |
+| S10-7 | CSP updates for TCGDex (connect-src + img-src) | Done S10 |
+| S10b-1 | State/Province dropdown in Country section | Done S10b |
+| S10b-2 | Restore PSA slab overlay on marketplace browse thumbnails | Done S10b |
+
+### Website Phase 3.6 — Country Filter + Wants Thumbnails (Session 11) ✓
+
+| # | Task | Status |
+|---|---|---|
+| S11-1 | Country/state database migration (backfill Brunei) | Done S11 |
+| S11-2 | Country filter with CountryPill dropdown on browse page | Done S11 |
+| S11-3 | State filter in sidebar (when country has states) | Done S11 |
+| S11-4 | Country/state persistence in listings table | Done S11 |
+| S11-5 | Wants thumbnails in ListingCard (up to 10 images) | Done S11 |
+| S11-6 | Haves thumbnails expanded to 10 max | Done S11 |
+| S11-7 | Create Listing label: "State / Province / District" | Done S11 |
+
+### Website Phase 3.7 — CardPicker Search & Filter Improvements (Done, Session 12)
+
+**Target component:** `src/components/CardPicker.tsx` (sections 3 & 4 of the Create Listing page)
+
+Four related issues to fix:
+
+| # | Task | Description |
+|---|---|---|
+| S12-1 | Cross-set search within an era | **Done S12** — era-wide name search via TCGdex `?name=like:` endpoint, filtered to the era's sets |
+| S12-2 | Japanese language support (EN display) | **Done S12** — English era/set labels always; JP card pool via `JA_SET_MAP`; English search reaches JA cards through `expandQuery()` |
+| S12-3 | Promos fix | **Done S12** — all promo sets searchable + browsable per era; imageless promos render as name tiles with placeholder image |
+| S12-4 | Global search across all eras | **Done S12** — "All Eras" search hits every set, sorted newest era first, capped at 100 with hint |
+
+**Prompt to use for the next session:**
+
+> **Goal:** Fix and improve the card search/filter system in sections 3 and 4 of the Create Listing page (`CardPicker` component).
+>
+> There are four related issues to address:
+>
+> 1. **Cross-set search within an era:** When a user selects an era (e.g. "Sword & Shield") but has not picked a specific set, searching for a card name (e.g. "Pikachu") should return results from **all sets in that era**, not just a single set. Currently, searching only works once a specific set is selected.
+>
+> 2. **Japanese language support:** When the user switches to the JP (Japanese) language filter, the era and set names should still be displayed in English (not Japanese), but the card pool should reflect Japanese sets. A user should be able to type "Pikachu" in English and see matching Japanese cards displayed.
+>
+> 3. **Promos not working:** Searching for promo cards (e.g. "Pikachu with Grey Felt Hat") returns no results. Promos need to be searchable through the TCGDex API the same way regular set cards are.
+>
+> 4. **Global search across all eras:** If no era or set filter is applied ("All Eras" selected), searching for "Pikachu" should return results from every era and set — not be blocked or return nothing.
+>
+> Before implementing, please ask any clarifying questions needed, such as:
+> - How should results be ranked or ordered when searching across multiple sets or all eras (e.g. newest era first, alphabetical by set)?
+> - For the "All Eras" cross-era search, is there a maximum number of results to show, or should pagination be used?
+> - For Japanese cards, should the card *names* displayed be in Japanese or English?
+> - Are there any TCGDex API rate limit concerns to consider when fetching from many sets simultaneously?
+> - For promos, which promo categories from TCGDex should be included (e.g. `svp`, `swshp`, `basep`, etc.)?
+
+**Key files for the next session:**
+
+| File | Role |
+|---|---|
+| `src/components/CardPicker.tsx` | Main component to fix (search logic, API calls) |
+| `src/components/CardPicker.module.css` | Styling |
+| `src/lib/marketplace/cardData.ts` | `ERA_DATA` (set IDs), `TRANSLATION_MAP`, `expandQuery()` |
+| `src/app/marketplace/new/page.tsx` | Create Listing page hosting the CardPicker |
+
+**Database note:** Migrations 00013–00017 have not yet been applied to the remote Supabase database. The `looking_for_images`, `wants_*` flags, `country`, and `state` columns are missing from the live DB. Run the SQL block from the Session 11 "Migration note" section in Supabase Dashboard → SQL Editor before running `npx tsx scripts/seed.ts` again.
 
 ### Website Phase 4 — Post-Launch Improvements
 
@@ -359,6 +684,8 @@ To be done after the website is live and working.
 | W21 | E2E tests with Playwright | Automated regression testing | New test suite; not blocking launch |
 | W22 | Avatar upload on profile edit | Users can set a profile picture | Needs new storage bucket for avatars |
 | W23 | Listing image reordering | Users can drag-and-drop to reorder images | Enhancement to `ImageUploader.tsx` |
+| W24 | Edit page alignment with new Create page | Edit page uses old form; should match new 5-section layout | Mirror S10 changes to `[id]/edit/page.tsx` |
+| W25 | Per-card grading overlays | Users can tag individual card thumbnails with PSA/CGC/BGS grades | Descoped from S10; overlay on ThumbContainer |
 
 ---
 
@@ -409,7 +736,7 @@ Begin after the website is fully launched and stable. The iOS app covers **marke
 | Database schema | Same | All tables, enums, relationships |
 | Realtime channels | Same | Messages, unread counts |
 | Storage bucket | Same | `listing-images` bucket with public URLs |
-| Validation rules | Must replicate | Title 5-120, desc 10-2000, etc. — shared constants needed |
+| Validation rules | Must replicate | havesText/wantsText 2-40 chars, desc optional max 2000, etc. |
 | Server-side logic | API calls | Ban checks, Turnstile, rate limiting, auto-decline on accept |
 
 ### iOS Phase 1 — Foundation + Backend Prep
@@ -498,7 +825,7 @@ These routes contain server-side business logic that cannot be replicated via th
 | Route | Reason |
 |---|---|
 | `POST /api/signup` | Rate limiting, admin user creation (Turnstile skipped on iOS) |
-| `POST /api/listings` | Ban check, rate limiting, 30-day expiry calc (Turnstile skipped on iOS) |
+| `POST /api/listings` | Ban check, rate limiting, 30-day expiry calc, title construction (Turnstile skipped on iOS) |
 | `PATCH /api/listings/[id]` | Ban check, ownership verification |
 | `DELETE /api/listings/[id]` | Ban check, ownership verification, soft delete |
 | `POST /api/listings/upload` | Server-side file validation, rate limiting, storage path generation |

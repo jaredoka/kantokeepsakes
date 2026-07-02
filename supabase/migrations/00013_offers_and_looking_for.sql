@@ -8,8 +8,8 @@ do $$ begin
 exception when duplicate_object then null;
 end $$;
 
--- Create offers table
-create table offers (
+-- Create offers table (idempotent: safe to re-run)
+create table if not exists offers (
   id uuid primary key default gen_random_uuid(),
   listing_id uuid not null references listings (id) on delete cascade,
   offerer_id uuid not null references profiles (id) on delete cascade,
@@ -20,18 +20,20 @@ create table offers (
   created_at timestamptz not null default now()
 );
 
-create index idx_offers_listing on offers (listing_id);
-create index idx_offers_offerer on offers (offerer_id);
-create index idx_offers_status on offers (status);
+create index if not exists idx_offers_listing on offers (listing_id);
+create index if not exists idx_offers_offerer on offers (offerer_id);
+create index if not exists idx_offers_status on offers (status);
 
 alter table offers enable row level security;
 
 -- Offerers can view their own offers
+drop policy if exists "Users can view their own offers" on offers;
 create policy "Users can view their own offers"
   on offers for select
   using (auth.uid() = offerer_id);
 
 -- Listing owners can view all offers on their listings
+drop policy if exists "Listing owners can view offers on their listings" on offers;
 create policy "Listing owners can view offers on their listings"
   on offers for select
   using (
@@ -43,11 +45,13 @@ create policy "Listing owners can view offers on their listings"
   );
 
 -- Authenticated users can create offers
+drop policy if exists "Authenticated users can create offers" on offers;
 create policy "Authenticated users can create offers"
   on offers for insert
   with check (auth.uid() = offerer_id);
 
 -- Listing owners can update offer status (accept/decline)
+drop policy if exists "Listing owners can update offer status" on offers;
 create policy "Listing owners can update offer status"
   on offers for update
   using (

@@ -1,17 +1,110 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import Turnstile from "@/components/Turnstile";
-import CardSearch from "@/components/CardSearch";
+import CardPicker from "@/components/CardPicker";
 import { validateListing } from "@/lib/marketplace/validation";
-import {
-  CURRENCIES,
-  type ListingFormData,
-} from "@/lib/marketplace/types";
+import { COUNTRIES, STATES_BY_COUNTRY, type CardItem, type Country } from "@/lib/marketplace/cardData";
 import styles from "./page.module.css";
+
+// ── SVG icon helpers ────────────────────────────────────────────────────────
+function IconSingles({ active }: { active: boolean }) {
+  const c = active ? "#92400e" : "#9ca3af";
+  return (
+    <svg width={20} height={28} viewBox="0 0 20 28" fill="none" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1.5" y="1.5" width="17" height="25" rx="2.5" />
+      <rect x="3.5" y="3.5" width="13" height="11" rx="1.5" strokeWidth="1.25" />
+    </svg>
+  );
+}
+
+function IconGraded({ active }: { active: boolean }) {
+  const c = active ? "#92400e" : "#9ca3af";
+  const labelFill = active ? "#b45309" : "#d1d5db";
+  return (
+    <svg width={20} height={28} viewBox="0 0 20 28" overflow="visible" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="-2" y="-9.5" width="24" height="39" rx="1.5" stroke={c} strokeWidth="1.75" />
+      <rect x="1.5" y="-8.5" width="17" height="8" rx="1" fill={labelFill} />
+      <rect x="2.75" y="-7.5" width="14.5" height="5.5" rx="0.5" fill="#ffffff" />
+      <rect x="1.5" y="1.5" width="17" height="25" rx="2.5" stroke={c} strokeWidth="1.5" />
+      <rect x="3.5" y="3.5" width="13" height="11" rx="1.5" stroke={c} strokeWidth="1.25" />
+    </svg>
+  );
+}
+
+function IconSealed({ active }: { active: boolean }) {
+  const c = active ? "#92400e" : "#9ca3af";
+  return (
+    <svg width={28} height={22} viewBox="0 0 28 22" fill="none" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1.5" y="5.5" width="18" height="15" rx="1.5" />
+      <path d="M1.5 5.5 L5.5 1.5 L25 1.5 L25 6.5 L19.5 6.5 L19.5 5.5 Z" />
+      <path d="M19.5 5.5 L25 1.5 L25 16.5 L19.5 20.5 Z" />
+      <line x1="1.5" y1="10" x2="19.5" y2="10" strokeWidth="1" />
+      <circle cx="10.5" cy="15" r="2.8" strokeWidth="1.25" />
+      <line x1="7.7" y1="15" x2="13.3" y2="15" strokeWidth="1" />
+      <circle cx="10.5" cy="15" r="1" fill={c} stroke="none" />
+    </svg>
+  );
+}
+
+// ── Sub-components ──────────────────────────────────────────────────────────
+
+function SectionHead({ n, title, flag, note }: { n: string; title: string; flag?: string | null; note?: string | null }) {
+  return (
+    <div className={styles.sectionHead}>
+      <span className={styles.sectionBadge}>{n}</span>
+      <span className={styles.sectionTitle}>{title}</span>
+      {flag && <span className={styles.sectionFlag}>{flag}</span>}
+      {note && <span className={styles.sectionNote}>{note}</span>}
+    </div>
+  );
+}
+
+function CharCount({ val, max }: { val: number; max: number }) {
+  return (
+    <div className={`${styles.charCount} ${val >= max ? styles.charCountOver : ""}`}>
+      {val}/{max}
+    </div>
+  );
+}
+
+function ThumbContainer({ images, onRemove, emptyMsg }: { images: CardItem[]; onRemove: (i: number) => void; emptyMsg: string }) {
+  return (
+    <div className={`${styles.thumbContainer} ${images.length ? styles.thumbContainerFilled : styles.thumbContainerEmpty}`}>
+      {images.length ? (
+        images.map((card, i) => (
+          <div key={`${card.localId || ""}${i}`} className={styles.thumbCard}>
+            <img
+              src={card.img}
+              alt={card.name || ""}
+              className={styles.thumbImg}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+            <button type="button" className={styles.thumbRemove} onClick={() => onRemove(i)}>
+              &times;
+            </button>
+          </div>
+        ))
+      ) : (
+        <span className={styles.thumbEmptyMsg}>{emptyMsg}</span>
+      )}
+    </div>
+  );
+}
+
+function PrefCard({ label, icon, active, onClick }: { label: string; icon: React.ReactNode; active: boolean; onClick: () => void }) {
+  return (
+    <button type="button" className={`${styles.prefCard} ${active ? styles.prefCardActive : ""}`} onClick={onClick}>
+      <span className={`${styles.prefCardIcon} ${active ? styles.prefCardIconActive : ""}`}>{icon}</span>
+      <span className={`${styles.prefCardLabel} ${active ? styles.prefCardLabelActive : ""}`}>{label}</span>
+    </button>
+  );
+}
+
+// ── Main page component ─────────────────────────────────────────────────────
 
 export default function NewListingPage() {
   const router = useRouter();
@@ -20,21 +113,44 @@ export default function NewListingPage() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
 
-  const [form, setForm] = useState<ListingFormData>({
-    havesText: "",
-    wantsText: "",
-    description: "",
-    price: "",
-    currency: "BND",
-    haveImages: [],
-    wantItems: [],
-    wantsCash: false,
-    wantsOffers: false,
-    wantsSingles: false,
-    wantsGraded: false,
-    wantsSealed: false,
-  });
+  // Country
+  const [country, setCountry] = useState<Country | null>(null);
+  const [countryQuery, setCountryQuery] = useState("");
+  const [countryOpen, setCountryOpen] = useState(false);
 
+  // State / Province
+  const [state, setState] = useState<string | null>(null);
+
+  // Title
+  const [havesText, setHavesText] = useState("");
+  const [wantsText, setWantsText] = useState("");
+
+  // Haves
+  const [haveImages, setHaveImages] = useState<CardItem[]>([]);
+  const [havesCash, setHavesCash] = useState(false);
+
+  // Wants
+  const [wantImages, setWantImages] = useState<CardItem[]>([]);
+  const [wPrefs, setWPrefs] = useState({ cash: false, singles: false, graded: false, sealed: false });
+
+  // Description
+  const [description, setDescription] = useState("");
+
+  // Responsive
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const TITLE_LIMIT = 40;
+  const DESC_LIMIT = 300;
+
+  const toggleW = (k: keyof typeof wPrefs) => setWPrefs((p) => ({ ...p, [k]: !p[k] }));
+
+  // Auth check
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -46,18 +162,59 @@ export default function NewListingPage() {
     setTurnstileToken(token);
   }, []);
 
-  function updateField<K extends keyof ListingFormData>(
-    key: K,
-    value: ListingFormData[K]
-  ) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }
+  // Filtered countries
+  const filteredCountries = useMemo(() => {
+    const q = countryQuery.toLowerCase().trim();
+    return q ? COUNTRIES.filter((c) => c.name.toLowerCase().includes(q)) : COUNTRIES;
+  }, [countryQuery]);
 
+  // States for selected country
+  const countryStates = country ? (STATES_BY_COUNTRY[country.name] ?? []) : [];
+
+  // Submit
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
-    const validation = validateListing(form);
+    if (!country) {
+      setError("Please select your country.");
+      return;
+    }
+
+    // Transform to API body shape
+    const apiBody = {
+      havesText,
+      wantsText,
+      description,
+      price: null as number | null,
+      currency: "BND",
+      haveImages: haveImages.map((c) => ({ url: c.img })),
+      wantItems: wantImages.map((c) => ({ url: c.img })),
+      wantsCash: wPrefs.cash,
+      wantsOffers: false,
+      wantsSingles: wPrefs.singles,
+      wantsGraded: wPrefs.graded,
+      wantsSealed: wPrefs.sealed,
+      country: country?.name ?? null,
+      state: state ?? null,
+      turnstileToken,
+    };
+
+    const validation = validateListing({
+      havesText: apiBody.havesText,
+      wantsText: apiBody.wantsText,
+      description: apiBody.description,
+      price: "",
+      currency: apiBody.currency,
+      haveImages: apiBody.haveImages.map((img) => ({ url: img.url, grader: "RAW" as const, grade: "" })),
+      wantItems: apiBody.wantItems.map((item) => ({ url: item.url, type: "singles" as const })),
+      wantsCash: apiBody.wantsCash,
+      wantsOffers: false,
+      wantsSingles: apiBody.wantsSingles,
+      wantsGraded: apiBody.wantsGraded,
+      wantsSealed: apiBody.wantsSealed,
+    });
+
     if (!validation.valid) {
       setError(validation.error!);
       return;
@@ -74,11 +231,7 @@ export default function NewListingPage() {
       const res = await fetch("/api/listings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          price: form.price.trim() ? Number(form.price) : null,
-          turnstileToken,
-        }),
+        body: JSON.stringify(apiBody),
       });
 
       if (!res.ok) {
@@ -97,6 +250,7 @@ export default function NewListingPage() {
     }
   }
 
+  // ── Auth states ───────────────────────────────────────────────────────────
   if (authed === null) {
     return (
       <main className={styles.main}>
@@ -108,263 +262,207 @@ export default function NewListingPage() {
   if (!authed) {
     return (
       <main className={styles.main}>
-        <div className={styles.card}>
-          <h1 className={styles.title}>Create a Listing</h1>
-          <p className={styles.subtitle}>
-            You need to be logged in to create a listing.
-          </p>
+        <div className={styles.authCard}>
+          <h1 className={styles.authTitle}>Create a Listing</h1>
+          <p className={styles.authSubtitle}>You need to be logged in to create a listing.</p>
           <div className={styles.authLinks}>
-            <Link href="/login" className={styles.authLinkPrimary}>
-              Log in
-            </Link>
-            <Link href="/signup" className={styles.authLink}>
-              Sign up
-            </Link>
+            <Link href="/login" className={styles.authLinkPrimary}>Log in</Link>
+            <Link href="/signup" className={styles.authLink}>Sign up</Link>
           </div>
         </div>
       </main>
     );
   }
 
-  // Build title preview
-  const titlePreview = `[H] ${form.havesText || "..."} [W] ${form.wantsText || "..."}`;
-
+  // ── Main form ─────────────────────────────────────────────────────────────
   return (
     <main className={styles.main}>
-      <div className={styles.card}>
+      <div className={styles.container}>
         <Link href="/marketplace" className={styles.backLink}>
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
           Back to Marketplace
         </Link>
-        <h1 className={styles.title}>Post a listing</h1>
-        <p className={styles.subtitle}>
-          Post a trade listing for Pokemon TCG items
-        </p>
+        <h1 className={styles.pageTitle}>Post a listing</h1>
+        <p className={styles.pageSubtitle}>Post a trade listing for Pok&eacute;mon TCG items</p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           {error && <div className={styles.error}>{error}</div>}
 
-          {/* Title — [H] and [W] inputs */}
-          <div className={styles.field}>
-            <label className={styles.label}>Title</label>
-            <div className={styles.titlePreview}>{titlePreview}</div>
-            <div className={styles.titleRow}>
-              <div className={styles.titleInputGroup}>
-                <span className={styles.titlePrefix}>[H]</span>
+          {/* ── SECTION 1: COUNTRY ──────────────────────────────────────── */}
+          <div className={styles.sectionCard}>
+            <SectionHead n="1" title="Country" flag={country ? country.flag : null} />
+            <div className={styles.sectionBody}>
+              <div className={styles.countryInputWrap}>
                 <input
                   type="text"
-                  value={form.havesText}
-                  onChange={(e) => updateField("havesText", e.target.value)}
-                  className={styles.titleInput}
-                  placeholder="e.g. Charizard ex PSA 10, Sealed ETB"
-                  maxLength={100}
+                  placeholder="Search country..."
+                  value={countryQuery}
+                  onFocus={() => setCountryOpen(true)}
+                  onChange={(e) => { setCountryQuery(e.target.value); setCountryOpen(true); setCountry(null); setState(null); }}
+                  className={`${styles.countryInput} ${country && !countryOpen ? styles.countryInputWithFlag : ""}`}
                 />
+                {country && !countryOpen && (
+                  <span className={styles.countryFlag}>{country.flag}</span>
+                )}
               </div>
-              <span className={styles.charCount}>
-                {form.havesText.length}/100
-              </span>
+              {countryOpen && (
+                <div className={styles.countryDropdown}>
+                  {filteredCountries.length === 0 ? (
+                    <div className={styles.countryEmpty}>No countries found</div>
+                  ) : (
+                    filteredCountries.map((c) => (
+                      <button
+                        key={c.name}
+                        type="button"
+                        className={`${styles.countryOption} ${country?.name === c.name ? styles.countryOptionActive : ""}`}
+                        onClick={() => { setCountry(c); setCountryQuery(c.name); setCountryOpen(false); setState(null); }}
+                      >
+                        <span className={styles.countryOptionFlag}>{c.flag}</span>
+                        {c.name}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+              {!country && !countryOpen && (
+                <p className={styles.countryRequired}>Required</p>
+              )}
+              {country && countryStates.length > 0 && (
+                <div className={styles.stateWrap}>
+                  <label className={styles.stateLabel}>State / Province / District <span className={styles.stateOptional}>(optional)</span></label>
+                  <select
+                    value={state ?? ""}
+                    onChange={(e) => setState(e.target.value || null)}
+                    className={styles.stateSelect}
+                  >
+                    <option value="">Select state...</option>
+                    {countryStates.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
-            <div className={styles.titleRow}>
-              <div className={styles.titleInputGroup}>
-                <span className={styles.titlePrefix}>[W]</span>
-                <input
-                  type="text"
-                  value={form.wantsText}
-                  onChange={(e) => updateField("wantsText", e.target.value)}
-                  className={styles.titleInput}
-                  placeholder="e.g. Mewtwo GX, Any offers, PayPal"
-                  maxLength={100}
-                />
+          </div>
+
+          {/* ── SECTION 2: TITLE ────────────────────────────────────────── */}
+          <div className={styles.sectionCard}>
+            <SectionHead n="2" title="Title" />
+            <div className={styles.sectionBody}>
+              {/* Live preview */}
+              <div className={`${styles.titlePreview} ${isMobile ? styles.titlePreviewMobile : ""}`}>
+                {isMobile ? (
+                  <>
+                    <span>[H] {havesText || "..."}</span>
+                    <span>[W] {wantsText || "..."}</span>
+                  </>
+                ) : (
+                  `[H] ${havesText || "..."} [W] ${wantsText || "..."}`
+                )}
               </div>
-              <span className={styles.charCount}>
-                {form.wantsText.length}/100
-              </span>
-            </div>
-          </div>
 
-          {/* Description */}
-          <div className={styles.field}>
-            <label htmlFor="description" className={styles.label}>
-              Description
-            </label>
-            <textarea
-              id="description"
-              value={form.description}
-              onChange={(e) => updateField("description", e.target.value)}
-              className={styles.textarea}
-              placeholder="Condition details, card language, shipping info..."
-              rows={5}
-              maxLength={2000}
-            />
-            <span className={styles.charCount}>
-              {form.description.length}/2000
-            </span>
-          </div>
-
-          {/* Haves — Card picker with per-card grading */}
-          <div className={styles.field}>
-            <label className={styles.label}>
-              Have Cards{" "}
-              <span className={styles.optional}>(click card to set grade)</span>
-            </label>
-            <CardSearch
-              mode="have"
-              haveImages={form.haveImages}
-              onHaveImagesChange={(imgs) => updateField("haveImages", imgs)}
-            />
-          </div>
-
-          {/* Wants — Card picker with type tags */}
-          <div className={styles.field}>
-            <label className={styles.label}>
-              Want Cards{" "}
-              <span className={styles.optional}>
-                (click card to set type: Singles/Graded/Sealed)
-              </span>
-            </label>
-            <CardSearch
-              mode="want"
-              wantItems={form.wantItems}
-              onWantItemsChange={(items) => updateField("wantItems", items)}
-            />
-          </div>
-
-          {/* What do you want? — Preferences */}
-          <div className={styles.sectionDivider}>
-            <h2 className={styles.sectionTitle}>Trading Preferences</h2>
-            <p className={styles.sectionSubtitle}>
-              Select at least one. You can combine multiple options.
-            </p>
-          </div>
-
-          <div className={styles.checkboxGroup}>
-            <label className={styles.checkboxRow}>
-              <input
-                type="checkbox"
-                checked={form.wantsCash}
-                onChange={(e) => updateField("wantsCash", e.target.checked)}
-              />
-              <span className={styles.checkboxLabel}>
-                Cash{" "}
-                <span className={styles.checkboxHint}>— set your price</span>
-              </span>
-            </label>
-            <label className={styles.checkboxRow}>
-              <input
-                type="checkbox"
-                checked={form.wantsOffers}
-                onChange={(e) => updateField("wantsOffers", e.target.checked)}
-              />
-              <span className={styles.checkboxLabel}>
-                Any Offers{" "}
-                <span className={styles.checkboxHint}>
-                  — open to any offer
-                </span>
-              </span>
-            </label>
-            <label className={styles.checkboxRow}>
-              <input
-                type="checkbox"
-                checked={form.wantsSingles}
-                onChange={(e) => updateField("wantsSingles", e.target.checked)}
-              />
-              <span className={styles.checkboxLabel}>
-                Any Singles{" "}
-                <span className={styles.checkboxHint}>
-                  — trade for singles
-                </span>
-              </span>
-            </label>
-            <label className={styles.checkboxRow}>
-              <input
-                type="checkbox"
-                checked={form.wantsGraded}
-                onChange={(e) => updateField("wantsGraded", e.target.checked)}
-              />
-              <span className={styles.checkboxLabel}>
-                Any Graded{" "}
-                <span className={styles.checkboxHint}>
-                  — trade for graded cards
-                </span>
-              </span>
-            </label>
-            <label className={styles.checkboxRow}>
-              <input
-                type="checkbox"
-                checked={form.wantsSealed}
-                onChange={(e) => updateField("wantsSealed", e.target.checked)}
-              />
-              <span className={styles.checkboxLabel}>
-                Any Sealed{" "}
-                <span className={styles.checkboxHint}>
-                  — trade for sealed products
-                </span>
-              </span>
-            </label>
-          </div>
-
-          {form.wantsCash && (
-            <div className={styles.priceRow}>
-              <div className={`${styles.field} ${styles.fieldFlex}`}>
-                <label htmlFor="price" className={styles.label}>
-                  Price
-                </label>
-                <input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={form.price}
-                  onChange={(e) => updateField("price", e.target.value)}
-                  className={styles.input}
-                  placeholder="Enter amount"
-                />
-              </div>
-              <div className={styles.field} style={{ width: 100 }}>
-                <label htmlFor="currency" className={styles.label}>
-                  Currency
-                </label>
-                <select
-                  id="currency"
-                  value={form.currency}
-                  onChange={(e) =>
-                    updateField(
-                      "currency",
-                      e.target.value as ListingFormData["currency"]
-                    )
-                  }
-                  className={styles.select}
-                >
-                  {CURRENCIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+              <div className={styles.titleInputs}>
+                {/* [H] input */}
+                <div>
+                  <div className={styles.titleInputRow}>
+                    <span className={styles.titleBadge}>[H]</span>
+                    <input
+                      type="text"
+                      value={havesText}
+                      maxLength={TITLE_LIMIT}
+                      onChange={(e) => setHavesText(e.target.value)}
+                      placeholder="What you have &#x2014; e.g. Charizard ex PSA 10"
+                      className={styles.titleInputField}
+                    />
+                  </div>
+                  <CharCount val={havesText.length} max={TITLE_LIMIT} />
+                </div>
+                {/* [W] input */}
+                <div>
+                  <div className={styles.titleInputRow}>
+                    <span className={styles.titleBadge}>[W]</span>
+                    <input
+                      type="text"
+                      value={wantsText}
+                      maxLength={TITLE_LIMIT}
+                      onChange={(e) => setWantsText(e.target.value)}
+                      placeholder="What you want &#x2014; e.g. Cash or Mewtwo GX"
+                      className={styles.titleInputField}
+                    />
+                  </div>
+                  <CharCount val={wantsText.length} max={TITLE_LIMIT} />
+                </div>
               </div>
             </div>
-          )}
+          </div>
 
+          {/* ── SECTION 3: HAVES ────────────────────────────────────────── */}
+          <div className={styles.sectionCard}>
+            <SectionHead n="3" title="Haves" note="What you're offering" />
+            <div className={styles.sectionBody}>
+              <div className={styles.havesRow}>
+                <ThumbContainer
+                  images={haveImages}
+                  onRemove={(i) => setHaveImages((imgs) => imgs.filter((_, j) => j !== i))}
+                  emptyMsg="Browse cards below to add images"
+                />
+                {isMobile ? (
+                  <div className={styles.prefCards}>
+                    <PrefCard label="Cash" icon="$" active={havesCash} onClick={() => setHavesCash(!havesCash)} />
+                  </div>
+                ) : (
+                  <PrefCard label="Cash" icon="$" active={havesCash} onClick={() => setHavesCash(!havesCash)} />
+                )}
+              </div>
+              <CardPicker onSelectCard={(card) => setHaveImages((imgs) => [...imgs, card])} />
+            </div>
+          </div>
+
+          {/* ── SECTION 4: WANTS ────────────────────────────────────────── */}
+          <div className={styles.sectionCard}>
+            <SectionHead n="4" title="Wants" note="What you're looking for" />
+            <div className={styles.sectionBody}>
+              <div className={styles.havesRow}>
+                <ThumbContainer
+                  images={wantImages}
+                  onRemove={(i) => setWantImages((imgs) => imgs.filter((_, j) => j !== i))}
+                  emptyMsg="Browse cards below to add images"
+                />
+                <div className={styles.prefCards}>
+                  <PrefCard label="Cash" icon="$" active={wPrefs.cash} onClick={() => toggleW("cash")} />
+                  <PrefCard label="Singles" icon={<IconSingles active={wPrefs.singles} />} active={wPrefs.singles} onClick={() => toggleW("singles")} />
+                  <PrefCard label="Graded" icon={<IconGraded active={wPrefs.graded} />} active={wPrefs.graded} onClick={() => toggleW("graded")} />
+                  <PrefCard label="Sealed" icon={<IconSealed active={wPrefs.sealed} />} active={wPrefs.sealed} onClick={() => toggleW("sealed")} />
+                </div>
+              </div>
+              <CardPicker onSelectCard={(card) => setWantImages((imgs) => [...imgs, card])} />
+            </div>
+          </div>
+
+          {/* ── SECTION 5: DESCRIPTION ──────────────────────────────────── */}
+          <div className={styles.sectionCard}>
+            <SectionHead n="5" title="Description" note="optional" />
+            <div className={styles.sectionBody}>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Condition details, card language, shipping info..."
+                rows={4}
+                maxLength={DESC_LIMIT}
+                className={styles.descTextarea}
+              />
+              <CharCount val={description.length} max={DESC_LIMIT} />
+            </div>
+          </div>
+
+          {/* ── CAPTCHA + Submit ─────────────────────────────────────────── */}
           <div className={styles.turnstile}>
             <Turnstile onVerify={onVerify} />
           </div>
 
-          <button
-            type="submit"
-            className={styles.submitBtn}
-            disabled={loading}
-          >
+          <button type="submit" className={styles.submitBtn} disabled={loading}>
             {loading ? "Creating..." : "Create Listing"}
           </button>
         </form>

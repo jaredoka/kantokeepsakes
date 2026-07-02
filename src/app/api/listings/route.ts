@@ -52,13 +52,15 @@ export async function POST(request: NextRequest) {
     description?: string;
     price?: number | null;
     currency?: string;
-    haveImages?: HaveImage[];
-    wantItems?: WantItem[];
+    haveImages?: (HaveImage | { url: string })[];
+    wantItems?: (WantItem | { url: string })[];
     wantsCash?: boolean;
     wantsOffers?: boolean;
     wantsSingles?: boolean;
     wantsGraded?: boolean;
     wantsSealed?: boolean;
+    country?: string;
+    state?: string;
     turnstileToken?: string;
   };
 
@@ -81,6 +83,8 @@ export async function POST(request: NextRequest) {
     wantsSingles,
     wantsGraded,
     wantsSealed,
+    country,
+    state,
     turnstileToken,
   } = body;
 
@@ -100,15 +104,26 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Normalise images to HaveImage[] / WantItem[] for validation
+  const normHaveImages = (haveImages || []).map((img) => ({
+    url: img.url,
+    grader: ("grader" in img ? img.grader : "RAW") as "RAW",
+    grade: ("grade" in img ? img.grade : "") as string,
+  }));
+  const normWantItems = (wantItems || []).map((item) => ({
+    url: item.url,
+    type: ("type" in item ? item.type : "singles") as "singles",
+  }));
+
   // Validate fields
   const validation = validateListing({
     havesText: havesText || "",
     wantsText: wantsText || "",
     description: description || "",
     price: price === null || price === undefined ? "" : String(price),
-    currency: currency || "",
-    haveImages: haveImages || [],
-    wantItems: wantItems || [],
+    currency: currency || "BND",
+    haveImages: normHaveImages,
+    wantItems: normWantItems,
     wantsCash: !!wantsCash,
     wantsOffers: !!wantsOffers,
     wantsSingles: !!wantsSingles,
@@ -123,11 +138,11 @@ export async function POST(request: NextRequest) {
   // Construct title from [H] and [W] text
   const title = `[H] ${(havesText || "").trim()} [W] ${(wantsText || "").trim()}`;
 
-  // Extract image URLs from haveImages for the images column
-  const imageUrls = (haveImages || []).map((img) => img.url);
+  // Extract image URLs for the images column
+  const imageUrls = normHaveImages.map((img) => img.url);
 
   // Extract want item URLs for looking_for_images column
-  const wantImageUrls = (wantItems || []).map((item) => item.url);
+  const wantImageUrls = normWantItems.map((item) => item.url);
 
   const now = new Date().toISOString();
   const expiresAt = new Date(
@@ -140,13 +155,15 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       type: "WTS" as const, // default for backward compatibility
       title: title.trim(),
-      description: (description as string).trim(),
+      description: (description || "").trim(),
       category: "singles" as const, // default for backward compatibility
       language: "any" as const, // default for backward compatibility
-      price: wantsCash ? (price ?? null) : null,
+      price: price ?? null,
       currency: (currency as "BND" | "USD" | "MYR" | "SGD") || "BND",
       images: imageUrls,
       looking_for_images: wantImageUrls,
+      country: (country || "").trim() || null,
+      state: (state || "").trim() || null,
       wants_cash: !!wantsCash,
       wants_offers: !!wantsOffers,
       wants_singles: !!wantsSingles,

@@ -7,6 +7,8 @@ import {
   type ListingWithProfile,
 } from "@/lib/marketplace/types";
 import { getExpiryWarning, getExpiryUrgency } from "@/lib/marketplace/dates";
+import { parseGradingTag } from "@/lib/marketplace/grading";
+import GradedCardImage from "./GradedCardImage";
 import styles from "./ListingCard.module.css";
 
 interface ListingCardProps {
@@ -30,8 +32,8 @@ function formatRelativeTime(dateStr: string): string {
   return `${diffMonths}mo ago`;
 }
 
-/** Max visible images before showing "+N" overflow */
-const MAX_VISIBLE_IMAGES = 4;
+/** Max visible images per section before showing "+N" overflow */
+const MAX_VISIBLE_IMAGES = 10;
 
 export default function ListingCard({
   listing,
@@ -43,6 +45,13 @@ export default function ListingCard({
     ? (listing as ListingWithProfile).profiles
     : null;
 
+  const grading = listing.category === "graded" ? parseGradingTag(listing.title) : null;
+  const cellSizeClass = grading
+    ? styles.imageCellGraded
+    : listing.category === "singles"
+      ? styles.imageCellSingles
+      : styles.imageCellDefault;
+
   const hasCash = listing.wants_cash || listing.price !== null;
   const hasOffers = listing.wants_offers;
   const hasSingles = listing.wants_singles;
@@ -50,9 +59,14 @@ export default function ListingCard({
   const hasSealed = listing.wants_sealed;
   const showFallback = !hasCash && !hasOffers && !hasSingles && !hasGraded && !hasSealed;
 
-  // Images to show, with overflow indicator
+  // Haves images to show, with overflow indicator
   const visibleImages = listing.images.slice(0, MAX_VISIBLE_IMAGES);
   const overflowCount = listing.images.length - MAX_VISIBLE_IMAGES;
+
+  // Wants images to show, with overflow indicator
+  const wantImages = listing.looking_for_images ?? [];
+  const wantVisibleImages = wantImages.slice(0, MAX_VISIBLE_IMAGES);
+  const wantOverflowCount = wantImages.length - MAX_VISIBLE_IMAGES;
 
   // Collect want pills
   const wantPills: { label: string; value?: string }[] = [];
@@ -123,17 +137,21 @@ export default function ListingCard({
             <div className={styles.imageGrid}>
               {visibleImages.length > 0 ? (
                 visibleImages.map((url, i) => (
-                  <div key={i} className={`${styles.imageCell} ${styles.imageCellDefault}`}>
-                    <img
-                      src={url}
-                      alt={`Card ${i + 1}`}
-                      className={styles.cardImg}
-                      loading="lazy"
-                    />
+                  <div key={i} className={`${styles.imageCell} ${cellSizeClass}`}>
+                    {grading ? (
+                      <GradedCardImage src={url} alt={`Card ${i + 1}`} grading={grading} size="sm" />
+                    ) : (
+                      <img
+                        src={url}
+                        alt={`Card ${i + 1}`}
+                        className={styles.cardImg}
+                        loading="lazy"
+                      />
+                    )}
                   </div>
                 ))
               ) : (
-                <div className={`${styles.imageCell} ${styles.imageCellDefault}`}>
+                <div className={`${styles.imageCell} ${cellSizeClass}`}>
                   <svg
                     width="24"
                     height="24"
@@ -156,10 +174,29 @@ export default function ListingCard({
             </div>
           </div>
 
-          {/* Wants — compact pills */}
+          {/* Wants — thumbnails + pills */}
           <div className={styles.wantsPanel}>
             <span className={styles.colLabel}>Wants</span>
-            <div className={styles.wantPills}>
+            {wantVisibleImages.length > 0 && (
+              <div className={styles.imageGrid}>
+                {wantVisibleImages.map((url, i) => (
+                  <div key={i} className={`${styles.imageCell} ${styles.imageCellSingles}`}>
+                    <img
+                      src={url}
+                      alt={`Want ${i + 1}`}
+                      className={styles.cardImg}
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+                {wantOverflowCount > 0 && (
+                  <div className={styles.overflowCell}>
+                    +{wantOverflowCount}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className={`${styles.wantPills} ${wantVisibleImages.length > 0 ? styles.wantPillsWithImages : ""}`}>
               {wantPills.map((pill) => (
                 <span key={pill.label} className={styles.wantPill}>
                   {pill.label}

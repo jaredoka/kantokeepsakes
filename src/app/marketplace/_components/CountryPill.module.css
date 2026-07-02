@@ -1,0 +1,117 @@
+.wrap {
+  position: relative;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius-pill);
+  background-color: var(--color-white);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-gray-700);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.pill:hover {
+  border-color: var(--color-gray-500);
+  background-color: var(--color-gray-50);
+}
+
+.flag {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.name {
+  line-height: 1.2;
+}
+
+.chevron {
+  flex-shrink: 0;
+  transition: transform 150ms ease;
+  color: var(--color-gray-400);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* Dropdown */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 260px;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 50;
+  overflow: hidden;
+}
+
+.search {
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-bottom: 1px solid var(--color-gray-200);
+  font-size: var(--font-size-sm);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.search:focus {
+  background-color: var(--color-gray-50);
+}
+
+.list {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-700);
+  cursor: pointer;
+  text-align: left;
+}
+
+.option:hover {
+  background-color: var(--color-gray-50);
+}
+
+.optionActive {
+  background-color: var(--color-gray-100);
+  font-weight: 600;
+}
+
+.optionFlag {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.empty {
+  padding: 12px;
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-400);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .dropdown {
+    width: 220px;
+  }
+}

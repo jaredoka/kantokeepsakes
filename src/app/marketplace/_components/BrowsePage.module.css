@@ -18,6 +18,13 @@
   flex-wrap: wrap;
 }
 
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
 .title {
   font-size: var(--font-size-2xl);
 }

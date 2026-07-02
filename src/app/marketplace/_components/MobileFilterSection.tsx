@@ -9,12 +9,14 @@ interface MobileFilterSectionProps {
   filters: ListingFilters;
   basePath: string;
   activeFilterCount: number;
+  country?: string;
 }
 
 export default function MobileFilterSection({
   filters,
   basePath,
   activeFilterCount,
+  country,
 }: MobileFilterSectionProps) {
   const [open, setOpen] = useState(false);
 
@@ -45,7 +47,7 @@ export default function MobileFilterSection({
 
       {open && (
         <div className={styles.filterPanel}>
-          <FilterBar filters={filters} basePath={basePath} />
+          <FilterBar filters={filters} basePath={basePath} country={country} />
         </div>
       )}
     </div>

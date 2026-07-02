@@ -47,10 +47,21 @@ interface SeedListing {
   price: number | null;
   currency: string;
   images: string[];
+  looking_for_images: string[];
+  wants_cash: boolean;
+  wants_offers: boolean;
+  wants_singles: boolean;
+  wants_graded: boolean;
+  wants_sealed: boolean;
   status: string;
   bumped_at: string;
   expires_at: string;
 }
+
+// Default want fields for listings that only want cash
+const WANTS_CASH_ONLY = { looking_for_images: [] as string[], wants_cash: true, wants_offers: false, wants_singles: false, wants_graded: false, wants_sealed: false };
+const WANTS_OFFERS = { looking_for_images: [] as string[], wants_cash: false, wants_offers: true, wants_singles: false, wants_graded: false, wants_sealed: false };
+const WANTS_NONE = { looking_for_images: [] as string[], wants_cash: false, wants_offers: false, wants_singles: false, wants_graded: false, wants_sealed: false };
 
 function listings(userIds: Record<string, string>): SeedListing[] {
   const now = new Date();
@@ -65,7 +76,7 @@ function listings(userIds: Record<string, string>): SeedListing[] {
     {
       user_id: userIds["AshK_trainer"],
       type: "WTS",
-      title: "[RAW] Charizard VMAX Rainbow Rare - Champion's Path",
+      title: "[H] Charizard VMAX Rainbow [W] Cash",
       description:
         "Pulled this from a booster box. Card is in near-mint condition, went straight into a sleeve. No whitening on edges, centering is solid. Happy to send close-up photos on request.",
       category: "singles",
@@ -73,6 +84,7 @@ function listings(userIds: Record<string, string>): SeedListing[] {
       price: 161,
       currency: "USD",
       images: ["https://assets.tcgdex.net/en/swsh/swsh3.5/74/high.webp"],
+      ...WANTS_CASH_ONLY,
       status: "active",
       bumped_at: hr(2),
       expires_at: expires,
@@ -80,82 +92,7 @@ function listings(userIds: Record<string, string>): SeedListing[] {
     {
       user_id: userIds["MistyCerulean"],
       type: "WTS",
-      title: "[PSA10] Pikachu Illustration Contest 2024 Promo #214",
-      description:
-        "PSA 10 Gem Mint slab of the Pikachu Illustration Contest promo. Case is clean with no scratches. Will ship with tracking and insurance. Price based on recent PSA 10 comps.",
-      category: "graded",
-      language: "japanese",
-      price: 305,
-      currency: "USD",
-      images: ["https://assets.tcgdex.net/ja/SV/SV2a/025/high.webp"],
-      status: "active",
-      bumped_at: hr(4),
-      expires_at: expires,
-    },
-    {
-      user_id: userIds["BrockPewter"],
-      type: "WTS",
-      title: "[SEALED] Pokemon 151 Booster Bundle (6 packs)",
-      description:
-        "Six sealed booster packs from the Scarlet & Violet 151 set. Packs are unweighed and come from a freshly opened Elite Trainer Box. Selling because I completed my set.",
-      category: "sealed",
-      language: "english",
-      price: 175,
-      currency: "USD",
-      images: ["https://assets.tcgdex.net/en/sv/sv03.5/009/high.webp"],
-      status: "active",
-      bumped_at: hr(8),
-      expires_at: expires,
-    },
-    {
-      user_id: userIds["GaryOakRival"],
-      type: "WTS",
-      title: "[RAW] Blastoise ex SAR 202/165 - Pokemon 151",
-      description:
-        "Special Art Rare Blastoise ex from the Japanese 151 set. Pack fresh, sleeved immediately. Centering looks great front and back. Also open to trading for Venusaur ex SAR or Charizard ex SAR from 151.",
-      category: "singles",
-      language: "japanese",
-      price: 144,
-      currency: "USD",
-      images: ["https://assets.tcgdex.net/ja/SV/SV2a/202/high.webp"],
-      status: "active",
-      bumped_at: hr(12),
-      expires_at: expires,
-    },
-    {
-      user_id: userIds["JessieRocket"],
-      type: "WTS",
-      title: "[SEALED] Japanese Eevee Heroes Booster Box",
-      description:
-        "Factory sealed Eevee Heroes booster box, Japanese version. Box is in excellent condition with no dents or tears on the shrink wrap. One of the best modern Japanese sets for Eeveelution fans.",
-      category: "sealed",
-      language: "japanese",
-      price: 835,
-      currency: "USD",
-      images: [],
-      status: "active",
-      bumped_at: hr(24),
-      expires_at: expires,
-    },
-    {
-      user_id: userIds["AshK_trainer"],
-      type: "WTS",
-      title: "[RAW] Mew VMAX Alt Art #269 - Fusion Strike",
-      description:
-        "Alt art Mew VMAX from Fusion Strike. Card is NM with clean edges and no surface scratches. A beautiful card for any collection. Price is firm based on recent sold comps.",
-      category: "singles",
-      language: "english",
-      price: 188,
-      currency: "USD",
-      images: ["https://assets.tcgdex.net/en/swsh/swsh8/268/high.webp"],
-      status: "active",
-      bumped_at: hr(3),
-      expires_at: expires,
-    },
-    {
-      user_id: userIds["MistyCerulean"],
-      type: "WTS",
-      title: "[PSA9] Umbreon VMAX Alt Art #215 - Evolving Skies",
+      title: "[H] PSA 9 Umbreon VMAX Alt Art [W] Cash",
       description:
         "PSA 9 Mint Umbreon VMAX Alternate Art from Evolving Skies. The most iconic modern Pokemon card. Slab is in perfect condition with no case scratches. Serious inquiries only.",
       category: "graded",
@@ -163,159 +100,180 @@ function listings(userIds: Record<string, string>): SeedListing[] {
       price: 2249,
       currency: "USD",
       images: ["https://assets.tcgdex.net/en/swsh/swsh7/215/high.webp"],
+      ...WANTS_CASH_ONLY,
       status: "active",
       bumped_at: hr(0.5),
       expires_at: expires,
     },
     {
-      user_id: userIds["BrockPewter"],
-      type: "WTS",
-      title: "Ultra Pro Magnetic One-Touch 35pt Holders (10 pack)",
-      description:
-        "Brand new pack of 10 Ultra Pro magnetic card holders. UV protected, 35pt thickness - perfect for standard Pokemon cards. Never opened.",
-      category: "accessories",
-      language: "any",
-      price: 18,
-      currency: "USD",
-      images: [],
-      status: "active",
-      bumped_at: hr(48),
-      expires_at: expires,
-    },
-    {
-      user_id: userIds["GaryOakRival"],
-      type: "WTS",
-      title: "[SEALED] Scarlet & Violet Obsidian Flames ETB",
-      description:
-        "Sealed Elite Trainer Box from Obsidian Flames. Includes 9 booster packs, card sleeves, dice, and more. Box is in great shape with tight seal, perfect for opening or collecting.",
-      category: "sealed",
-      language: "english",
-      price: 291,
-      currency: "USD",
-      images: [],
-      status: "active",
-      bumped_at: hr(5),
-      expires_at: expires,
-    },
-    {
       user_id: userIds["JessieRocket"],
       type: "WTS",
-      title: "[RAW] Gengar VMAX Alt Art #271 - Fusion Strike",
+      title: "[H] Dark Charizard Holo [W] Cash",
       description:
-        "Gengar VMAX alternate art from Fusion Strike. Near-mint condition, pulled and sleeved. One of my favorite artworks in the SWSH era. Selling to fund a grading submission.",
+        "1st Edition Dark Charizard Holo from Team Rocket. Near-mint condition. A true vintage gem.",
       category: "singles",
       language: "english",
-      price: 897,
+      price: 8000,
       currency: "USD",
-      images: ["https://assets.tcgdex.net/en/swsh/swsh8/271/high.webp"],
+      images: ["https://assets.tcgdex.net/en/base/base5/4/high.webp"],
+      ...WANTS_CASH_ONLY,
       status: "active",
-      bumped_at: hr(6),
+      bumped_at: hr(0.5),
       expires_at: expires,
     },
     {
       user_id: userIds["AshK_trainer"],
       type: "WTS",
-      title: "[PSA10] Charizard VMAX #20 - Darkness Ablaze",
+      title: "[H] Sealed Surging Sparks Box [W] Cash",
       description:
-        "PSA 10 Gem Mint Charizard VMAX from Darkness Ablaze. Clean slab, no scratches. One of the most popular modern Charizard cards in perfect grade. Price based on recent PSA 10 sales.",
-      category: "graded",
-      language: "english",
-      price: 160,
-      currency: "USD",
-      images: ["https://assets.tcgdex.net/en/swsh/swsh3/20/high.webp"],
-      status: "active",
-      bumped_at: hr(9),
-      expires_at: expires,
-    },
-    {
-      user_id: userIds["MistyCerulean"],
-      type: "WTS",
-      title: "[PSA9] Mew VMAX Alt Art #269 - Fusion Strike",
-      description:
-        "PSA 9 Mint Mew VMAX alternate art. Beautiful card in a clean slab. Would also consider trading for a PSA 9 or PSA 10 Moonbreon (Umbreon V Alt Art).",
-      category: "graded",
-      language: "english",
-      price: 210,
-      currency: "USD",
-      images: ["https://assets.tcgdex.net/en/swsh/swsh8/268/high.webp"],
-      status: "active",
-      bumped_at: hr(15),
-      expires_at: expires,
-    },
-    {
-      user_id: userIds["BrockPewter"],
-      type: "WTS",
-      title: "[SEALED] Japanese VSTAR Universe Booster Box",
-      description:
-        "Factory sealed VSTAR Universe booster box from Japan. One of the best sets for chase cards including the iconic God Pack. Perfect for ripping or holding as an investment.",
-      category: "sealed",
-      language: "japanese",
-      price: 219,
-      currency: "USD",
-      images: [],
-      status: "active",
-      bumped_at: hr(20),
-      expires_at: expires,
-    },
-
-    // ── Additional WTS listings ──
-
-    {
-      user_id: userIds["MistyCerulean"],
-      type: "WTS",
-      title: "[RAW] Espeon V Alt Art #180 - Evolving Skies",
-      description:
-        "Espeon V alternate art from Evolving Skies. NM condition, pulled and double-sleeved. Beautiful Mitsuhiro Arita artwork. Trade only — looking for Eeveelution alt arts I'm missing.",
-      category: "singles",
-      language: "english",
-      price: null,
-      currency: "USD",
-      images: ["https://assets.tcgdex.net/en/swsh/swsh7/64/high.webp"],
-      status: "active",
-      bumped_at: hr(1),
-      expires_at: expires,
-    },
-    {
-      user_id: userIds["AshK_trainer"],
-      type: "WTS",
-      title: "[SEALED] Surging Sparks Booster Box",
-      description:
-        "Fresh sealed Surging Sparks booster box, English. Great pull rates with Pikachu ex SAR chase card. Will trade for Japanese sealed product of equal value or sell for cash.",
+        "Fresh sealed Surging Sparks booster box, English. Great pull rates with Pikachu ex SAR chase card.",
       category: "sealed",
       language: "english",
       price: 125,
       currency: "USD",
       images: [],
+      ...WANTS_CASH_ONLY,
       status: "active",
       bumped_at: hr(1.5),
       expires_at: expires,
     },
     {
-      user_id: userIds["JessieRocket"],
+      user_id: userIds["AshK_trainer"],
       type: "WTS",
-      title: "[RAW] Miraidon ex SAR #227 - Scarlet ex",
+      title: "[H] PSA 10 Charizard VMAX [W] Cash",
       description:
-        "Japanese Miraidon ex Special Art Rare from the Scarlet ex set. Pack fresh NM. Gorgeous full art with the electric landscape. Open to offers — cash or trades welcome.",
-      category: "singles",
-      language: "japanese",
-      price: 72,
+        "PSA 10 Gem Mint Charizard VMAX from Darkness Ablaze. Clean slab, no scratches.",
+      category: "graded",
+      language: "english",
+      price: 160,
       currency: "USD",
-      images: ["https://assets.tcgdex.net/ja/SV/SV1V/037/high.webp"],
+      images: ["https://assets.tcgdex.net/en/swsh/swsh3/20/high.webp"],
+      ...WANTS_CASH_ONLY,
       status: "active",
-      bumped_at: hr(7),
+      bumped_at: hr(9),
+      expires_at: expires,
+    },
+
+    // ── WTS with trade wants (looking_for_images populated) ──
+
+    {
+      user_id: userIds["MistyCerulean"],
+      type: "WTS",
+      title: "[H] Espeon V Alt Art [W] Eeveelution Alt Arts",
+      description:
+        "Espeon V alternate art from Evolving Skies. NM condition. Trade only — looking for Eeveelution alt arts I'm missing.",
+      category: "singles",
+      language: "english",
+      price: null,
+      currency: "USD",
+      images: ["https://assets.tcgdex.net/en/swsh/swsh7/64/high.webp"],
+      looking_for_images: [
+        "https://assets.tcgdex.net/en/swsh/swsh7/167/high.webp",  // Leafeon V Alt
+        "https://assets.tcgdex.net/en/swsh/swsh7/175/high.webp",  // Glaceon V Alt
+        "https://assets.tcgdex.net/en/swsh/swsh7/184/high.webp",  // Sylveon V Alt
+      ],
+      wants_cash: false,
+      wants_offers: false,
+      wants_singles: true,
+      wants_graded: false,
+      wants_sealed: false,
+      status: "active",
+      bumped_at: hr(1),
       expires_at: expires,
     },
     {
       user_id: userIds["GaryOakRival"],
       type: "WTS",
-      title: "[PSA9] Rayquaza VMAX Alt Art #218 - Evolving Skies",
+      title: "[H] Blastoise ex SAR [W] Venusaur or Charizard SAR",
       description:
-        "PSA 9 Mint Rayquaza VMAX alternate art from Evolving Skies. One of the most sought-after alt arts. Slab is pristine. Cash or trade for other high-end PSA slabs.",
+        "Special Art Rare Blastoise ex from the Japanese 151 set. Pack fresh. Trading for Venusaur ex SAR or Charizard ex SAR from 151.",
+      category: "singles",
+      language: "japanese",
+      price: null,
+      currency: "USD",
+      images: ["https://assets.tcgdex.net/en/sv/sv03.5/199/high.webp"],
+      looking_for_images: [
+        "https://assets.tcgdex.net/en/sv/sv03.5/200/high.webp",  // Venusaur ex SAR
+        "https://assets.tcgdex.net/en/sv/sv03.5/201/high.webp",  // Charizard ex SAR
+      ],
+      wants_cash: false,
+      wants_offers: true,
+      wants_singles: true,
+      wants_graded: false,
+      wants_sealed: false,
+      status: "active",
+      bumped_at: hr(12),
+      expires_at: expires,
+    },
+    {
+      user_id: userIds["MistyCerulean"],
+      type: "WTS",
+      title: "[H] Giratina V Alt Art [W] Evolving Skies Alt Arts",
+      description:
+        "Giratina V alternate art from Lost Origin. NM condition. Will trade for Evolving Skies alt arts.",
+      category: "singles",
+      language: "english",
+      price: null,
+      currency: "USD",
+      images: ["https://assets.tcgdex.net/en/swsh/swsh11/130/high.webp"],
+      looking_for_images: [
+        "https://assets.tcgdex.net/en/swsh/swsh7/188/high.webp",  // Umbreon V Alt
+        "https://assets.tcgdex.net/en/swsh/swsh7/215/high.webp",  // Umbreon VMAX Alt
+        "https://assets.tcgdex.net/en/swsh/swsh7/218/high.webp",  // Rayquaza VMAX Alt
+        "https://assets.tcgdex.net/en/swsh/swsh7/203/high.webp",  // Dragonite V Alt
+      ],
+      wants_cash: true,
+      wants_offers: false,
+      wants_singles: true,
+      wants_graded: false,
+      wants_sealed: false,
+      status: "active",
+      bumped_at: hr(11),
+      expires_at: expires,
+    },
+    {
+      user_id: userIds["JessieRocket"],
+      type: "WTS",
+      title: "[H] Gengar VMAX Alt Art [W] Cash or Trades",
+      description:
+        "Gengar VMAX alternate art from Fusion Strike. Near-mint condition. Selling or trading.",
+      category: "singles",
+      language: "english",
+      price: 897,
+      currency: "USD",
+      images: ["https://assets.tcgdex.net/en/swsh/swsh8/271/high.webp"],
+      looking_for_images: [
+        "https://assets.tcgdex.net/en/swsh/swsh7/215/high.webp",  // Umbreon VMAX Alt
+      ],
+      wants_cash: true,
+      wants_offers: true,
+      wants_singles: true,
+      wants_graded: false,
+      wants_sealed: false,
+      status: "active",
+      bumped_at: hr(6),
+      expires_at: expires,
+    },
+    {
+      user_id: userIds["GaryOakRival"],
+      type: "WTS",
+      title: "[H] PSA 9 Rayquaza VMAX Alt [W] High-End Slabs",
+      description:
+        "PSA 9 Mint Rayquaza VMAX alternate art from Evolving Skies. Cash or trade for other high-end PSA slabs.",
       category: "graded",
       language: "english",
       price: 420,
       currency: "USD",
       images: ["https://assets.tcgdex.net/en/swsh/swsh7/218/high.webp"],
+      looking_for_images: [
+        "https://assets.tcgdex.net/en/swsh/swsh7/215/high.webp",  // Umbreon VMAX Alt
+        "https://assets.tcgdex.net/en/swsh/swsh8/271/high.webp",  // Gengar VMAX Alt
+      ],
+      wants_cash: true,
+      wants_offers: false,
+      wants_singles: false,
+      wants_graded: true,
+      wants_sealed: false,
       status: "active",
       bumped_at: hr(2.5),
       expires_at: expires,
@@ -323,44 +281,70 @@ function listings(userIds: Record<string, string>): SeedListing[] {
     {
       user_id: userIds["BrockPewter"],
       type: "WTS",
-      title: "[SEALED] Prismatic Evolutions ETB x2",
+      title: "[H] Sealed 151 Bundle [W] Cash",
       description:
-        "Two sealed Prismatic Evolutions Elite Trainer Boxes. Will sell individually or as a pair. Boxes are in perfect condition with no shelf wear.",
+        "Six sealed booster packs from the Scarlet & Violet 151 set. Unweighed.",
       category: "sealed",
       language: "english",
-      price: 95,
+      price: 175,
       currency: "USD",
-      images: [],
+      images: ["https://assets.tcgdex.net/en/sv/sv03.5/009/high.webp"],
+      ...WANTS_CASH_ONLY,
       status: "active",
-      bumped_at: hr(4.5),
-      expires_at: expires,
-    },
-    {
-      user_id: userIds["MistyCerulean"],
-      type: "WTS",
-      title: "[RAW] Giratina V Alt Art #186 - Lost Origin",
-      description:
-        "Giratina V alternate art from Lost Origin. NM condition. One of my favorite modern artworks but I need to fund grading submissions. Will accept cash or trade for Evolving Skies alt arts.",
-      category: "singles",
-      language: "english",
-      price: 115,
-      currency: "USD",
-      images: ["https://assets.tcgdex.net/en/swsh/swsh11/130/high.webp"],
-      status: "active",
-      bumped_at: hr(11),
+      bumped_at: hr(8),
       expires_at: expires,
     },
     {
       user_id: userIds["AshK_trainer"],
       type: "WTS",
-      title: "[RAW] Pikachu VMAX Rainbow #188 - Vivid Voltage",
+      title: "[H] Mew VMAX Alt Art [W] Cash",
       description:
-        "Chonkachu! The beloved Pikachu VMAX rainbow rare from Vivid Voltage. NM+ condition. Would love to trade for Japanese promos or sell outright.",
+        "Alt art Mew VMAX from Fusion Strike. NM. Price is firm.",
+      category: "singles",
+      language: "english",
+      price: 188,
+      currency: "USD",
+      images: ["https://assets.tcgdex.net/en/swsh/swsh8/268/high.webp"],
+      ...WANTS_CASH_ONLY,
+      status: "active",
+      bumped_at: hr(3),
+      expires_at: expires,
+    },
+    {
+      user_id: userIds["MistyCerulean"],
+      type: "WTS",
+      title: "[H] PSA 9 Mew VMAX Alt Art [W] Moonbreon Trade",
+      description:
+        "PSA 9 Mint Mew VMAX alternate art. Would also consider trading for a PSA 9 Moonbreon.",
+      category: "graded",
+      language: "english",
+      price: 210,
+      currency: "USD",
+      images: ["https://assets.tcgdex.net/en/swsh/swsh8/268/high.webp"],
+      looking_for_images: [
+        "https://assets.tcgdex.net/en/swsh/swsh7/188/high.webp",  // Umbreon V Alt (Moonbreon)
+      ],
+      wants_cash: true,
+      wants_offers: false,
+      wants_singles: false,
+      wants_graded: true,
+      wants_sealed: false,
+      status: "active",
+      bumped_at: hr(15),
+      expires_at: expires,
+    },
+    {
+      user_id: userIds["AshK_trainer"],
+      type: "WTS",
+      title: "[H] Pikachu VMAX Rainbow [W] JP Promos or Cash",
+      description:
+        "Chonkachu! Pikachu VMAX rainbow rare from Vivid Voltage. NM+. Trade for Japanese promos or sell.",
       category: "singles",
       language: "english",
       price: 245,
       currency: "USD",
       images: ["https://assets.tcgdex.net/en/swsh/swsh4/44/high.webp"],
+      ...WANTS_CASH_ONLY,
       status: "active",
       bumped_at: hr(13),
       expires_at: expires,
@@ -368,16 +352,33 @@ function listings(userIds: Record<string, string>): SeedListing[] {
     {
       user_id: userIds["JessieRocket"],
       type: "WTS",
-      title: "[SEALED] Japanese Shiny Treasure ex Booster Box",
+      title: "[H] Sealed Shiny Treasure ex Box [W] Cash",
       description:
-        "Factory sealed Shiny Treasure ex booster box. Amazing set with shiny versions of popular Pokemon. Great for ripping — high pull rates on SARs and URs.",
+        "Factory sealed Shiny Treasure ex booster box. Amazing set with shiny versions of popular Pokemon.",
       category: "sealed",
       language: "japanese",
       price: 68,
       currency: "USD",
       images: [],
+      ...WANTS_CASH_ONLY,
       status: "active",
       bumped_at: hr(16),
+      expires_at: expires,
+    },
+    {
+      user_id: userIds["BrockPewter"],
+      type: "WTS",
+      title: "[H] Sealed Prismatic Evolutions ETB x2 [W] Cash",
+      description:
+        "Two sealed Prismatic Evolutions Elite Trainer Boxes. Perfect condition.",
+      category: "sealed",
+      language: "english",
+      price: 95,
+      currency: "USD",
+      images: [],
+      ...WANTS_CASH_ONLY,
+      status: "active",
+      bumped_at: hr(4.5),
       expires_at: expires,
     },
 
@@ -388,14 +389,15 @@ function listings(userIds: Record<string, string>): SeedListing[] {
     {
       user_id: userIds["AshK_trainer"],
       type: "WTB",
-      title: "[RAW] Gold Star Rayquaza #107 - EX Deoxys",
+      title: "[H] Cash $5500 [W] Gold Star Rayquaza",
       description:
-        "Searching for a Raw Gold Star Rayquaza from EX Deoxys. LP to NM preferred but will consider anything that isn't heavily damaged. Budget is around $5,000-$5,500 for the right card. Have cash and would also offer PSA 10 Charizard VMAX as partial trade.",
+        "Searching for a Raw Gold Star Rayquaza from EX Deoxys. LP to NM preferred.",
       category: "singles",
       language: "english",
       price: 5500,
       currency: "USD",
       images: [],
+      ...WANTS_CASH_ONLY,
       status: "active",
       bumped_at: hr(1),
       expires_at: expires,
@@ -403,14 +405,22 @@ function listings(userIds: Record<string, string>): SeedListing[] {
     {
       user_id: userIds["MistyCerulean"],
       type: "WTB",
-      title: "[RAW] Umbreon V Alt Art #189 - Evolving Skies",
+      title: "[H] Cash or PSA Promos [W] Umbreon V Alt Art",
       description:
-        "Looking for the Umbreon V alternate art (the Moonbreon) from Evolving Skies. Must be NM or better — planning to submit for grading. Willing to pay market price or trade from my collection of PSA 9 Japanese promos.",
+        "Looking for the Umbreon V alternate art (the Moonbreon). Must be NM+. Can pay or trade PSA 9 JP promos.",
       category: "singles",
       language: "english",
       price: 358,
       currency: "USD",
       images: ["https://assets.tcgdex.net/en/swsh/swsh7/188/high.webp"],
+      looking_for_images: [
+        "https://assets.tcgdex.net/en/swsh/swsh7/188/high.webp",  // Moonbreon
+      ],
+      wants_cash: true,
+      wants_offers: false,
+      wants_singles: true,
+      wants_graded: false,
+      wants_sealed: false,
       status: "active",
       bumped_at: hr(10),
       expires_at: expires,
@@ -418,14 +428,15 @@ function listings(userIds: Record<string, string>): SeedListing[] {
     {
       user_id: userIds["GaryOakRival"],
       type: "WTB",
-      title: "[SEALED] Japanese VSTAR Universe Booster Boxes x2-3",
+      title: "[H] Cash [W] Sealed VSTAR Universe Boxes",
       description:
-        "Looking to buy 2-3 sealed VSTAR Universe booster boxes at a reasonable price. Prefer to buy from someone local in Brunei for meetup, but will consider shipping if well-packaged. Budget is around B$280-300 per box.",
+        "Looking to buy 2-3 sealed VSTAR Universe booster boxes. Budget ~B$280-300 per box.",
       category: "sealed",
       language: "japanese",
       price: 290,
       currency: "BND",
       images: [],
+      ...WANTS_CASH_ONLY,
       status: "active",
       bumped_at: hr(18),
       expires_at: expires,
@@ -433,14 +444,24 @@ function listings(userIds: Record<string, string>): SeedListing[] {
     {
       user_id: userIds["BrockPewter"],
       type: "WTB",
-      title: "[PSA7+] Base Set Starters - Charizard/Blastoise/Venusaur",
+      title: "[H] Cash [W] PSA 7+ Base Set Starters",
       description:
-        "Collecting graded versions of the Base Set Charizard #4, Blastoise #2, and Venusaur #15 (any print — unlimited or 1st edition). Looking for PSA 7 or higher, or CGC 7 or higher. Show me what you have and your asking price!",
+        "Collecting graded Base Set Charizard #4, Blastoise #2, Venusaur #15. PSA 7+.",
       category: "graded",
       language: "english",
       price: null,
       currency: "USD",
       images: [],
+      looking_for_images: [
+        "https://assets.tcgdex.net/en/base/base1/4/high.webp",  // Charizard
+        "https://assets.tcgdex.net/en/base/base1/2/high.webp",  // Blastoise
+        "https://assets.tcgdex.net/en/base/base1/15/high.webp", // Venusaur
+      ],
+      wants_cash: false,
+      wants_offers: true,
+      wants_singles: false,
+      wants_graded: true,
+      wants_sealed: false,
       status: "active",
       bumped_at: hr(14),
       expires_at: expires,
@@ -448,14 +469,15 @@ function listings(userIds: Record<string, string>): SeedListing[] {
     {
       user_id: userIds["JessieRocket"],
       type: "WTB",
-      title: "[RAW] Meowth & Team Rocket themed cards - bulk",
+      title: "[H] Cash [W] Meowth & Team Rocket Cards",
       description:
-        "Building a Team Rocket themed binder. Looking for any cards featuring Meowth, Team Rocket, Dark Pokemon, or Rocket's Secret Machines. NM preferred but LP is fine too. Bulk deals preferred — will buy collections!",
+        "Building a Team Rocket themed binder. Looking for bulk Meowth and Dark Pokemon cards.",
       category: "singles",
       language: "any",
       price: null,
       currency: "USD",
       images: ["https://assets.tcgdex.net/en/base/basep/10/high.webp"],
+      ...WANTS_OFFERS,
       status: "active",
       bumped_at: hr(20),
       expires_at: expires,
@@ -463,167 +485,286 @@ function listings(userIds: Record<string, string>): SeedListing[] {
     {
       user_id: userIds["GaryOakRival"],
       type: "WTB",
-      title: "[PSA10] Gengar VMAX Alt Art #271 - Fusion Strike",
+      title: "[H] Cash $2500 [W] PSA 10 Gengar VMAX Alt",
       description:
-        "Looking for a PSA 10 Gengar VMAX Alt Art. This is my grail card. Budget is up to $2,500. Would also consider PSA 9 around $950. Must be a clean slab with no scratches.",
+        "Grail card. Budget up to $2,500. Also consider PSA 9 ~$950.",
       category: "graded",
       language: "english",
       price: 2500,
       currency: "USD",
       images: ["https://assets.tcgdex.net/en/swsh/swsh8/271/high.webp"],
+      looking_for_images: [
+        "https://assets.tcgdex.net/en/swsh/swsh8/271/high.webp",  // Gengar VMAX Alt
+      ],
+      wants_cash: true,
+      wants_offers: false,
+      wants_singles: false,
+      wants_graded: true,
+      wants_sealed: false,
       status: "active",
       bumped_at: hr(3),
       expires_at: expires,
     },
     {
-      user_id: userIds["AshK_trainer"],
-      type: "WTB",
-      title: "[SEALED] Evolving Skies Booster Box - English",
-      description:
-        "Looking for a sealed English Evolving Skies booster box. This set has the best alt arts in the SWSH era. Need it to be factory sealed with no tears in the wrap. Send me your price!",
-      category: "sealed",
-      language: "english",
-      price: null,
-      currency: "USD",
-      images: [],
-      status: "active",
-      bumped_at: hr(7),
-      expires_at: expires,
-    },
-
-    // ── Additional WTB listings with specific card/set wants ──
-
-    {
       user_id: userIds["MistyCerulean"],
       type: "WTB",
-      title: "[RAW] Complete Eeveelution Alt Art set - Evolving Skies",
+      title: "[H] Cash [W] Eeveelution Alt Arts from Evolving Skies",
       description:
-        "Need these specific cards from Evolving Skies to complete my set: Leafeon V #167, Glaceon V #175, Sylveon V #184, and Flareon V (TG). All must be NM. Will pay market price for each or buy as a lot at a discount.",
+        "Need Leafeon V, Glaceon V, Sylveon V alt arts to complete my set. NM only.",
       category: "singles",
       language: "english",
       price: null,
       currency: "USD",
-      images: ["https://assets.tcgdex.net/en/swsh/swsh7/167/high.webp"],
+      images: [],
+      looking_for_images: [
+        "https://assets.tcgdex.net/en/swsh/swsh7/167/high.webp",
+        "https://assets.tcgdex.net/en/swsh/swsh7/175/high.webp",
+        "https://assets.tcgdex.net/en/swsh/swsh7/184/high.webp",
+      ],
+      wants_cash: false,
+      wants_offers: false,
+      wants_singles: true,
+      wants_graded: false,
+      wants_sealed: false,
       status: "active",
       bumped_at: hr(2),
       expires_at: expires,
     },
     {
-      user_id: userIds["BrockPewter"],
-      type: "WTB",
-      title: "[SEALED] Japanese Pokemon 151 Master Ball reverse set",
-      description:
-        "Looking for sealed Japanese 151 booster boxes, preferably 2-3. Chasing the Master Ball reverse holos. Must be factory sealed with clean wrapping. Can pay cash or trade English sealed product.",
-      category: "sealed",
-      language: "japanese",
-      price: 195,
-      currency: "USD",
-      images: [],
-      status: "active",
-      bumped_at: hr(6),
-      expires_at: expires,
-    },
-    {
       user_id: userIds["GaryOakRival"],
       type: "WTB",
-      title: "[RAW] Charizard ex SAR #201 - Pokemon 151",
+      title: "[H] Cash or Blastoise SAR [W] Charizard ex SAR 151",
       description:
-        "Specifically looking for the Japanese Charizard ex Special Art Rare from the 151 set. Must be pack-fresh NM condition with clean centering. This is the last card I need for my 151 SAR master set. Can pay cash or trade my Blastoise ex SAR + cash.",
+        "Last card for my 151 SAR master set. Can pay cash or trade Blastoise ex SAR + cash.",
       category: "singles",
       language: "japanese",
       price: 280,
       currency: "USD",
-      images: ["https://assets.tcgdex.net/ja/SV/SV2a/201/high.webp"],
+      images: [],
+      looking_for_images: [
+        "https://assets.tcgdex.net/en/sv/sv03.5/201/high.webp",  // Charizard ex SAR
+      ],
+      wants_cash: true,
+      wants_offers: false,
+      wants_singles: true,
+      wants_graded: false,
+      wants_sealed: false,
       status: "active",
       bumped_at: hr(4),
       expires_at: expires,
     },
+
+    // ═══════════════════════════════════════════════════
+    //  SHOWCASE: 10 Haves + 10 Wants thumbnails
+    // ═══════════════════════════════════════════════════
+
     {
-      user_id: userIds["JessieRocket"],
-      type: "WTB",
-      title: "[PSA9+] Dark Charizard #4 - Team Rocket 1st Edition",
+      user_id: userIds["BrockPewter"],
+      type: "WTS",
+      title: "[H] 151 SAR Collection [W] Evolving Skies Alt Arts",
       description:
-        "Looking for a PSA 9 or PSA 10 1st Edition Dark Charizard Holo from the Team Rocket set. This is the crown jewel for my Rocket collection. Will pay top dollar for a clean slab. Budget: PSA 9 around $1,800, PSA 10 up to $8,000.",
-      category: "graded",
+        "Trading my full 151 Special Art Rare collection for Evolving Skies alternate art singles. All cards are NM pack-fresh. Willing to do 1-for-1 trades on comparable cards or work out a multi-card deal. Also open to cash offers on individual cards.",
+      category: "singles",
       language: "english",
-      price: 8000,
+      price: null,
       currency: "USD",
-      images: ["https://assets.tcgdex.net/en/base/base5/4/high.webp"],
+      images: [
+        "https://assets.tcgdex.net/en/sv/sv03.5/198/high.webp",  // Alakazam ex SAR
+        "https://assets.tcgdex.net/en/sv/sv03.5/199/high.webp",  // Blastoise ex SAR
+        "https://assets.tcgdex.net/en/sv/sv03.5/200/high.webp",  // Venusaur ex SAR
+        "https://assets.tcgdex.net/en/sv/sv03.5/201/high.webp",  // Charizard ex SAR
+        "https://assets.tcgdex.net/en/sv/sv03.5/202/high.webp",  // Arcanine ex SAR
+        "https://assets.tcgdex.net/en/sv/sv03.5/203/high.webp",  // Mew ex SAR
+        "https://assets.tcgdex.net/en/sv/sv03.5/204/high.webp",  // Erika's Invitation SAR
+        "https://assets.tcgdex.net/en/sv/sv03.5/205/high.webp",  // Bill's Transfer SAR
+        "https://assets.tcgdex.net/en/sv/sv03.5/206/high.webp",  // Giovanni's Charisma SAR
+        "https://assets.tcgdex.net/en/sv/sv03.5/207/high.webp",  // Zapdos ex SAR
+      ],
+      looking_for_images: [
+        "https://assets.tcgdex.net/en/swsh/swsh7/167/high.webp",  // Leafeon V Alt
+        "https://assets.tcgdex.net/en/swsh/swsh7/175/high.webp",  // Glaceon V Alt
+        "https://assets.tcgdex.net/en/swsh/swsh7/184/high.webp",  // Sylveon V Alt
+        "https://assets.tcgdex.net/en/swsh/swsh7/188/high.webp",  // Umbreon V Alt
+        "https://assets.tcgdex.net/en/swsh/swsh7/203/high.webp",  // Dragonite V Alt
+        "https://assets.tcgdex.net/en/swsh/swsh7/215/high.webp",  // Umbreon VMAX Alt
+        "https://assets.tcgdex.net/en/swsh/swsh7/218/high.webp",  // Rayquaza VMAX Alt
+        "https://assets.tcgdex.net/en/swsh/swsh7/204/high.webp",  // Noivern V Alt
+        "https://assets.tcgdex.net/en/swsh/swsh7/211/high.webp",  // Glaceon VMAX Alt
+        "https://assets.tcgdex.net/en/swsh/swsh7/212/high.webp",  // Espeon VMAX Alt
+      ],
+      wants_cash: true,
+      wants_offers: false,
+      wants_singles: true,
+      wants_graded: false,
+      wants_sealed: false,
       status: "active",
-      bumped_at: hr(0.5),
+      bumped_at: hr(0.1),
       expires_at: expires,
     },
+
+    // More listings with various want configs
+
     {
       user_id: userIds["AshK_trainer"],
-      type: "WTB",
-      title: "[RAW] Lugia V Alt Art #186 & Ho-Oh V Alt Art - Silver Tempest",
+      type: "WTS",
+      title: "[H] Lugia V Alt Art [W] Singles or Graded",
       description:
-        "Need the Lugia V alternate art from Silver Tempest and the Ho-Oh V alternate art. Both must be NM or better. Prefer to buy them together. Have cash ready or can trade from my collection of Evolving Skies singles.",
+        "Lugia V alternate art from Silver Tempest. NM. Open to trading for other alt arts or graded cards.",
       category: "singles",
       language: "english",
       price: 175,
       currency: "USD",
-      images: ["https://assets.tcgdex.net/en/swsh/swsh12/185/high.webp"],
+      images: ["https://assets.tcgdex.net/en/swsh/swsh12/186/high.webp"],
+      looking_for_images: [
+        "https://assets.tcgdex.net/en/swsh/swsh8/268/high.webp",  // Mew VMAX Alt
+        "https://assets.tcgdex.net/en/swsh/swsh8/271/high.webp",  // Gengar VMAX Alt
+        "https://assets.tcgdex.net/en/swsh/swsh11/130/high.webp", // Giratina V Alt
+      ],
+      wants_cash: true,
+      wants_offers: false,
+      wants_singles: true,
+      wants_graded: true,
+      wants_sealed: false,
       status: "active",
       bumped_at: hr(5),
       expires_at: expires,
     },
     {
-      user_id: userIds["BrockPewter"],
-      type: "WTB",
-      title: "[SEALED] Eevee Heroes Gym Set or Special Box",
+      user_id: userIds["JessieRocket"],
+      type: "WTS",
+      title: "[H] Miraidon ex SAR [W] Any Offers",
       description:
-        "Specifically looking for the Eevee Heroes Gym Set box or the Eevee Heroes VMAX Special Set. Must be factory sealed. These are hard to find so I'm flexible on price. Also interested in any Eevee Heroes sealed product.",
+        "Japanese Miraidon ex Special Art Rare. Pack fresh NM. Open to any offers.",
+      category: "singles",
+      language: "japanese",
+      price: 72,
+      currency: "USD",
+      images: ["https://assets.tcgdex.net/en/sv/sv01/253/high.webp"],
+      ...WANTS_OFFERS,
+      status: "active",
+      bumped_at: hr(7),
+      expires_at: expires,
+    },
+    {
+      user_id: userIds["BrockPewter"],
+      type: "WTS",
+      title: "[H] Sealed VSTAR Universe Box [W] Cash",
+      description:
+        "Factory sealed VSTAR Universe booster box from Japan.",
       category: "sealed",
       language: "japanese",
-      price: null,
+      price: 219,
       currency: "USD",
       images: [],
+      ...WANTS_CASH_ONLY,
       status: "active",
-      bumped_at: hr(22),
+      bumped_at: hr(20),
+      expires_at: expires,
+    },
+    {
+      user_id: userIds["GaryOakRival"],
+      type: "WTS",
+      title: "[H] Sealed Obsidian Flames ETB [W] Cash or Sealed",
+      description:
+        "Sealed Elite Trainer Box from Obsidian Flames. Trade for other sealed or sell.",
+      category: "sealed",
+      language: "english",
+      price: 291,
+      currency: "USD",
+      images: [],
+      wants_cash: true,
+      wants_offers: false,
+      wants_singles: false,
+      wants_graded: false,
+      wants_sealed: true,
+      looking_for_images: [],
+      status: "active",
+      bumped_at: hr(5),
+      expires_at: expires,
+    },
+    {
+      user_id: userIds["JessieRocket"],
+      type: "WTS",
+      title: "[H] Sealed Eevee Heroes Box [W] Cash",
+      description:
+        "Factory sealed Eevee Heroes booster box, Japanese. Excellent condition.",
+      category: "sealed",
+      language: "japanese",
+      price: 835,
+      currency: "USD",
+      images: [],
+      ...WANTS_CASH_ONLY,
+      status: "active",
+      bumped_at: hr(24),
       expires_at: expires,
     },
     {
       user_id: userIds["MistyCerulean"],
       type: "WTB",
-      title: "[PSA10] Vaporeon VMAX #30 - Eevee Heroes",
+      title: "[H] Cash [W] PSA 10 Vaporeon VMAX Eevee Heroes",
       description:
-        "Looking for a PSA 10 Japanese Vaporeon VMAX from Eevee Heroes. Need this to complete my PSA 10 Eeveelution VMAX set. Will pay well over market for the right slab. Can also do partial trade with other PSA 10 Eeveelution slabs I have duplicates of.",
+        "Need PSA 10 Japanese Vaporeon VMAX to complete my Eeveelution VMAX set.",
       category: "graded",
       language: "japanese",
       price: 145,
       currency: "USD",
-      images: ["https://assets.tcgdex.net/en/swsh/swsh7/30/high.webp"],
+      images: [],
+      looking_for_images: [
+        "https://assets.tcgdex.net/en/swsh/swsh7/30/high.webp",
+      ],
+      wants_cash: true,
+      wants_offers: false,
+      wants_singles: false,
+      wants_graded: true,
+      wants_sealed: false,
       status: "active",
       bumped_at: hr(8),
       expires_at: expires,
     },
     {
-      user_id: userIds["GaryOakRival"],
+      user_id: userIds["BrockPewter"],
       type: "WTB",
-      title: "[RAW] Full Paldea Fates Shiny vault set (SV001-SV091)",
+      title: "[H] Cash [W] Sealed Japanese 151 Boxes",
       description:
-        "Trying to complete the Paldea Fates shiny vault. Need about 40 cards still. Looking for bulk NM cards from SV001-SV091. Prefer to buy a big lot rather than individual cards. Will pay 50-70% of TCGPlayer market for bulk.",
-      category: "singles",
+        "Looking for sealed Japanese 151 booster boxes. 2-3 preferred.",
+      category: "sealed",
+      language: "japanese",
+      price: 195,
+      currency: "USD",
+      images: [],
+      ...WANTS_CASH_ONLY,
+      status: "active",
+      bumped_at: hr(6),
+      expires_at: expires,
+    },
+    {
+      user_id: userIds["AshK_trainer"],
+      type: "WTB",
+      title: "[H] Cash [W] Sealed Evolving Skies Box",
+      description:
+        "Looking for a sealed English Evolving Skies booster box. Factory sealed only.",
+      category: "sealed",
       language: "english",
       price: null,
       currency: "USD",
       images: [],
+      ...WANTS_CASH_ONLY,
       status: "active",
-      bumped_at: hr(26),
+      bumped_at: hr(7),
       expires_at: expires,
     },
     {
       user_id: userIds["JessieRocket"],
       type: "WTB",
-      title: "[SEALED] Team Rocket Returns Booster Packs (any artwork)",
+      title: "[H] Cash [W] Sealed Team Rocket Returns Packs",
       description:
-        "Hunting for sealed Team Rocket Returns booster packs. Any of the four artworks welcome. Willing to pay a premium for unweighed packs in good condition. Also interested in opened Team Rocket Returns cards in NM condition.",
+        "Hunting for sealed Team Rocket Returns booster packs. Any artwork.",
       category: "sealed",
       language: "english",
       price: 450,
       currency: "USD",
       images: [],
+      ...WANTS_CASH_ONLY,
       status: "active",
       bumped_at: hr(10),
       expires_at: expires,
@@ -704,20 +845,79 @@ async function seed() {
     }
   }
 
-  // 4. Insert listings
+  // 4. Insert listings (two-phase: core fields, then newer columns)
   const listingData = listings(userIds);
+
+  // Phase A: Insert with only core columns that always exist
+  const coreRows = listingData.map(({ looking_for_images, wants_cash, wants_offers, wants_singles, wants_graded, wants_sealed, ...core }) => core);
+
   const { data: inserted, error: insertError } = await supabase
     .from("listings")
-    .insert(listingData)
+    .insert(coreRows)
     .select("id, title");
 
   if (insertError) {
     console.error("  Failed to insert listings:", insertError.message);
-  } else {
-    console.log(`\n  Inserted ${inserted.length} listings:`);
-    for (const l of inserted) {
-      console.log(`    + ${l.title}`);
+    console.log("\nDone (with errors)!");
+    return;
+  }
+
+  console.log(`\n  Inserted ${inserted.length} listings:`);
+  for (const l of inserted) {
+    console.log(`    + ${l.title}`);
+  }
+
+  // Phase B: Update with newer columns (looking_for_images, wants_* flags)
+  // These columns may not exist if migrations 13-17 haven't been applied
+  let updatedCount = 0;
+  let updateFailed = false;
+
+  for (let i = 0; i < inserted.length; i++) {
+    const listing = listingData[i];
+    const id = inserted[i].id;
+
+    const extraFields: Record<string, unknown> = {};
+    if (listing.looking_for_images && listing.looking_for_images.length > 0) {
+      extraFields.looking_for_images = listing.looking_for_images;
     }
+    if (listing.wants_cash) extraFields.wants_cash = true;
+    if (listing.wants_offers) extraFields.wants_offers = true;
+    if (listing.wants_singles) extraFields.wants_singles = true;
+    if (listing.wants_graded) extraFields.wants_graded = true;
+    if (listing.wants_sealed) extraFields.wants_sealed = true;
+
+    if (Object.keys(extraFields).length === 0) continue;
+
+    const { error: updateError } = await supabase
+      .from("listings")
+      .update(extraFields)
+      .eq("id", id);
+
+    if (updateError) {
+      if (!updateFailed) {
+        console.log("\n  ⚠ Could not update newer columns (migrations 13-17 may not be applied):");
+        console.log(`    ${updateError.message}`);
+        console.log("    Run the following SQL in Supabase Dashboard → SQL Editor:");
+        console.log("    ─────────────────────────────────────────────────────────");
+        console.log("    ALTER TABLE listings ADD COLUMN IF NOT EXISTS looking_for_images text[] DEFAULT '{}';");
+        console.log("    ALTER TABLE listings ADD COLUMN IF NOT EXISTS wants_offers boolean NOT NULL DEFAULT false;");
+        console.log("    ALTER TABLE listings ADD COLUMN IF NOT EXISTS wants_cash boolean NOT NULL DEFAULT false;");
+        console.log("    ALTER TABLE listings ADD COLUMN IF NOT EXISTS wants_singles boolean NOT NULL DEFAULT false;");
+        console.log("    ALTER TABLE listings ADD COLUMN IF NOT EXISTS wants_graded boolean NOT NULL DEFAULT false;");
+        console.log("    ALTER TABLE listings ADD COLUMN IF NOT EXISTS wants_sealed boolean NOT NULL DEFAULT false;");
+        console.log("    NOTIFY pgrst, 'reload schema';");
+        console.log("    ─────────────────────────────────────────────────────────");
+        console.log("    Then re-run this seed script.");
+        updateFailed = true;
+      }
+      break;
+    } else {
+      updatedCount++;
+    }
+  }
+
+  if (updatedCount > 0) {
+    console.log(`\n  Updated ${updatedCount} listings with wants/looking_for data`);
   }
 
   console.log("\nDone!");

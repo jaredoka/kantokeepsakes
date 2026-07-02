@@ -2,12 +2,14 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
+import { STATES_BY_COUNTRY } from "@/lib/marketplace/cardData";
 import type { ListingFilters } from "@/lib/marketplace/queries";
 import styles from "./FilterBar.module.css";
 
 interface FilterBarProps {
   filters: ListingFilters;
   basePath?: string;
+  country?: string;
 }
 
 const SORT_OPTIONS = [
@@ -17,7 +19,7 @@ const SORT_OPTIONS = [
   { value: "price_desc", label: "Price: High to Low" },
 ] as const;
 
-export default function FilterBar({ filters, basePath }: FilterBarProps) {
+export default function FilterBar({ filters, basePath, country }: FilterBarProps) {
   const router = useRouter();
   const rawPathname = usePathname();
   const pathname = basePath || rawPathname;
@@ -59,8 +61,11 @@ export default function FilterBar({ filters, basePath }: FilterBarProps) {
   const hasFilters = !!(
     filters.priceMin !== undefined ||
     filters.priceMax !== undefined ||
-    filters.search
+    filters.search ||
+    filters.state
   );
+
+  const countryStates = country ? (STATES_BY_COUNTRY[country] ?? []) : [];
 
   return (
     <div className={styles.bar}>
@@ -77,6 +82,25 @@ export default function FilterBar({ filters, basePath }: FilterBarProps) {
           Search
         </button>
       </form>
+
+      {/* State filter — only when country has states */}
+      {country && countryStates.length > 0 && (
+        <div className={styles.filterGroup}>
+          <span className={styles.filterLabel}>State</span>
+          <select
+            className={styles.select}
+            value={filters.state || ""}
+            onChange={(e) => updateParams({ state: e.target.value || undefined })}
+          >
+            <option value="">All</option>
+            {countryStates.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Sort */}
       <div className={styles.filterGroup}>

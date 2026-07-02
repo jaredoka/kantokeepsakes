@@ -18,8 +18,8 @@ export function validateHavesText(text: string): ValidationResult {
   if (!trimmed) return { valid: false, error: "Haves text is required." };
   if (trimmed.length < 2)
     return { valid: false, error: "Haves text must be at least 2 characters." };
-  if (trimmed.length > 100)
-    return { valid: false, error: "Haves text must be 100 characters or fewer." };
+  if (trimmed.length > 40)
+    return { valid: false, error: "Haves text must be 40 characters or fewer." };
   return { valid: true };
 }
 
@@ -28,19 +28,14 @@ export function validateWantsText(text: string): ValidationResult {
   if (!trimmed) return { valid: false, error: "Wants text is required." };
   if (trimmed.length < 2)
     return { valid: false, error: "Wants text must be at least 2 characters." };
-  if (trimmed.length > 100)
-    return { valid: false, error: "Wants text must be 100 characters or fewer." };
+  if (trimmed.length > 40)
+    return { valid: false, error: "Wants text must be 40 characters or fewer." };
   return { valid: true };
 }
 
 export function validateDescription(description: string): ValidationResult {
   const trimmed = description.trim();
-  if (!trimmed) return { valid: false, error: "Description is required." };
-  if (trimmed.length < 10)
-    return {
-      valid: false,
-      error: "Description must be at least 10 characters.",
-    };
+  if (!trimmed) return { valid: true }; // description is optional
   if (trimmed.length > 2000)
     return {
       valid: false,
@@ -130,29 +125,6 @@ export function validateListing(data: ListingInput): ValidationResult {
 
   for (const check of checks) {
     if (!check.valid) return check;
-  }
-
-  // At least one want type must be selected
-  if (
-    !data.wantsCash &&
-    !data.wantsOffers &&
-    !data.wantsSingles &&
-    !data.wantsGraded &&
-    !data.wantsSealed
-  ) {
-    return {
-      valid: false,
-      error:
-        "You must select at least one want type (Cash, Any Offers, Any Singles, Any Graded, or Any Sealed).",
-    };
-  }
-
-  // If wantsCash is selected, price must be provided
-  if (data.wantsCash && !data.price.trim()) {
-    return {
-      valid: false,
-      error: "Price is required when Cash is selected.",
-    };
   }
 
   return { valid: true };
