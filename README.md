@@ -1,10 +1,21 @@
 # Kanto Keepsakes
 
-A full-stack web application for **Kanto Keepsakes**, a Pokemon TCG retailer based in Brunei. The site combines an e-commerce product catalog with a community-driven **Marketplace** — a peer-to-peer WTB/WTS trade listing board for Pokemon TCG products, inspired by platforms like CSGOLounge.
+**Kanto Keepsakes** is an online **peer-to-peer marketplace for Pokemon TCG hobbyists around the world** — a have/want trade listing board in the spirit of the golden days of CSGOLounge, minus the gambling. Traders post what they **have** and what they **want** (cards, graded slabs, sealed product, or cash), negotiate through offers and real-time chat, and build reputation through confirmed trades.
 
-Built as a solo developer project using **Claude Code (Opus 4.6 by Anthropic)** as an AI-assisted development tool.
+The marketplace is the sole product: the original Brunei retail catalog is being retired (roadmap item G5).
+
+Built as a solo developer project using **Claude Code by Anthropic** as an AI-assisted development tool.
 
 **Live site:** [kantokeepsakes.com](https://kantokeepsakes.com) — hosted on Vercel with Cloudflare DNS
+
+## The Goal
+
+An open, worldwide trading board where the platform provides **discovery, negotiation, and trust** — and stays out of the money:
+
+- **Have/Want listings** — every listing is a trade proposition: card images picked from real TCG data (English + Japanese sets), plus cash/singles/graded/sealed preference flags
+- **Trade-first economy** — cash amounts and payment methods are negotiated between traders in chat; the platform never processes payments or shipping (traders arrange settlement and the exchange themselves) and hosts no gambling, jackpots, or betting of any kind
+- **Community trust** — reputation from confirmed two-step trade completions, star ratings, trader badges, reporting and admin moderation; community self-polices like the golden-days trading sites
+- **Global by default** — country/state on every listing and filterable browsing, with cross-timezone features (email notifications) and trade-matching on the roadmap
 
 ---
 
@@ -29,12 +40,8 @@ Built as a solo developer project using **Claude Code (Opus 4.6 by Anthropic)** 
 
 ## Features
 
-### Product Catalog (Shop)
-- Browse Pokemon TCG products by category: Japanese, English, Accessories, Preorder
-- Sub-category filtering: Sealed, Singles, Graded
-- Product cards with image placeholders, pricing, and stock status
-- Shopping cart with localStorage persistence and WhatsApp checkout
-- Mobile-first responsive design
+### Product Catalog (Shop) — being retired
+The original Brunei retail catalog (category browsing, cart with WhatsApp checkout) still exists in the codebase but is scheduled for removal per the marketplace-only decision (roadmap item G5).
 
 ### Marketplace
 - **User accounts** — email/password signup with Cloudflare Turnstile CAPTCHA, login, forgot/reset password
@@ -330,7 +337,7 @@ This project started as a static HTML/CSS/JS site and evolved into a full-stack 
 
 ## Build Progress
 
-### Shop (Complete)
+### Shop (Complete — scheduled for removal per G5)
 | # | Task | Status |
 |---|------|--------|
 | 1 | README (living document) | Done |
@@ -403,6 +410,22 @@ Improvements to the CardPicker component (sections 3 & 4 of the Create Listing p
 | S12-2 | Japanese language support — JP toggle shows English era/set names, card search works in English | Done S12 |
 | S12-3 | Promos fix — promo cards (e.g. "Pikachu with Grey Felt Hat") are discoverable through the same search flow | Done S12 |
 | S12-4 | Global search — searching with "All Eras" selected returns results from every era and set | Done S12 |
+
+### Global Marketplace Readiness (Planned)
+
+The remaining work to serve Pokemon TCG hobbyists worldwide, in rough priority order. See the handoff document for open product decisions.
+
+| # | Task | Why it matters globally |
+|---|------|------------------------|
+| G1 | Email notifications (offers, messages, trade confirmations) | Traders in different timezones can't rely on being online together |
+| G2 | Have/Want matching ("find trades for me") | The killer feature of golden-era trading sites — surface listings whose haves match your wants and vice versa |
+| G3 | Counteroffers with a short negotiation thread | Accept/decline alone kills trades that a counter would save |
+| G4 | Listing comment threads | Public community vetting of trades, CSGOLounge-style |
+| G5 | Retire the shop (remove catalog, cart, WhatsApp checkout; marketplace landing page) | Marketplace-only identity |
+| G6 | Country UX polish (stop defaulting to Brunei) | Serve a worldwide audience; country is a trader-location signal, nothing more |
+| G7 | Public launch — remove `SITE_PASSWORD` only when both the website and the iOS app are ready | Website and app launch together |
+
+The platform deliberately builds **no** payment, escrow, pricing, shipping, or gambling features — traders handle settlement and the exchange themselves.
 
 ---
 

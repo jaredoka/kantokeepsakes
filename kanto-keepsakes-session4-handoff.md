@@ -2,8 +2,23 @@
 
 ## Project Overview
 
-Pokemon TCG peer-to-peer marketplace for Brunei.
+**Goal:** an online peer-to-peer marketplace for **Pokemon TCG hobbyists around the world** — a have/want trade listing board in the spirit of the golden days of CSGOLounge, without the gambling. The platform provides discovery (listings, filters, search), negotiation (offers, real-time chat), and trust (reputation, two-step trade completion, moderation) — and stays out of the money: payment is negotiated between traders in chat.
+
+Started as a Brunei-focused retail site; per owner decision (D1) the shop is **retired** and Kanto Keepsakes is now a pure peer-to-peer trading platform. The platform also stays out of shipping entirely (D3) — traders arrange the exchange themselves.
+
 Stack: **Next.js 16.2.7** · **React 19** · **TypeScript** · **Supabase** (Postgres + Auth + Storage + Realtime) · **Tailwind v4** · **CSS Modules**
+
+### Product decision log (Session 14 — resolved by owner)
+
+| # | Decision | Answer |
+|---|---|---|
+| D1 | Shop's fate | **Retire the shop entirely** — marketplace-only from here on (owner decision) |
+| D2 | Money model | **Trade-first**: no price field, cash negotiated in chat, platform never touches payments (recommended default, accepted) |
+| D3 | Shipping / cross-border trust | **No shipping features at all** — users handle trades themselves. No tracking, no shipping-proof step, no ships-to fields. Trust = reputation + two-step completion + moderation, global from day one (owner decision) |
+| D4 | CSGOLounge-era features | **All four**: have/want matching, counteroffers, listing comments, email notifications (recommended default, accepted) |
+| D5 | Public launch gating | **Password gate stays until both the website (Phase 5) and the iOS app are ready** to launch together (owner decision) |
+
+Known code-level implications (roadmap items, not yet executed): retiring the shop means removing the product catalog pages, cart, WhatsApp checkout, and `data/products.json`, and reworking the home page into a marketplace landing; `currency` is hardcoded to `"BND"` in the create flow and is meaningless under D2; existing listings were backfilled to `country = 'Brunei'` and the browse default should not assume Brunei; UI is English-only (JA localization is a candidate later phase).
 
 ---
 
@@ -691,25 +706,42 @@ Implementation details in the "Session 13 Changes" section above. **Update proce
 
 **Database note:** Migrations 00013–00015 were made idempotent in Session 12 (PR #4) after a re-run of 00015 failed with "relation already exists". A combined idempotent SQL block covering 00013–00017 was provided in the Session 12 chat for the Supabase Dashboard → SQL Editor. If the live DB is still missing `wants_*`, `country`, or `state` columns (specific-country filtering or listing creation erroring), run that block — every statement is safe to re-run.
 
+### Website Phase 5 — Global Marketplace Readiness (Next Up)
+
+The work that turns the current site into the worldwide trading board described in the Project Overview. Rough priority order; each item is its own branch/PR.
+
+| # | Task | Why it matters globally | Notes |
+|---|---|---|---|
+| G1 | Email notifications (offers, messages, trade confirmations) | Traders in different timezones can't rely on being online together | Was W19. Resend or SendGrid; new API helper; per-user notification prefs |
+| G2 | Have/Want matching ("find trades for me") | The killer feature of golden-era trading sites | Match listings whose haves ∩ your wants (card names/sets from CardPicker data); needs card identity stored on listings, not just image URLs |
+| G3 | Counteroffers + short negotiation thread | Accept/decline alone kills trades a counter would save | Extend `offers` with parent_offer_id / status `countered` |
+| G4 | Listing comment threads | Public community vetting, CSGOLounge-style | New `listing_comments` table + RLS; moderation hooks into existing reports |
+| G5 | Retire the shop | Marketplace-only identity (D1) | Remove product catalog pages, cart, WhatsApp checkout, `data/products.json`; home page becomes the marketplace landing |
+| G6 | Country UX polish | Don't assume Brunei for a worldwide audience | Stop defaulting browse/backfill assumptions to Brunei; country stays a trader-location signal only |
+| G7 | Public launch | Site is staging-gated | Remove `SITE_PASSWORD` **only when both the website and the iOS app are ready** (D5); launch together |
+
+**Deliberately out of scope (per D2/D3):** on-platform payments, escrow, per-listing prices/currencies, any shipping features (tracking, shipping-proof, ships-to — users handle trades themselves), and gambling/raffle mechanics of any kind.
+
 ### Website Phase 4 — Post-Launch Improvements
 
-To be done after the website is live and working.
+General polish, lower priority than Phase 5.
 
 | # | Task | Benefit | Notes |
 |---|---|---|---|
-| W19 | Email notifications | Users get notified of offers, messages, trade confirmations | Resend or SendGrid integration; new API helper |
+| W19 | ~~Email notifications~~ | Moved to **G1** (Phase 5) | — |
 | W20 | Replace in-memory rate limiting with Redis | Current rate limiter resets on every Vercel cold start | Only needed if scaling to multiple instances |
-| W21 | E2E tests with Playwright | Automated regression testing | New test suite; not blocking launch |
+| W21 | E2E tests with Playwright | Automated regression testing | Session 12/13 verification scripts are a starting point |
 | W22 | Avatar upload on profile edit | Users can set a profile picture | Needs new storage bucket for avatars |
 | W23 | Listing image reordering | Users can drag-and-drop to reorder images | Enhancement to `ImageUploader.tsx` |
 | W24 | Edit page alignment with new Create page | Edit page uses old form; should match new 5-section layout | Mirror S10 changes to `[id]/edit/page.tsx` |
 | W25 | Per-card grading overlays | Users can tag individual card thumbnails with PSA/CGC/BGS grades | Descoped from S10; overlay on ThumbContainer |
+| W26 | UI localization (Japanese first) | JP hobbyists are half the card market | Card data is already dual-language; UI strings are not |
 
 ---
 
 ## iOS App Roadmap
 
-Begin after the website is fully launched and stable. The iOS app covers **marketplace features only** (no shop/product catalog).
+Begin after Website Phase 5 items G1–G6 are complete. **Public launch (G7) happens only when both the website and the iOS app are ready** — the password gate stays until then (D5). The iOS app covers marketplace features only (the shop is retired per D1).
 
 ### Decision Log
 
