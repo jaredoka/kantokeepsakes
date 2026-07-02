@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, FlatList, StyleSheet, RefreshControl } from "react-native";
+import { useRouter } from "expo-router";
 import { apiFetch } from "../../lib/api";
 import ListingCard, { type ListingRow } from "../../components/ListingCard";
 import { colors } from "../../lib/theme";
@@ -15,6 +16,7 @@ interface MatchSection {
 }
 
 export default function MatchesScreen() {
+  const router = useRouter();
   const [sections, setSections] = useState<MatchSection[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -65,7 +67,15 @@ export default function MatchesScreen() {
                 {item.match.twoWay ? "⇄ Two-way match" : "Match"} for{" "}
                 {item.section.title}
               </Text>
-              <ListingCard listing={item.match.listing} />
+              <ListingCard
+                listing={item.match.listing}
+                onPress={() =>
+                  router.push({
+                    pathname: "/listing/[id]",
+                    params: { id: item.match.listing.id },
+                  })
+                }
+              />
             </View>
           )}
           contentContainerStyle={styles.list}

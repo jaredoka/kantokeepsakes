@@ -9,6 +9,14 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(auth)" />
+        <Stack.Screen
+          name="listing/[id]"
+          options={{
+            headerShown: true,
+            title: "Listing",
+            headerTitleStyle: { fontWeight: "800" },
+          }}
+        />
       </Stack>
     </SessionProvider>
   );

@@ -1,4 +1,4 @@
-# Kanto Keepsakes — Session 23 Handoff
+# Kanto Keepsakes — Session 24 Handoff
 
 ## Project Overview
 
@@ -544,6 +544,17 @@ No changes needed. The API route already constructs titles as `[H] ... [W] ...` 
 ### Migration note
 
 The migration `00017_add_country_state.sql` must be run on the Supabase database before the country filter will work. Until then, "All Countries" (no filter) works correctly; selecting a specific country triggers a "column listings.country does not exist" error from Supabase.
+
+---
+
+## Session 24 Changes — M1 continuation: listing detail + offer threads
+
+- **Fixed PR #16's failing Vercel build** — the root `tsconfig.json` `include: ["**/*.ts(x)"]` swept `mobile/**` into the website's type check, and React Native's global `FormData` type conflicts with lib.dom's (surfaced in `upload/route.ts`). Fix: `"exclude": ["node_modules", "mobile"]` — the Expo app type-checks with its own tsconfig.
+- **Mobile listing detail screen** — `mobile/app/listing/[id].tsx` (root-stack route with header, auth-guarded): type badge + time-ago + location, title, seller line (**reputation_score is stored ×10** — divide before display, hide when 0, same as `SellerCard.tsx`), HAVES/WANTS horizontal image rows, want-pref pills, description, Make Offer / Offer to Sell + Message Seller/Buyer (creates conversation via `POST /api/conversations`, jumps to Inbox tab — chat screen still pending), and full **offer threads** ported from the website's `OfferList` (same `buildThreads`/`authoredByOwner` turn logic): accept/decline/counter for the actionable party, waiting hint otherwise. Browse and Matches cards now navigate to it (typed routes, object-form `router.push`). New `mobile/lib/format.ts` (`formatTimeAgo`).
+- **Verified E2E** (Expo web + Playwright, misty/ash seed accounts): browse→detail navigation, offer POST via Bearer, duplicate-offer 409 rendered inline, owner sees Accept/Decline/Counter and no Make Offer on own listing, decline PATCH flips badge, deep link works, garbage id → "Listing not found.", card images render from tcgdex. Test offer cleaned from DB.
+- **Dev-loop gotchas (this machine):** Metro's file watcher does not reliably pick up edits — restart `expo start` after code changes before re-verifying. Killing a background `expo start`/`next dev` shell leaves the node child alive holding the port — check `netstat -ano | findstr :8081` and kill the PID.
+
+**Next (M1):** create-listing flow (RN CardPicker), realtime chat screen (inbox conversation detail), my-listings, push-notification registration, forgot-password, in-app account deletion + block (M1-8 compliance).
 
 ---
 

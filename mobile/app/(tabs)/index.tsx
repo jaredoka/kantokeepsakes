@@ -7,11 +7,13 @@ import {
   StyleSheet,
   RefreshControl,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import ListingCard, { type ListingRow } from "../../components/ListingCard";
 import { colors } from "../../lib/theme";
 
 export default function BrowseScreen() {
+  const router = useRouter();
   const [type, setType] = useState<"WTS" | "WTB">("WTS");
   const [listings, setListings] = useState<ListingRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +70,17 @@ export default function BrowseScreen() {
         <FlatList
           data={listings}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ListingCard listing={item} />}
+          renderItem={({ item }) => (
+            <ListingCard
+              listing={item}
+              onPress={() =>
+                router.push({
+                  pathname: "/listing/[id]",
+                  params: { id: item.id },
+                })
+              }
+            />
+          )}
           contentContainerStyle={styles.list}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
