@@ -1,3 +1,5 @@
+import generated from "./cardData.generated.json";
+
 // ── CardItem shape (emitted by CardPicker, stored in form state) ─────────────
 export interface CardItem {
   localId: string; // e.g. "4", "SV001"
@@ -8,208 +10,27 @@ export interface CardItem {
 }
 
 // ── Era / Set taxonomy ──────────────────────────────────────────────────────
+// Generated from the TCGdex API by `npx tsx scripts/update-card-data.ts`.
+// Re-run that script whenever a new set or era releases, then update
+// JA_SET_MAP below for any new sets that have Japanese equivalents.
+
 export interface EraSet {
   id: string;
   en: string;
-  ja: string | null;
 }
 
 export interface Era {
   id: string;
   en: string;
-  ja: string;
   sets: EraSet[];
 }
 
-export const ERA_DATA: Era[] = [
-  {
-    id: "scarlet-violet",
-    en: "Scarlet & Violet",
-    ja: "スカーレット＆バイオレット",
-    sets: [
-      { id: "sv01", en: "Scarlet & Violet Base Set", ja: "スカーレットex / バイオレットex" },
-      { id: "sv02", en: "Paldea Evolved", ja: "クレイバースト" },
-      { id: "sv03", en: "Obsidian Flames", ja: "レイジングサーフ" },
-      { id: "sv03.5", en: "Pokémon 151", ja: "ポケモンカード151" },
-      { id: "sv04", en: "Paradox Rift", ja: "エイシャントロアー / フューチャーフラッシュ" },
-      { id: "sv04.5", en: "Paldean Fates", ja: "シャイニートレジャーex" },
-      { id: "sv05", en: "Temporal Forces", ja: "ワイルドフォース / サイバージャッジ" },
-      { id: "sv06", en: "Twilight Masquerade", ja: "マスクオブチェンジ" },
-      { id: "sv06.5", en: "Shrouded Fable", ja: null },
-      { id: "sv07", en: "Stellar Crown", ja: "ステラミラクル" },
-      { id: "sv08", en: "Surging Sparks", ja: "超電ブレイカー" },
-      { id: "sv08.5", en: "Prismatic Evolutions", ja: "テラスタルフェスex" },
-      { id: "sv09", en: "Journey Together", ja: "ジャーニートゥゲザー" },
-      { id: "sv10", en: "Destined Rivals", ja: "バトルパートナーズ" },
-    ],
-  },
-  {
-    id: "sword-shield",
-    en: "Sword & Shield",
-    ja: "ソード＆シールド",
-    sets: [
-      { id: "swsh1", en: "Sword & Shield Base", ja: "スターターセットV" },
-      { id: "swsh2", en: "Rebel Clash", ja: "ムゲンゾーン" },
-      { id: "swsh3", en: "Darkness Ablaze", ja: "ムゲンゾーン" },
-      { id: "swsh3.5", en: "Champion's Path", ja: "チャンピオンズパス" },
-      { id: "swsh4", en: "Vivid Voltage", ja: "超電ブレイカー" },
-      { id: "swsh4.5", en: "Shining Fates", ja: null },
-      { id: "swsh5", en: "Battle Styles", ja: "バトルスタイル" },
-      { id: "swsh6", en: "Chilling Reign", ja: "ジュージュースティール" },
-      { id: "swsh7", en: "Evolving Skies", ja: "イーブイヒーローズ" },
-      { id: "cel25", en: "Celebrations", ja: "25周年記念" },
-      { id: "swsh8", en: "Fusion Strike", ja: "フュージョンアーツ" },
-      { id: "swsh9", en: "Brilliant Stars", ja: "スターバース" },
-      { id: "swsh10", en: "Astral Radiance", ja: "タイムゲイザー / スペースジャグラー" },
-      { id: "swsh10.5", en: "Pokémon GO", ja: "ポケモンGO" },
-      { id: "swsh11", en: "Lost Origin", ja: "ロストアビス" },
-      { id: "swsh12", en: "Silver Tempest", ja: "バトルリージョン" },
-      { id: "swsh12.5", en: "Crown Zenith", ja: "VSTARユニバース" },
-    ],
-  },
-  {
-    id: "sun-moon",
-    en: "Sun & Moon",
-    ja: "サン＆ムーン",
-    sets: [
-      { id: "sm1", en: "Sun & Moon Base", ja: "コレクションサン / コレクションムーン" },
-      { id: "sm2", en: "Guardians Rising", ja: "アローラの月光" },
-      { id: "sm3", en: "Burning Shadows", ja: "ひかる伝説" },
-      { id: "sm3.5", en: "Shining Legends", ja: "シャイニングレジェンド" },
-      { id: "sm4", en: "Crimson Invasion", ja: "ウルトラサン / ウルトラムーン" },
-      { id: "sm5", en: "Ultra Prism", ja: "ウルトラフォース" },
-      { id: "sm6", en: "Forbidden Light", ja: "禁断の光" },
-      { id: "sm7", en: "Celestial Storm", ja: "ドラゴンストーム" },
-      { id: "sm7.5", en: "Dragon Majesty", ja: "ドラゴンマジェスティ" },
-      { id: "sm8", en: "Lost Thunder", ja: "ロストサンダー" },
-      { id: "sm9", en: "Team Up", ja: "タッグボルト" },
-      { id: "sm10", en: "Unbroken Bonds", ja: "ダブルブレイズ" },
-      { id: "sm11", en: "Unified Minds", ja: "オルタージェネシス" },
-      { id: "sm115", en: "Hidden Fates", ja: "ヒドゥンフェイツ" },
-      { id: "sm12", en: "Cosmic Eclipse", ja: "夢を超えた戦い" },
-    ],
-  },
-  {
-    id: "xy",
-    en: "XY",
-    ja: "XY",
-    sets: [
-      { id: "xy1", en: "XY Base", ja: "コレクションX / コレクションY" },
-      { id: "xy2", en: "Flashfire", ja: "ライジングフィスト" },
-      { id: "xy3", en: "Furious Fists", ja: "レイジングナックル" },
-      { id: "xy4", en: "Phantom Forces", ja: "ファントムゲート" },
-      { id: "xy5", en: "Primal Clash", ja: "グラードンex / カイオーガex" },
-      { id: "xy6", en: "Roaring Skies", ja: "ダークオーダー" },
-      { id: "xy7", en: "Ancient Origins", ja: "ガイアボルケーノ / タイダルストーム" },
-      { id: "xy8", en: "BREAKthrough", ja: "ブルーショック / レッドフラッシュ" },
-      { id: "xy9", en: "BREAKpoint", ja: "ニンフィアEX" },
-      { id: "g1", en: "Generations", ja: null },
-      { id: "xy10", en: "Fates Collide", ja: "レックウザEX" },
-      { id: "xy11", en: "Steam Siege", ja: "ドラゴンストーム" },
-      { id: "xy12", en: "Evolutions", ja: "BREAK進化BOX" },
-    ],
-  },
-  {
-    id: "black-white",
-    en: "Black & White",
-    ja: "ブラック＆ホワイト",
-    sets: [
-      { id: "bw1", en: "Black & White Base", ja: "ブラックコレクション / ホワイトコレクション" },
-      { id: "bw2", en: "Emerging Powers", ja: "レッドコレクション" },
-      { id: "bw3", en: "Noble Victories", ja: "ヘイルブリザード" },
-      { id: "bw4", en: "Next Destinies", ja: "コールドフレア / フリーズボルト" },
-      { id: "bw5", en: "Dark Explorers", ja: "ダークラッシュ" },
-      { id: "bw6", en: "Dragons Exalted", ja: "ドラゴンブレード / ドラゴンブラスト" },
-      { id: "bw7", en: "Boundaries Crossed", ja: "フロストレイ / サンダーナックル" },
-      { id: "bw8", en: "Plasma Storm", ja: "プラズマゲイル" },
-      { id: "bw9", en: "Plasma Freeze", ja: "ライデンナックル" },
-      { id: "bw10", en: "Plasma Blast", ja: "メガロキャノン" },
-      { id: "bw11", en: "Legendary Treasures", ja: "EXバトルブースト" },
-    ],
-  },
-  {
-    id: "heartgold-soulsilver",
-    en: "HeartGold & SoulSilver",
-    ja: "ハートゴールド＆ソウルシルバー",
-    sets: [
-      { id: "hgss1", en: "HeartGold & SoulSilver Base", ja: "ハートゴールドコレクション / ソウルシルバーコレクション" },
-      { id: "hgss2", en: "Unleashed", ja: "ハートゴールドコレクション" },
-      { id: "hgss3", en: "Undaunted", ja: "ソウルシルバーコレクション" },
-      { id: "hgss4", en: "Triumphant", ja: "ポケモンカードゲームHGSS" },
-      { id: "col1", en: "Call of Legends", ja: null },
-    ],
-  },
-  {
-    id: "diamond-pearl",
-    en: "Diamond & Pearl",
-    ja: "ダイヤモンド＆パール",
-    sets: [
-      { id: "dp1", en: "Diamond & Pearl Base", ja: "ダイヤモンドコレクション / パールコレクション" },
-      { id: "dp2", en: "Mysterious Treasures", ja: "モンスターコレクション" },
-      { id: "dp3", en: "Secret Wonders", ja: "ひかる闇" },
-      { id: "dp4", en: "Great Encounters", ja: "ときめきのプリズム" },
-      { id: "dp5", en: "Majestic Dawn", ja: "夜明けのダッシュ" },
-      { id: "dp6", en: "Legends Awakened", ja: "ポケモンカードゲームDP" },
-      { id: "dp7", en: "Stormfront", ja: "ギガスバースト" },
-      { id: "pl1", en: "Platinum Base", ja: "ポケモンカードゲームPt" },
-      { id: "pl2", en: "Rising Rivals", ja: "ギガスバースト" },
-      { id: "pl3", en: "Supreme Victors", ja: "アルセウス" },
-      { id: "pl4", en: "Arceus", ja: "ポケモンカードゲームPt アルセウス" },
-    ],
-  },
-  {
-    id: "ex-series",
-    en: "EX Series",
-    ja: "e-カード / ADV",
-    sets: [
-      { id: "ex1", en: "Ruby & Sapphire", ja: "ADV 拡張パック" },
-      { id: "ex2", en: "Sandstorm", ja: "ADV 拡張パック 2" },
-      { id: "ex3", en: "Dragon", ja: "ADV 拡張パック 3" },
-      { id: "ex4", en: "Team Magma vs Aqua", ja: "ADV 拡張パック 4" },
-      { id: "ex5", en: "Hidden Legends", ja: "ADV 拡張パック 5" },
-      { id: "ex6", en: "FireRed & LeafGreen", ja: "PCG 拡張パック" },
-      { id: "ex7", en: "Team Rocket Returns", ja: "PCG 拡張パック 2" },
-      { id: "ex8", en: "Deoxys", ja: "PCG 拡張パック 3" },
-      { id: "ex9", en: "Emerald", ja: "PCG 拡張パック 4" },
-      { id: "ex10", en: "Unseen Forces", ja: "PCG 拡張パック 5" },
-      { id: "ex11", en: "Delta Species", ja: "PCG 拡張パック 6" },
-      { id: "ex12", en: "Legend Maker", ja: "PCG 拡張パック 7" },
-      { id: "ex13", en: "Holon Phantoms", ja: "PCG 拡張パック 8" },
-      { id: "ex14", en: "Crystal Guardians", ja: "PCG 拡張パック 9" },
-      { id: "ex15", en: "Dragon Frontiers", ja: "PCG 拡張パック 10" },
-      { id: "ex16", en: "Power Keepers", ja: "PCG 拡張パック 11" },
-    ],
-  },
-  {
-    id: "neo",
-    en: "Neo / e-Card",
-    ja: "ネオ・eシリーズ",
-    sets: [
-      { id: "neo1", en: "Neo Genesis", ja: "ネオジェネシス" },
-      { id: "neo2", en: "Neo Discovery", ja: "ネオディスカバリー" },
-      { id: "neo3", en: "Neo Revelation", ja: "ネオ・レベレーション" },
-      { id: "neo4", en: "Neo Destiny", ja: "ネオ・デスティニー" },
-      { id: "ecard1", en: "Expedition", ja: "e-カード第1弾" },
-      { id: "ecard2", en: "Aquapolis", ja: "e-カード第2弾" },
-      { id: "ecard3", en: "Skyridge", ja: "e-カード第3弾" },
-    ],
-  },
-  {
-    id: "original",
-    en: "Original (Wizards)",
-    ja: "オリジナル (旧裏)",
-    sets: [
-      { id: "base1", en: "Base Set", ja: "拡張パック" },
-      { id: "jungle", en: "Jungle", ja: "ジャングル" },
-      { id: "fossil", en: "Fossil", ja: "化石の秘密" },
-      { id: "base2", en: "Base Set 2", ja: null },
-      { id: "rocket", en: "Team Rocket", ja: "ロケット団" },
-      { id: "gym1", en: "Gym Heroes", ja: "ジムリーダーの城" },
-      { id: "gym2", en: "Gym Challenge", ja: "ジムバッジ" },
-      { id: "lc", en: "Legendary Collection", ja: null },
-    ],
-  },
-];
+export const ERA_DATA: Era[] = generated.eras;
+
+// TCGdex set ID → pokemontcg.io set ID. Image fallback for English cards
+// TCGdex has no scan of: images.pokemontcg.io/{ptcgioSetId}/{number}.png
+export const PTCGIO_SET_MAP: Record<string, string> =
+  generated.ptcgioSetMap as Record<string, string>;
 
 // ── EN set → Japanese TCGdex set ID(s) ──────────────────────────────────────
 // TCGdex uses entirely different set IDs for Japanese releases (e.g. Pokémon
@@ -217,6 +38,10 @@ export const ERA_DATA: Era[] = [
 // JA sets. Sets absent from this map have no Japanese data on TCGdex
 // (all of Black & White / Diamond & Pearl, plus a few EN-exclusive sets).
 export const JA_SET_MAP: Record<string, string[]> = {
+  // Mega Evolution (JP sets release ~2 months before EN; matched by date+size)
+  "me01": ["M1L", "M1S"],
+  "me02": ["M2"],
+  "me03": ["M3"],
   // Scarlet & Violet
   "sv01": ["SV1S", "SV1V"],
   "sv02": ["SV2D", "SV2P", "SV1a"],
@@ -232,6 +57,8 @@ export const JA_SET_MAP: Record<string, string[]> = {
   "sv08.5": ["SV8a"],
   "sv09": ["SV9"],
   "sv10": ["SV10", "SV9a"],
+  "sv10.5b": ["SV11B"],
+  "sv10.5w": ["SV11W"],
   // Sword & Shield
   "swsh1": ["S1W", "S1H", "S1a"],
   "swsh2": ["S2"],
@@ -265,6 +92,7 @@ export const JA_SET_MAP: Record<string, string[]> = {
   "sm11": ["sn11", "SM10b", "sn10a"],
   "sm115": ["SM8b"],
   "sm12": ["SM12", "SM11a", "SM11b"],
+  "det1": ["SMP2"],
   // XY
   "xy1": ["XY1a", "XY1b"],
   "xy2": ["XY2"],
@@ -307,29 +135,21 @@ export const JA_SET_MAP: Record<string, string[]> = {
   "ecard1": ["E1"],
   "ecard2": ["E2", "E3"],
   "ecard3": ["E4", "E5"],
-  // Original (Wizards)
+  // Original (Wizards) — TCGdex EN ids: base2=Jungle, base3=Fossil,
+  // base4=Base Set 2, base5=Team Rocket
   "base1": ["PMCG1"],
-  "jungle": ["PMCG2"],
-  "fossil": ["PMCG3"],
-  "rocket": ["PMCG4"],
+  "base2": ["PMCG2"],
+  "base3": ["PMCG3"],
+  "base5": ["PMCG4"],
   "gym1": ["PMCG5"],
   "gym2": ["PMCG6"],
 };
 
 // ── Promo sets per era (English TCGdex set IDs) ─────────────────────────────
-// TCGdex has no standalone Japanese promo sets, so these are EN-only.
-export const PROMO_SETS_BY_ERA: Record<string, string[]> = {
-  "scarlet-violet": ["svp"],
-  "sword-shield": ["swshp"],
-  "sun-moon": ["smp"],
-  "xy": ["xyp"],
-  "black-white": ["bwp"],
-  "heartgold-soulsilver": ["hgssp"],
-  "diamond-pearl": ["dpp", "pop6", "pop7", "pop8", "pop9"],
-  "ex-series": ["np", "pop1", "pop2", "pop3", "pop4", "pop5"],
-  "neo": [],
-  "original": ["basep", "wp"],
-};
+// Generated alongside ERA_DATA. TCGdex has no standalone Japanese promo sets,
+// so these are EN-only.
+export const PROMO_SETS_BY_ERA: Record<string, string[]> =
+  generated.promoSetsByEra as Record<string, string[]>;
 
 export const ALL_PROMO_SET_IDS: Set<string> = new Set(
   Object.values(PROMO_SETS_BY_ERA).flat()

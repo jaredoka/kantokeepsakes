@@ -1,0 +1,825 @@
+{
+  "generatedAt": "2026-07-02T07:45:09.218Z",
+  "eras": [
+    {
+      "id": "mega-evolution",
+      "en": "Mega Evolution",
+      "sets": [
+        {
+          "id": "mee",
+          "en": "Mega Evolution Energy"
+        },
+        {
+          "id": "me01",
+          "en": "Mega Evolution"
+        },
+        {
+          "id": "me02",
+          "en": "Phantasmal Flames"
+        },
+        {
+          "id": "me02.5",
+          "en": "Ascended Heroes"
+        },
+        {
+          "id": "me03",
+          "en": "Perfect Order"
+        },
+        {
+          "id": "me04",
+          "en": "Chaos Rising"
+        }
+      ]
+    },
+    {
+      "id": "scarlet-violet",
+      "en": "Scarlet & Violet",
+      "sets": [
+        {
+          "id": "sv01",
+          "en": "Scarlet & Violet"
+        },
+        {
+          "id": "sve",
+          "en": "Scarlet & Violet Energy"
+        },
+        {
+          "id": "sv02",
+          "en": "Paldea Evolved"
+        },
+        {
+          "id": "sv03",
+          "en": "Obsidian Flames"
+        },
+        {
+          "id": "sv03.5",
+          "en": "151"
+        },
+        {
+          "id": "mfb",
+          "en": "My First Battle"
+        },
+        {
+          "id": "sv04",
+          "en": "Paradox Rift"
+        },
+        {
+          "id": "sv04.5",
+          "en": "Paldean Fates"
+        },
+        {
+          "id": "sv05",
+          "en": "Temporal Forces"
+        },
+        {
+          "id": "sv06",
+          "en": "Twilight Masquerade"
+        },
+        {
+          "id": "sv06.5",
+          "en": "Shrouded Fable"
+        },
+        {
+          "id": "sv07",
+          "en": "Stellar Crown"
+        },
+        {
+          "id": "sv08",
+          "en": "Surging Sparks"
+        },
+        {
+          "id": "sv08.5",
+          "en": "Prismatic Evolutions"
+        },
+        {
+          "id": "sv09",
+          "en": "Journey Together"
+        },
+        {
+          "id": "sv10",
+          "en": "Destined Rivals"
+        },
+        {
+          "id": "sv10.5b",
+          "en": "Black Bolt"
+        },
+        {
+          "id": "sv10.5w",
+          "en": "White Flare"
+        }
+      ]
+    },
+    {
+      "id": "sword-shield",
+      "en": "Sword & Shield",
+      "sets": [
+        {
+          "id": "swsh1",
+          "en": "Sword & Shield"
+        },
+        {
+          "id": "swsh2",
+          "en": "Rebel Clash"
+        },
+        {
+          "id": "swsh3",
+          "en": "Darkness Ablaze"
+        },
+        {
+          "id": "fut2020",
+          "en": "Pokémon Futsal 2020"
+        },
+        {
+          "id": "swsh3.5",
+          "en": "Champion's Path"
+        },
+        {
+          "id": "swsh4",
+          "en": "Vivid Voltage"
+        },
+        {
+          "id": "swsh4.5",
+          "en": "Shining Fates"
+        },
+        {
+          "id": "swsh5",
+          "en": "Battle Styles"
+        },
+        {
+          "id": "swsh6",
+          "en": "Chilling Reign"
+        },
+        {
+          "id": "swsh7",
+          "en": "Evolving Skies"
+        },
+        {
+          "id": "cel25",
+          "en": "Celebrations"
+        },
+        {
+          "id": "swsh8",
+          "en": "Fusion Strike"
+        },
+        {
+          "id": "swsh9",
+          "en": "Brilliant Stars"
+        },
+        {
+          "id": "swsh10",
+          "en": "Astral Radiance"
+        },
+        {
+          "id": "swsh10.5",
+          "en": "Pokémon GO"
+        },
+        {
+          "id": "swsh11",
+          "en": "Lost Origin"
+        },
+        {
+          "id": "swsh12",
+          "en": "Silver Tempest"
+        },
+        {
+          "id": "swsh12.5",
+          "en": "Crown Zenith"
+        }
+      ]
+    },
+    {
+      "id": "sun-moon",
+      "en": "Sun & Moon",
+      "sets": [
+        {
+          "id": "sm1",
+          "en": "Sun & Moon"
+        },
+        {
+          "id": "sm2",
+          "en": "Guardians Rising"
+        },
+        {
+          "id": "sm3",
+          "en": "Burning Shadows"
+        },
+        {
+          "id": "sm3.5",
+          "en": "Shining Legends"
+        },
+        {
+          "id": "sm4",
+          "en": "Crimson Invasion"
+        },
+        {
+          "id": "sm5",
+          "en": "Ultra Prism"
+        },
+        {
+          "id": "sm6",
+          "en": "Forbidden Light"
+        },
+        {
+          "id": "sm7",
+          "en": "Celestial Storm"
+        },
+        {
+          "id": "sm7.5",
+          "en": "Dragon Majesty"
+        },
+        {
+          "id": "sm8",
+          "en": "Lost Thunder"
+        },
+        {
+          "id": "sm9",
+          "en": "Team Up"
+        },
+        {
+          "id": "det1",
+          "en": "Detective Pikachu"
+        },
+        {
+          "id": "sm10",
+          "en": "Unbroken Bonds"
+        },
+        {
+          "id": "sm11",
+          "en": "Unified Minds"
+        },
+        {
+          "id": "sma",
+          "en": "Hidden Fates Shiny Vault"
+        },
+        {
+          "id": "sm115",
+          "en": "Hidden Fates"
+        },
+        {
+          "id": "sm12",
+          "en": "Cosmic Eclipse"
+        }
+      ]
+    },
+    {
+      "id": "xy",
+      "en": "XY",
+      "sets": [
+        {
+          "id": "xy0",
+          "en": "Kalos Starter Set"
+        },
+        {
+          "id": "xya",
+          "en": "Yellow A Alternate"
+        },
+        {
+          "id": "xy1",
+          "en": "XY"
+        },
+        {
+          "id": "xy2",
+          "en": "Flashfire"
+        },
+        {
+          "id": "xy3",
+          "en": "Furious Fists"
+        },
+        {
+          "id": "xy4",
+          "en": "Phantom Forces"
+        },
+        {
+          "id": "xy5",
+          "en": "Primal Clash"
+        },
+        {
+          "id": "dc1",
+          "en": "Double Crisis"
+        },
+        {
+          "id": "xy6",
+          "en": "Roaring Skies"
+        },
+        {
+          "id": "xy7",
+          "en": "Ancient Origins"
+        },
+        {
+          "id": "xy8",
+          "en": "BREAKthrough"
+        },
+        {
+          "id": "xy9",
+          "en": "BREAKpoint"
+        },
+        {
+          "id": "g1",
+          "en": "Generations"
+        },
+        {
+          "id": "xy10",
+          "en": "Fates Collide"
+        },
+        {
+          "id": "xy11",
+          "en": "Steam Siege"
+        },
+        {
+          "id": "xy12",
+          "en": "Evolutions"
+        }
+      ]
+    },
+    {
+      "id": "black-white",
+      "en": "Black & White",
+      "sets": [
+        {
+          "id": "bw1",
+          "en": "Black & White"
+        },
+        {
+          "id": "bw2",
+          "en": "Emerging Powers"
+        },
+        {
+          "id": "bw3",
+          "en": "Noble Victories"
+        },
+        {
+          "id": "bw4",
+          "en": "Next Destinies"
+        },
+        {
+          "id": "bw5",
+          "en": "Dark Explorers"
+        },
+        {
+          "id": "bw6",
+          "en": "Dragons Exalted"
+        },
+        {
+          "id": "dv1",
+          "en": "Dragon Vault"
+        },
+        {
+          "id": "bw7",
+          "en": "Boundaries Crossed"
+        },
+        {
+          "id": "bw8",
+          "en": "Plasma Storm"
+        },
+        {
+          "id": "bw9",
+          "en": "Plasma Freeze"
+        },
+        {
+          "id": "bw10",
+          "en": "Plasma Blast"
+        },
+        {
+          "id": "rc",
+          "en": "Radiant Collection"
+        },
+        {
+          "id": "bw11",
+          "en": "Legendary Treasures"
+        }
+      ]
+    },
+    {
+      "id": "heartgold-soulsilver",
+      "en": "HeartGold & SoulSilver",
+      "sets": [
+        {
+          "id": "hgss1",
+          "en": "HeartGold SoulSilver"
+        },
+        {
+          "id": "hgss2",
+          "en": "Unleashed"
+        },
+        {
+          "id": "hgss3",
+          "en": "Undaunted"
+        },
+        {
+          "id": "hgss4",
+          "en": "Triumphant"
+        },
+        {
+          "id": "col1",
+          "en": "Call of Legends"
+        }
+      ]
+    },
+    {
+      "id": "diamond-pearl",
+      "en": "Diamond & Pearl",
+      "sets": [
+        {
+          "id": "dp1",
+          "en": "Diamond & Pearl"
+        },
+        {
+          "id": "dp2",
+          "en": "Mysterious Treasures"
+        },
+        {
+          "id": "dp3",
+          "en": "Secret Wonders"
+        },
+        {
+          "id": "dp4",
+          "en": "Great Encounters"
+        },
+        {
+          "id": "dp5",
+          "en": "Majestic Dawn"
+        },
+        {
+          "id": "dp6",
+          "en": "Legends Awakened"
+        },
+        {
+          "id": "dp7",
+          "en": "Stormfront"
+        },
+        {
+          "id": "pl1",
+          "en": "Platinum"
+        },
+        {
+          "id": "pl2",
+          "en": "Rising Rivals"
+        },
+        {
+          "id": "pl3",
+          "en": "Supreme Victors"
+        },
+        {
+          "id": "pl4",
+          "en": "Arceus"
+        },
+        {
+          "id": "ru1",
+          "en": "Pokémon Rumble"
+        }
+      ]
+    },
+    {
+      "id": "ex-series",
+      "en": "EX Series",
+      "sets": [
+        {
+          "id": "ex1",
+          "en": "Ruby & Sapphire"
+        },
+        {
+          "id": "ex2",
+          "en": "Sandstorm"
+        },
+        {
+          "id": "ex3",
+          "en": "Dragon"
+        },
+        {
+          "id": "ex4",
+          "en": "Team Magma vs Team Aqua"
+        },
+        {
+          "id": "ex5",
+          "en": "Hidden Legends"
+        },
+        {
+          "id": "ex5.5",
+          "en": "Poké Card Creator Pack"
+        },
+        {
+          "id": "ex6",
+          "en": "FireRed & LeafGreen"
+        },
+        {
+          "id": "ex7",
+          "en": "Team Rocket Returns"
+        },
+        {
+          "id": "ex8",
+          "en": "Deoxys"
+        },
+        {
+          "id": "ex9",
+          "en": "Emerald"
+        },
+        {
+          "id": "exu",
+          "en": "Unseen Forces Unown Collection"
+        },
+        {
+          "id": "ex10",
+          "en": "Unseen Forces"
+        },
+        {
+          "id": "ex11",
+          "en": "Delta Species"
+        },
+        {
+          "id": "ex12",
+          "en": "Legend Maker"
+        },
+        {
+          "id": "ex13",
+          "en": "Holon Phantoms"
+        },
+        {
+          "id": "ex14",
+          "en": "Crystal Guardians"
+        },
+        {
+          "id": "ex15",
+          "en": "Dragon Frontiers"
+        },
+        {
+          "id": "ex16",
+          "en": "Power Keepers"
+        }
+      ]
+    },
+    {
+      "id": "neo",
+      "en": "Neo / e-Card",
+      "sets": [
+        {
+          "id": "neo1",
+          "en": "Neo Genesis"
+        },
+        {
+          "id": "neo2",
+          "en": "Neo Discovery"
+        },
+        {
+          "id": "si1",
+          "en": "Southern Islands"
+        },
+        {
+          "id": "neo3",
+          "en": "Neo Revelation"
+        },
+        {
+          "id": "neo4",
+          "en": "Neo Destiny"
+        },
+        {
+          "id": "ecard1",
+          "en": "Expedition Base Set"
+        },
+        {
+          "id": "bog",
+          "en": "Best of game"
+        },
+        {
+          "id": "ecard2",
+          "en": "Aquapolis"
+        },
+        {
+          "id": "ecard3",
+          "en": "Skyridge"
+        }
+      ]
+    },
+    {
+      "id": "original",
+      "en": "Original (Wizards)",
+      "sets": [
+        {
+          "id": "base1",
+          "en": "Base Set"
+        },
+        {
+          "id": "base2",
+          "en": "Jungle"
+        },
+        {
+          "id": "base3",
+          "en": "Fossil"
+        },
+        {
+          "id": "base4",
+          "en": "Base Set 2"
+        },
+        {
+          "id": "base5",
+          "en": "Team Rocket"
+        },
+        {
+          "id": "gym1",
+          "en": "Gym Heroes"
+        },
+        {
+          "id": "gym2",
+          "en": "Gym Challenge"
+        },
+        {
+          "id": "lc",
+          "en": "Legendary Collection"
+        }
+      ]
+    }
+  ],
+  "promoSetsByEra": {
+    "mega-evolution": [
+      "mep"
+    ],
+    "scarlet-violet": [
+      "svp"
+    ],
+    "sword-shield": [
+      "swshp"
+    ],
+    "sun-moon": [
+      "smp"
+    ],
+    "xy": [
+      "xyp"
+    ],
+    "black-white": [
+      "bwp"
+    ],
+    "heartgold-soulsilver": [
+      "hgssp"
+    ],
+    "diamond-pearl": [
+      "dpp",
+      "pop6",
+      "pop7",
+      "pop8",
+      "pop9"
+    ],
+    "ex-series": [
+      "np",
+      "pop1",
+      "pop2",
+      "pop3",
+      "pop4",
+      "pop5"
+    ],
+    "neo": [],
+    "original": [
+      "basep",
+      "wp"
+    ]
+  },
+  "ptcgioSetMap": {
+    "svp": "svp",
+    "sve": "sve",
+    "me01": "me1",
+    "me02": "me2",
+    "me02.5": "me2pt5",
+    "me03": "me3",
+    "me04": "me4",
+    "sv01": "sv1",
+    "sv02": "sv2",
+    "sv03": "sv3",
+    "sv03.5": "sv3pt5",
+    "sv04": "sv4",
+    "sv04.5": "sv4pt5",
+    "sv05": "sv5",
+    "sv06": "sv6",
+    "sv06.5": "sv6pt5",
+    "sv07": "sv7",
+    "sv08": "sv8",
+    "sv08.5": "sv8pt5",
+    "sv09": "sv9",
+    "sv10": "sv10",
+    "sv10.5b": "zsv10pt5",
+    "sv10.5w": "rsv10pt5",
+    "swshp": "swshp",
+    "swsh1": "swsh1",
+    "swsh2": "swsh2",
+    "swsh3": "swsh3",
+    "swsh3.5": "swsh35",
+    "swsh4": "swsh4",
+    "swsh4.5": "swsh45",
+    "swsh5": "swsh5",
+    "swsh6": "swsh6",
+    "swsh7": "swsh7",
+    "swsh8": "swsh8",
+    "swsh9": "swsh9",
+    "swsh10": "swsh10",
+    "swsh10.5": "pgo",
+    "swsh11": "swsh11",
+    "swsh12": "swsh12",
+    "swsh12.5": "swsh12pt5",
+    "smp": "smp",
+    "sm1": "sm1",
+    "sm2": "sm2",
+    "sm3": "sm3",
+    "sm3.5": "sm35",
+    "sm4": "sm4",
+    "sm5": "sm5",
+    "sm6": "sm6",
+    "sm7": "sm7",
+    "sm7.5": "sm75",
+    "sm8": "sm8",
+    "sm9": "sm9",
+    "det1": "det1",
+    "sm10": "sm10",
+    "sm11": "sm11",
+    "sma": "sma",
+    "sm115": "sm115",
+    "sm12": "sm12",
+    "xyp": "xyp",
+    "xy0": "xy0",
+    "xy1": "xy1",
+    "xy2": "xy2",
+    "xy3": "xy3",
+    "xy4": "xy4",
+    "xy5": "xy5",
+    "dc1": "dc1",
+    "xy6": "xy6",
+    "xy7": "xy7",
+    "xy8": "xy8",
+    "xy9": "xy9",
+    "g1": "g1",
+    "xy10": "xy10",
+    "xy11": "xy11",
+    "xy12": "xy12",
+    "bw1": "bw1",
+    "bwp": "bwp",
+    "bw2": "bw2",
+    "bw3": "bw3",
+    "bw4": "bw4",
+    "bw5": "bw5",
+    "bw6": "bw6",
+    "dv1": "dv1",
+    "bw7": "bw7",
+    "bw8": "bw8",
+    "bw9": "bw9",
+    "bw10": "bw10",
+    "bw11": "bw11",
+    "hgss1": "hgss1",
+    "hgssp": "hsp",
+    "col1": "col1",
+    "dp1": "dp1",
+    "dpp": "dpp",
+    "dp2": "dp2",
+    "dp3": "dp3",
+    "dp4": "dp4",
+    "dp5": "dp5",
+    "dp6": "dp6",
+    "dp7": "dp7",
+    "pl1": "pl1",
+    "pl2": "pl2",
+    "pl3": "pl3",
+    "pl4": "pl4",
+    "ru1": "ru1",
+    "ex1": "ex1",
+    "ex2": "ex2",
+    "ex3": "ex3",
+    "ex4": "ex4",
+    "ex5": "ex5",
+    "ex6": "ex6",
+    "ex7": "ex7",
+    "ex8": "ex8",
+    "ex9": "ex9",
+    "ex10": "ex10",
+    "ex11": "ex11",
+    "ex12": "ex12",
+    "ex13": "ex13",
+    "ex14": "ex14",
+    "ex15": "ex15",
+    "ex16": "ex16",
+    "neo1": "neo1",
+    "neo2": "neo2",
+    "si1": "si1",
+    "neo3": "neo3",
+    "neo4": "neo4",
+    "ecard1": "ecard1",
+    "bog": "bp",
+    "base2": "base2",
+    "basep": "basep",
+    "base3": "base3",
+    "base4": "base4",
+    "base5": "base5",
+    "gym1": "gym1",
+    "gym2": "gym2",
+    "lc": "base6",
+    "np": "np",
+    "pop1": "pop1",
+    "pop2": "pop2",
+    "pop3": "pop3",
+    "pop4": "pop4",
+    "pop5": "pop5",
+    "pop6": "pop6",
+    "pop7": "pop7",
+    "pop8": "pop8",
+    "pop9": "pop9",
+    "fut2020": "fut20",
+    "hgss2": "hgss2",
+    "hgss3": "hgss3",
+    "hgss4": "hgss4",
+    "base1": "base1"
+  }
+}

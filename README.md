@@ -378,6 +378,16 @@ This project started as a static HTML/CSS/JS site and evolved into a full-stack 
 | S10b | State/Province dropdown, PSA slab overlay fix on marketplace browse | Done |
 | S11 | Country/state persistence to DB, country filter pill on browse, wants thumbnails in listing cards | Done |
 
+### Create Listing — Phase 3: Card Data Freshness (Complete, Session 13)
+
+| # | Task | Status |
+|---|------|--------|
+| S13-1 | Era/set taxonomy generated from TCGdex (`npm run update-cards`) — adds Mega Evolution era, Black Bolt, White Flare, and every other missing set | Done S13 |
+| S13-2 | pokemontcg.io image fallback for cards TCGdex has no scan of (e.g. SVP promos) | Done S13 |
+| S13-3 | JP mappings for new sets (Mega Evolution, Black Bolt/White Flare, Detective Pikachu) | Done S13 |
+
+**Keeping card data current:** run `npm run update-cards` whenever a new set releases, review the diff in `src/lib/marketplace/cardData.generated.json`, add any new JP set IDs to `JA_SET_MAP` in `cardData.ts`, then commit.
+
 ### Create Listing — Phase 2: CardPicker Search & Filter (Complete, Session 12)
 
 Improvements to the CardPicker component (sections 3 & 4 of the Create Listing page):
