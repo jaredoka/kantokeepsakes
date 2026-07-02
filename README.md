@@ -22,7 +22,7 @@ Built as a solo developer project using **Claude Code (Opus 4.6 by Anthropic)** 
 | Anti-abuse | **Cloudflare Turnstile** | CAPTCHA on signup and listing creation |
 | Rate Limiting | **Custom in-memory** | IP-based request throttling on API routes |
 | Hosting | **Vercel** | Serverless deployment with cron jobs |
-| Card Data | **TCGdex API** | Pokemon TCG card images, set logos, and series data (EN + JA) |
+| Card Data | **TCGdex API** + **pokemontcg.io** | Card images, set logos, series data (EN + JA); pokemontcg.io fills image gaps for cards TCGdex has no scan of |
 | UI Library | **React 19** | Component-based UI with server and client components |
 
 ---
@@ -134,13 +134,18 @@ src/
       dates.ts                      # Expiry date helpers
       validation.ts                 # Field validators (listings, offers, images)
       grading.ts                    # Grading tag parser (PSA/CGC/BGS)
+      cardData.ts                   # Era/set taxonomy, JP set map, translations, countries
+      cardData.generated.json       # Generated from TCGdex (npm run update-cards)
     turnstile.ts                    # Server-side CAPTCHA verification
     rate-limit.ts                   # IP-based rate limiter (Map, 60s cleanup)
   proxy.ts                          # Next.js 16 proxy (session, security headers, password gate)
 public/
   og-image.png                      # OpenGraph image (1200×630)
   images/                           # Logo PNGs + WebP (optimized)
-supabase/migrations/                # SQL migrations for all tables
+scripts/
+  update-card-data.ts               # Regenerates cardData.generated.json from TCGdex
+  seed.ts                           # Seeds test users + listings
+supabase/migrations/                # SQL migrations for all tables (idempotent, safe to re-run)
 data/products.json                  # Product catalog data
 ```
 
