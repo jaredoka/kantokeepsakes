@@ -98,6 +98,8 @@ export interface Listing {
   images: string[];
   looking_for_description: string | null;
   looking_for_images: string[];
+  country: string | null;
+  state: string | null;
   wants_cash: boolean;
   wants_offers: boolean;
   wants_singles: boolean;

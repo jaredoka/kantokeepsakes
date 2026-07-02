@@ -371,6 +371,24 @@ This project started as a static HTML/CSS/JS site and evolved into a full-stack 
 | W17 | Pokemon TCG stock images via TCGdex API (replace user uploads) | Done |
 | W18 | Graded slab overlay (PSA template + CSS CGC/BGS frames on card images) | Done |
 
+### Create Listing — Phase 1 Overhaul (Complete, Sessions 10–11)
+| Phase | Description | Status |
+|-------|-------------|--------|
+| S10 | 5-section card UI (Country, Title, Haves, Wants, Description) + CardPicker component | Done |
+| S10b | State/Province dropdown, PSA slab overlay fix on marketplace browse | Done |
+| S11 | Country/state persistence to DB, country filter pill on browse, wants thumbnails in listing cards | Done |
+
+### Create Listing — Phase 2: CardPicker Search & Filter (Complete, Session 12)
+
+Improvements to the CardPicker component (sections 3 & 4 of the Create Listing page):
+
+| # | Task | Status |
+|---|------|--------|
+| S12-1 | Cross-set search within an era — searching "Pikachu" with an era selected (but no set) returns cards from all sets in that era | Done S12 |
+| S12-2 | Japanese language support — JP toggle shows English era/set names, card search works in English | Done S12 |
+| S12-3 | Promos fix — promo cards (e.g. "Pikachu with Grey Felt Hat") are discoverable through the same search flow | Done S12 |
+| S12-4 | Global search — searching with "All Eras" selected returns results from every era and set | Done S12 |
+
 ---
 
 ## License

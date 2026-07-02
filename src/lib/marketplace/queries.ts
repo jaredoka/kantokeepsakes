@@ -6,6 +6,8 @@ export interface ListingFilters {
   priceMax?: number;
   sort?: "newest" | "oldest" | "price_asc" | "price_desc";
   search?: string;
+  country?: string;
+  state?: string;
   page?: number;
   perPage?: number;
 }
@@ -19,6 +21,8 @@ export async function fetchListings(
     priceMax,
     sort = "newest",
     search,
+    country,
+    state,
     page = 1,
     perPage = 24,
   } = filters;
@@ -37,6 +41,14 @@ export async function fetchListings(
 
   if (priceMax !== undefined) {
     query = query.lte("price", priceMax);
+  }
+
+  if (country) {
+    query = query.eq("country", country);
+  }
+
+  if (state) {
+    query = query.eq("state", state);
   }
 
   if (search && search.trim()) {

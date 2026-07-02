@@ -5,6 +5,7 @@ import FilterBar from "@/components/FilterBar";
 import Pagination from "@/components/Pagination";
 import EmptyState from "@/components/EmptyState";
 import MobileFilterSection from "./MobileFilterSection";
+import CountryPill from "./CountryPill";
 import type { ListingWithProfile } from "@/lib/marketplace/types";
 import { fetchListings, type ListingFilters } from "@/lib/marketplace/queries";
 import styles from "./BrowsePage.module.css";
@@ -27,6 +28,8 @@ export default async function BrowsePage({
     priceMax: validNumber(params.priceMax),
     sort: validSort(params.sort),
     search: typeof params.search === "string" ? params.search.trim() : undefined,
+    country: typeof params.country === "string" ? params.country.trim() : undefined,
+    state: typeof params.state === "string" ? params.state.trim() : undefined,
     page: Math.max(1, validNumber(params.page) ?? 1),
     perPage: ITEMS_PER_PAGE,
   };
@@ -46,13 +49,17 @@ export default async function BrowsePage({
     <main className={styles.main}>
       <div className={styles.container}>
         <div className={styles.header}>
-          <h1 className={styles.title}>Marketplace</h1>
+          <div className={styles.titleRow}>
+            <h1 className={styles.title}>Marketplace</h1>
+            <CountryPill currentCountry={filters.country} />
+          </div>
           <div className={styles.headerRight}>
             {/* Mobile-only filter toggle */}
             <MobileFilterSection
               filters={filters}
               basePath={basePath}
               activeFilterCount={activeFilterCount}
+              country={filters.country}
             />
 
             <div className={styles.headerActions}>
@@ -72,7 +79,7 @@ export default async function BrowsePage({
         <div className={styles.layout}>
           {/* Left sidebar — filters (desktop only) */}
           <aside className={styles.sidebar}>
-            <FilterBar filters={filters} basePath={basePath} />
+            <FilterBar filters={filters} basePath={basePath} country={filters.country} />
           </aside>
 
           {/* Right — listing content */}
@@ -148,7 +155,9 @@ function hasActiveFilters(filters: ListingFilters): boolean {
   return !!(
     filters.priceMin !== undefined ||
     filters.priceMax !== undefined ||
-    filters.search
+    filters.search ||
+    filters.country ||
+    filters.state
   );
 }
 
@@ -157,5 +166,7 @@ function countActiveFilters(filters: ListingFilters): number {
   if (filters.priceMin !== undefined) count++;
   if (filters.priceMax !== undefined) count++;
   if (filters.search) count++;
+  if (filters.country) count++;
+  if (filters.state) count++;
   return count;
 }

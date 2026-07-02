@@ -237,6 +237,10 @@
   gap: 6px;
 }
 
+.wantPillsWithImages {
+  margin-top: 6px;
+}
+
 .wantPill {
   display: inline-flex;
   align-items: center;
