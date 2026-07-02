@@ -1,4 +1,4 @@
-# Kanto Keepsakes — Session 17 Handoff
+# Kanto Keepsakes — Session 19 Handoff
 
 ## Project Overview
 
@@ -18,7 +18,7 @@ Stack: **Next.js 16.2.7** · **React 19** · **TypeScript** · **Supabase** (Pos
 | D4 | CSGOLounge-era features | **All four**: have/want matching, counteroffers, listing comments, email notifications (recommended default, accepted) |
 | D5 | Public launch gating | **Password gate stays until both the website (Phase 5) and the iOS app are ready** to launch together (owner decision) |
 
-Known code-level implications (roadmap items, not yet executed): retiring the shop means removing the product catalog pages, cart, WhatsApp checkout, and `data/products.json`, and reworking the home page into a marketplace landing; `currency` is hardcoded to `"BND"` in the create flow and is meaningless under D2; existing listings were backfilled to `country = 'Brunei'` and the browse default should not assume Brunei; UI is English-only (JA localization is a candidate later phase).
+Known code-level implications: ~~retiring the shop~~ (**done S19**); `currency` is hardcoded to `"BND"` in the create flow and is meaningless under D2; existing listings were backfilled to `country = 'Brunei'` and the browse default should not assume Brunei; UI is English-only (JA localization is a candidate later phase).
 
 ---
 
@@ -535,6 +535,40 @@ The migration `00017_add_country_state.sql` must be run on the Supabase database
 
 ---
 
+## Session 19 Changes — G5 Retire the Shop
+
+Roadmap item **G5** (owner decision D1): Kanto Keepsakes is now marketplace-only.
+
+**Removed:** all shop route dirs (`/japanese`, `/english`, `/accessories`, `/preorder`, `/cart`, plus the six `-sealed/-singles/-graded` subcategory routes), shop components (`CategoryPage`, `ProductCard`, `ProductGrid`, `CartToast` + their CSS), `src/lib/products.ts`, and the entire `legacy/` folder (the original pre-Next.js static site, including `legacy/data/products.json`). All recoverable from git history.
+
+**Home page rewritten** as a marketplace landing: hero ("Trade Pokémon cards with hobbyists around the world") with Browse/Post CTAs, three feature cards (Have/Want listings; Matches & offers; Community trust), and a principles strip (no fees, no gambling, no middleman) linking to the safe trading guide. Root layout metadata updated from "retailer based in Brunei" to the worldwide marketplace description; `CartToast` removed from the layout.
+
+Old shop routes now 404 (the branded not-found page). Sitemap never included them; header/footer had no shop links.
+
+---
+
+## Session 18 Changes — G4 Listing Comments (+ RLS recursion fix)
+
+Roadmap item **G4**: public comment threads on listings, CSGOLounge-style.
+
+- **Migration `00020_listing_comments.sql`** — `listing_comments` table (500-char check, cascade deletes) with RLS: everyone reads, authenticated users post, **authors delete their own, admins delete any — deliberately not the listing owner** (owners must not be able to silence scam warnings; moderation via reports/admin).
+- **API**: `GET/POST /api/listings/[id]/comments` (10/min rate limit, ban check, listing must exist and not be removed; returns 503 until the migration is applied) and `DELETE /api/comments/[id]` (RLS-enforced, 404 on silent denial).
+- **UI**: `ListingComments` on the listing detail page (left column) — author profile links with trade-count pills, relative timestamps, × on own comments only, textarea with 0/500 counter. Hides itself entirely pre-migration. No emails for comments by design.
+
+### The is_admin / RLS recursion saga (important history)
+
+Applying 00020 exposed **two latent schema bugs**, both fixed this session:
+1. **`profiles.is_admin` never existed.** Migration 00011 assumed it ("already exists per schema") but nothing ever created it — meaning 00011's admin policies never applied and the admin panel's `requireAdmin()` was broken in production since S8. Both 00011 and 00020 now create the column idempotently.
+2. **00011's original policies were recursively self-referential** — a SELECT policy on `profiles` whose USING clause queries `profiles` → PostgreSQL error 42P17 ("infinite recursion detected in policy") the moment it finally applied, which **broke every user-scoped profiles join** (browse, offers, comments). Fixed with the standard Supabase pattern: a `SECURITY DEFINER public.is_admin()` function used by all admin policies. Also dropped the redundant admin-select policy on profiles (00002 already makes profiles public) and added the missing **"Admins can update any listing"** policy (the ban flow's listing-removal step had silently matched 0 rows forever).
+
+**Admin account created:** username `kantokeepsakes` (kantokeepsakes@gmail.com), `is_admin = true`, sign-in verified.
+
+Verified E2E post-migration: post/list as two users, no delete button on others' comments, cross-user API delete → 404, delete-own works, empty body → 400, and the profiles joins confirmed restored after the recursion fix.
+
+**Schema drift note:** the live DB and the migrations folder diverged three times before this was caught (00013–00017 unapplied; phantom `is_admin`; latent recursive policies). All migrations 00011+ are idempotent — re-running the folder in order is safe and recommended after any doubt. 00001–00010 predate the convention and error harmlessly on re-run ("already exists").
+
+---
+
 ## Session 17 Changes — G3 Counteroffers
 
 Roadmap item **G3**: negotiation threads on offers. Either party can now respond to a pending offer turn with accept, decline, or a **counter** — countering marks the turn `countered` and appends a new turn to the thread. Turns alternate; only the party who didn't author the latest turn can act.
@@ -804,8 +838,8 @@ The work that turns the current site into the worldwide trading board described 
 | G1 | Email notifications (offers, messages, trade confirmations) | Traders in different timezones can't rely on being online together | **Done S15** — Resend + `src/lib/email.ts` + prefs (migration 00018). Needs RESEND_API_KEY + domain verification to activate |
 | G2 | Have/Want matching ("find trades for me") | The killer feature of golden-era trading sites | **Done S16** — /marketplace/matches, card identity derived from image URLs (no migration) |
 | G3 | Counteroffers + short negotiation thread | Accept/decline alone kills trades a counter would save | **Done S17** — offer threads via parent_offer_id/author_id; requires migration 00019 |
-| G4 | Listing comment threads | Public community vetting, CSGOLounge-style | New `listing_comments` table + RLS; moderation hooks into existing reports |
-| G5 | Retire the shop | Marketplace-only identity (D1) | Remove product catalog pages, cart, WhatsApp checkout, `data/products.json`; home page becomes the marketplace landing |
+| G4 | Listing comment threads | Public community vetting, CSGOLounge-style | **Done S18** — listing_comments table (migration 00020), comments on listing detail pages |
+| G5 | Retire the shop | Marketplace-only identity (D1) | **Done S19** — catalog/cart/checkout and legacy static site removed; home page is a marketplace landing |
 | G6 | Country UX polish | Don't assume Brunei for a worldwide audience | Stop defaulting browse/backfill assumptions to Brunei; country stays a trader-location signal only |
 | G7 | Public launch | Site is staging-gated | Remove `SITE_PASSWORD` **only when both the website and the iOS app are ready** (D5); launch together |
 

@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local working files (not part of the app)
+.claude/
+design_ref_temp/
+scripts/apply-migration.ts
+scripts/check-columns.ts
