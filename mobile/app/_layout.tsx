@@ -17,6 +17,14 @@ export default function RootLayout() {
             headerTitleStyle: { fontWeight: "800" },
           }}
         />
+        <Stack.Screen
+          name="listing/new"
+          options={{
+            headerShown: true,
+            title: "New Listing",
+            headerTitleStyle: { fontWeight: "800" },
+          }}
+        />
       </Stack>
     </SessionProvider>
   );
