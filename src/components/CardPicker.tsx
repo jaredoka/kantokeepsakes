@@ -7,6 +7,7 @@ import {
   PROMO_SETS_BY_ERA,
   ALL_PROMO_SET_IDS,
   SET_RANK,
+  PTCGIO_SET_MAP,
   expandQuery,
   type CardItem,
 } from "@/lib/marketplace/cardData";
@@ -36,6 +37,20 @@ const MAX_RESULTS = 100;
 const PLACEHOLDER_IMG = "/images/card-placeholder.svg";
 const NO_CARDS: PickerCard[] = [];
 
+/** pokemontcg.io image fallback for English cards TCGdex has no scan of. */
+function ptcgioImg(setId: string, localId: string): string {
+  const pid = PTCGIO_SET_MAP[setId];
+  if (!pid) return "";
+  const num = localId.replace(/^0+(?=\d)/, "");
+  return `https://images.pokemontcg.io/${pid}/${num}.png`;
+}
+
+/** Best image URL for a card brief: TCGdex scan, else pokemontcg.io (EN only). */
+function cardImg(c: TCGDexCardBrief, setId: string, lang: "en" | "ja"): string {
+  if (c.image) return `${c.image}/high.webp`;
+  return lang === "en" ? ptcgioImg(setId, String(c.localId ?? "")) : "";
+}
+
 function sortCards(list: PickerCard[]): PickerCard[] {
   return [...list].sort((a, b) => {
     const ra = SET_RANK[a.setId] ?? Number.MAX_SAFE_INTEGER;
@@ -56,17 +71,12 @@ async function loadSets(setIds: string[], lang: "en" | "ja"): Promise<PickerCard
       const r = await fetch(`${API}/${lang}/sets/${encodeURIComponent(sid)}`);
       if (!r.ok) throw new Error(`set ${sid}: ${r.status}`);
       const data = await r.json();
-      const serieId: string = data.serie?.id || "";
       return ((data.cards || []) as TCGDexCardBrief[]).map((c): PickerCard => ({
         id: c.id || `${sid}-${c.localId}`,
         localId: String(c.localId),
         name: c.name || "",
         setId: sid,
-        img: c.image
-          ? `${c.image}/high.webp`
-          : serieId
-            ? `https://assets.tcgdex.net/${lang}/${serieId}/${sid}/${c.localId}/high.webp`
-            : "",
+        img: cardImg(c, sid, lang),
       }));
     })
   );
@@ -109,7 +119,7 @@ async function loadSearch(
         localId: String(c.localId ?? ""),
         name: c.name || "",
         setId,
-        img: c.image ? `${c.image}/high.webp` : "",
+        img: cardImg(c, setId, lang),
       });
     }
   }

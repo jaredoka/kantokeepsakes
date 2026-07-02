@@ -515,6 +515,39 @@ The migration `00017_add_country_state.sql` must be run on the Supabase database
 
 ---
 
+## Session 13 Changes — Card Data Freshness + Image Fallback
+
+Goal: latest eras/sets in the CardPicker, and images for every card that has one anywhere. User was AFK for the clarifying questions, so the recommended options were implemented: generator script, pokemontcg.io fallback, no TCG Pocket, name tiles for vintage JP.
+
+### 1. Era/set taxonomy is now generated
+
+**`scripts/update-card-data.ts`** (new, `npm run update-cards`) regenerates **`src/lib/marketplace/cardData.generated.json`** from the TCGdex API:
+- Curated era grouping (ERA_DEFS in the script): 11 eras, newest first, now including **Mega Evolution** (Mega Evolution, Phantasmal Flames, Ascended Heroes, Perfect Order, Chaos Rising, Energy + MEP promos). SV era gained Black Bolt, White Flare, Energies, My First Battle. Other eras gained previously missing sets (Detective Pikachu `det1`, Southern Islands `si1`, Double Crisis `dc1`, Dragon Vault `dv1`, Radiant Collection `rc`, Best of Game `bog`, etc.). Excluded: TCG Pocket (digital-only), McDonald's, Trainer Kits, misc.
+- Promo sets auto-detected by name (+ pinned overrides for POP/np).
+- **ptcgioSetMap**: TCGdex→pokemontcg.io set IDs, matched by name/date/count *within promo and non-promo partitions* (promos must match promos — date+count alone mis-matched svp→sv1), verified by HEAD-checking a sample image. Manual pins for svp/sve (pokemontcg.io promo sets carry placeholder dates + lagging counts).
+
+`cardData.ts` now imports the JSON: `ERA_DATA`, `PROMO_SETS_BY_ERA`, `PTCGIO_SET_MAP` come from it; `JA_SET_MAP`, `TRANSLATION_MAP`, `COUNTRIES`, `STATES_BY_COUNTRY` stay hand-curated.
+
+**Update procedure when a new set/era releases:** `npm run update-cards` → review the JSON diff → add new JP set IDs to `JA_SET_MAP` (JP sets release ~2 months before EN; match by release date + card count) → commit.
+
+### 2. pokemontcg.io image fallback
+
+`CardPicker` resolves card images as: TCGdex scan → `images.pokemontcg.io/{ptcgioSetId}/{number}.png` (EN only) → name tile + placeholder. The constructed-assets-URL guess was removed (when TCGdex omits `image`, the asset genuinely 404s). CSP `img-src` gained `https://images.pokemontcg.io`. "Pikachu with Grey Felt Hat" now shows its real artwork.
+
+### 3. JA_SET_MAP additions / fixes
+
+- Mega era: `me01→[M1L,M1S]`, `me02→[M2]`, `me03→[M3]` (verified by release-date alignment; Ascended Heroes/Chaos Rising have no JP data yet)
+- `sv10.5b→[SV11B]`, `sv10.5w→[SV11W]`, `det1→[SMP2]`
+- Original era rekeyed to TCGdex canonical IDs: `base2`=Jungle, `base3`=Fossil, `base5`=Team Rocket (old hand-rolled ids `jungle`/`fossil`/`rocket` don't exist on TCGdex)
+
+### Known data gaps (upstream, not fixable client-side)
+
+- TCGdex has **no JA scans yet for the newest JP sets** (SV11B/SV11W, all Mega-era M sets) — they render as name tiles; scans appear automatically once TCGdex adds them (no re-run needed, images resolve at runtime).
+- No image source anywhere for: mep/mee (Mega promos/energy), mfb, xya, ex5.5, exu, parts of cel25 Classic Collection, ecard2/3 reverse-holos — name tiles.
+- Verified via Playwright: Mega era browsable (130 Phantasmal Flames cards), Grey Felt Hat searchable with real image + selectable thumbnail (naturalWidth>0), EN Black Bolt 172 cards, JP Black Bolt/Mega name tiles, mep promo browse 52 name tiles.
+
+---
+
 ## Session 12 Changes — CardPicker Search & Filter Fixes
 
 All four S12 issues fixed in `CardPicker.tsx` + `cardData.ts`. Verified end-to-end with Playwright against the live dev server (login → Create Listing → drive the picker).

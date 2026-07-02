@@ -16,7 +16,7 @@ const securityHeaders: Record<string, string> = {
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
-    `img-src 'self' data: blob: https://*.supabase.co https://assets.tcgdex.net`,
+    `img-src 'self' data: blob: https://*.supabase.co https://assets.tcgdex.net https://images.pokemontcg.io`,
     `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://api.tcgdex.net`,
     "frame-src https://challenges.cloudflare.com",
     "object-src 'none'",
