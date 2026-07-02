@@ -32,6 +32,10 @@ create policy "Authors can delete their own comments"
   on listing_comments for delete
   using (auth.uid() = user_id);
 
+-- profiles.is_admin was assumed by 00011 but never actually created —
+-- ensure it exists before referencing it (idempotent)
+alter table profiles add column if not exists is_admin boolean not null default false;
+
 drop policy if exists "Admins can delete any comment" on listing_comments;
 create policy "Admins can delete any comment"
   on listing_comments for delete
