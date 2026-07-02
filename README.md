@@ -2,7 +2,7 @@
 
 **Kanto Keepsakes** is an online **peer-to-peer marketplace for Pokemon TCG hobbyists around the world** — a have/want trade listing board in the spirit of the golden days of CSGOLounge, minus the gambling. Traders post what they **have** and what they **want** (cards, graded slabs, sealed product, or cash), negotiate through offers and real-time chat, and build reputation through confirmed trades.
 
-The site also carries a small e-commerce catalog for the Kanto Keepsakes retail shop in Brunei; the marketplace is the flagship product.
+The marketplace is the sole product: the original Brunei retail catalog is being retired (roadmap item G5).
 
 Built as a solo developer project using **Claude Code by Anthropic** as an AI-assisted development tool.
 
@@ -13,7 +13,7 @@ Built as a solo developer project using **Claude Code by Anthropic** as an AI-as
 An open, worldwide trading board where the platform provides **discovery, negotiation, and trust** — and stays out of the money:
 
 - **Have/Want listings** — every listing is a trade proposition: card images picked from real TCG data (English + Japanese sets), plus cash/singles/graded/sealed preference flags
-- **Trade-first economy** — cash amounts and payment methods are negotiated between traders in chat; the platform never processes payments and hosts no gambling, jackpots, or betting of any kind
+- **Trade-first economy** — cash amounts and payment methods are negotiated between traders in chat; the platform never processes payments or shipping (traders arrange settlement and the exchange themselves) and hosts no gambling, jackpots, or betting of any kind
 - **Community trust** — reputation from confirmed two-step trade completions, star ratings, trader badges, reporting and admin moderation; community self-polices like the golden-days trading sites
 - **Global by default** — country/state on every listing and filterable browsing, with cross-timezone features (email notifications) and trade-matching on the roadmap
 
@@ -40,12 +40,8 @@ An open, worldwide trading board where the platform provides **discovery, negoti
 
 ## Features
 
-### Product Catalog (Shop)
-- Browse Pokemon TCG products by category: Japanese, English, Accessories, Preorder
-- Sub-category filtering: Sealed, Singles, Graded
-- Product cards with image placeholders, pricing, and stock status
-- Shopping cart with localStorage persistence and WhatsApp checkout
-- Mobile-first responsive design
+### Product Catalog (Shop) — being retired
+The original Brunei retail catalog (category browsing, cart with WhatsApp checkout) still exists in the codebase but is scheduled for removal per the marketplace-only decision (roadmap item G5).
 
 ### Marketplace
 - **User accounts** — email/password signup with Cloudflare Turnstile CAPTCHA, login, forgot/reset password
@@ -341,7 +337,7 @@ This project started as a static HTML/CSS/JS site and evolved into a full-stack 
 
 ## Build Progress
 
-### Shop (Complete)
+### Shop (Complete — scheduled for removal per G5)
 | # | Task | Status |
 |---|------|--------|
 | 1 | README (living document) | Done |
@@ -425,9 +421,11 @@ The remaining work to serve Pokemon TCG hobbyists worldwide, in rough priority o
 | G2 | Have/Want matching ("find trades for me") | The killer feature of golden-era trading sites — surface listings whose haves match your wants and vice versa |
 | G3 | Counteroffers with a short negotiation thread | Accept/decline alone kills trades that a counter would save |
 | G4 | Listing comment threads | Public community vetting of trades, CSGOLounge-style |
-| G5 | "Ships to" scope on listings + country UX polish (stop defaulting to Brunei) | International traders need to know who will actually ship to them |
-| G6 | Shipping-proof step in trade completion (tracking numbers, shipped/received states) | Cross-border trust beyond reputation alone |
-| G7 | Remove the site password gate and launch publicly | Currently staging-only behind `SITE_PASSWORD` |
+| G5 | Retire the shop (remove catalog, cart, WhatsApp checkout; marketplace landing page) | Marketplace-only identity |
+| G6 | Country UX polish (stop defaulting to Brunei) | Serve a worldwide audience; country is a trader-location signal, nothing more |
+| G7 | Public launch — remove `SITE_PASSWORD` only when both the website and the iOS app are ready | Website and app launch together |
+
+The platform deliberately builds **no** payment, escrow, pricing, shipping, or gambling features — traders handle settlement and the exchange themselves.
 
 ---
 

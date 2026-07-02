@@ -4,20 +4,21 @@
 
 **Goal:** an online peer-to-peer marketplace for **Pokemon TCG hobbyists around the world** — a have/want trade listing board in the spirit of the golden days of CSGOLounge, without the gambling. The platform provides discovery (listings, filters, search), negotiation (offers, real-time chat), and trust (reputation, two-step trade completion, moderation) — and stays out of the money: payment is negotiated between traders in chat.
 
-Started as a Brunei-focused project; the Brunei retail shop (product catalog + WhatsApp checkout) remains as a secondary section while the global marketplace is the flagship.
+Started as a Brunei-focused retail site; per owner decision (D1) the shop is **retired** and Kanto Keepsakes is now a pure peer-to-peer trading platform. The platform also stays out of shipping entirely (D3) — traders arrange the exchange themselves.
 
 Stack: **Next.js 16.2.7** · **React 19** · **TypeScript** · **Supabase** (Postgres + Auth + Storage + Realtime) · **Tailwind v4** · **CSS Modules**
 
-### Open product decisions (Session 14 — owner was AFK; recommended defaults assumed, veto anytime)
+### Product decision log (Session 14 — resolved by owner)
 
-| # | Decision | Assumed answer | Alternatives considered |
-|---|---|---|---|
-| D1 | Shop's fate in the global vision | **Keep as secondary Brunei-local section; marketplace is flagship** | Retire the shop; take the shop global too |
-| D2 | Money model for a worldwide audience | **Trade-first: no price field, cash negotiated in chat, platform never touches payments** (matches current code: `price: null`, cash is a want-flag) | Optional price + per-listing currency; reference market prices via pokemontcg.io pricing data |
-| D3 | Cross-border trust at launch | **Rep-only, global from day one** (existing reputation + two-step completion + reports/admin); shipping-proof step is roadmap item G6, not a launch blocker | Build shipping-proof before launch; regional (SEA) rollout first |
-| D4 | CSGOLounge-era roadmap features | **All four: have/want matching, counteroffers, listing comments, email notifications** (prioritized in Phase 5 below) | Any subset |
+| # | Decision | Answer |
+|---|---|---|
+| D1 | Shop's fate | **Retire the shop entirely** — marketplace-only from here on (owner decision) |
+| D2 | Money model | **Trade-first**: no price field, cash negotiated in chat, platform never touches payments (recommended default, accepted) |
+| D3 | Shipping / cross-border trust | **No shipping features at all** — users handle trades themselves. No tracking, no shipping-proof step, no ships-to fields. Trust = reputation + two-step completion + moderation, global from day one (owner decision) |
+| D4 | CSGOLounge-era features | **All four**: have/want matching, counteroffers, listing comments, email notifications (recommended default, accepted) |
+| D5 | Public launch gating | **Password gate stays until both the website (Phase 5) and the iOS app are ready** to launch together (owner decision) |
 
-Known code-level implications of the global goal (roadmap items, not yet executed): `currency` is hardcoded to `"BND"` in the create flow and should become meaningless or explicit under D2; existing listings were backfilled to `country = 'Brunei'` and the browse default should not assume Brunei; UI is English-only (JA localization is a candidate later phase).
+Known code-level implications (roadmap items, not yet executed): retiring the shop means removing the product catalog pages, cart, WhatsApp checkout, and `data/products.json`, and reworking the home page into a marketplace landing; `currency` is hardcoded to `"BND"` in the create flow and is meaningless under D2; existing listings were backfilled to `country = 'Brunei'` and the browse default should not assume Brunei; UI is English-only (JA localization is a candidate later phase).
 
 ---
 
@@ -715,11 +716,11 @@ The work that turns the current site into the worldwide trading board described 
 | G2 | Have/Want matching ("find trades for me") | The killer feature of golden-era trading sites | Match listings whose haves ∩ your wants (card names/sets from CardPicker data); needs card identity stored on listings, not just image URLs |
 | G3 | Counteroffers + short negotiation thread | Accept/decline alone kills trades a counter would save | Extend `offers` with parent_offer_id / status `countered` |
 | G4 | Listing comment threads | Public community vetting, CSGOLounge-style | New `listing_comments` table + RLS; moderation hooks into existing reports |
-| G5 | "Ships to" scope + country UX polish | International traders need to know who ships to them | `ships_to` on listings; stop defaulting browse to Brunei assumptions |
-| G6 | Shipping-proof step in trade completion | Cross-border trust beyond reputation | Tracking numbers, shipped/received states on `trade_completions` |
-| G7 | Public launch | Site is staging-gated | Remove `SITE_PASSWORD`, announce |
+| G5 | Retire the shop | Marketplace-only identity (D1) | Remove product catalog pages, cart, WhatsApp checkout, `data/products.json`; home page becomes the marketplace landing |
+| G6 | Country UX polish | Don't assume Brunei for a worldwide audience | Stop defaulting browse/backfill assumptions to Brunei; country stays a trader-location signal only |
+| G7 | Public launch | Site is staging-gated | Remove `SITE_PASSWORD` **only when both the website and the iOS app are ready** (D5); launch together |
 
-**Deliberately out of scope (per D2/D3 decisions):** on-platform payments, escrow, per-listing prices/currencies, gambling/raffle mechanics of any kind.
+**Deliberately out of scope (per D2/D3):** on-platform payments, escrow, per-listing prices/currencies, any shipping features (tracking, shipping-proof, ships-to — users handle trades themselves), and gambling/raffle mechanics of any kind.
 
 ### Website Phase 4 — Post-Launch Improvements
 
@@ -740,7 +741,7 @@ General polish, lower priority than Phase 5.
 
 ## iOS App Roadmap
 
-Begin after **Website Phase 5 (Global Marketplace Readiness)** is complete and the site is publicly launched and stable. The iOS app covers **marketplace features only** (no shop/product catalog).
+Begin after Website Phase 5 items G1–G6 are complete. **Public launch (G7) happens only when both the website and the iOS app are ready** — the password gate stays until then (D5). The iOS app covers marketplace features only (the shop is retired per D1).
 
 ### Decision Log
 
