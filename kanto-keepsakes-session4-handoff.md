@@ -1,4 +1,4 @@
-# Kanto Keepsakes — Session 11 Handoff
+# Kanto Keepsakes — Session 13 Handoff
 
 ## Project Overview
 
@@ -103,6 +103,8 @@ Branch protection on `main` has been configured in GitHub UI (require PR before 
 | Pagination | Done | `Pagination.tsx` + URL param |
 | Listing detail page | Done | `src/app/marketplace/[id]/page.tsx` |
 | Create listing (5-section card UI + state dropdown) | Done S10/10b/11 | `src/app/marketplace/new/page.tsx`, `CardPicker.tsx`, `cardData.ts` |
+| CardPicker search (era-wide/global/JP/promos) | Done S12 | `CardPicker.tsx`, `cardData.ts` — TCGdex `?name=like:` search, `JA_SET_MAP`, promo sets |
+| Card data generator + image fallback | Done S13 | `scripts/update-card-data.ts` → `cardData.generated.json`; pokemontcg.io fallback images |
 | Edit listing | Done | `src/app/marketplace/[id]/edit/page.tsx` |
 | Bump listing (24h cooldown) | Done | `BumpButton.tsx` + `/api/listings/[id]/bump` |
 | Relist expired listing | Done | `RelistButton.tsx` + `/api/listings/[id]/relist` |
@@ -227,7 +229,8 @@ src/
       dates.ts            <- expiry helpers
       validation.ts       <- field validators for listings, offers, images
       grading.ts          <- parseGradingTag() utility
-      cardData.ts         <- ERA_DATA, TRANSLATION_MAP, expandQuery, COUNTRIES, STATES_BY_COUNTRY (S10/10b)
+      cardData.ts         <- ERA_DATA (from generated JSON), JA_SET_MAP, PTCGIO_SET_MAP, TRANSLATION_MAP, expandQuery, COUNTRIES, STATES_BY_COUNTRY
+      cardData.generated.json <- era/set taxonomy + pokemontcg.io map; rebuild with `npm run update-cards` (S13)
     turnstile.ts          <- Cloudflare Turnstile server-side verify
     rate-limit.ts         <- in-memory rate limiter (Map-based, 60s cleanup)
   proxy.ts                <- Next.js 16 proxy (replaces middleware.ts)
@@ -674,37 +677,19 @@ Four related issues to fix:
 | S12-3 | Promos fix | **Done S12** — all promo sets searchable + browsable per era; imageless promos render as name tiles with placeholder image |
 | S12-4 | Global search across all eras | **Done S12** — "All Eras" search hits every set, sorted newest era first, capped at 100 with hint |
 
-**Prompt to use for the next session:**
+Implementation details in the "Session 12 Changes" section above.
 
-> **Goal:** Fix and improve the card search/filter system in sections 3 and 4 of the Create Listing page (`CardPicker` component).
->
-> There are four related issues to address:
->
-> 1. **Cross-set search within an era:** When a user selects an era (e.g. "Sword & Shield") but has not picked a specific set, searching for a card name (e.g. "Pikachu") should return results from **all sets in that era**, not just a single set. Currently, searching only works once a specific set is selected.
->
-> 2. **Japanese language support:** When the user switches to the JP (Japanese) language filter, the era and set names should still be displayed in English (not Japanese), but the card pool should reflect Japanese sets. A user should be able to type "Pikachu" in English and see matching Japanese cards displayed.
->
-> 3. **Promos not working:** Searching for promo cards (e.g. "Pikachu with Grey Felt Hat") returns no results. Promos need to be searchable through the TCGDex API the same way regular set cards are.
->
-> 4. **Global search across all eras:** If no era or set filter is applied ("All Eras" selected), searching for "Pikachu" should return results from every era and set — not be blocked or return nothing.
->
-> Before implementing, please ask any clarifying questions needed, such as:
-> - How should results be ranked or ordered when searching across multiple sets or all eras (e.g. newest era first, alphabetical by set)?
-> - For the "All Eras" cross-era search, is there a maximum number of results to show, or should pagination be used?
-> - For Japanese cards, should the card *names* displayed be in Japanese or English?
-> - Are there any TCGDex API rate limit concerns to consider when fetching from many sets simultaneously?
-> - For promos, which promo categories from TCGDex should be included (e.g. `svp`, `swshp`, `basep`, etc.)?
+### Website Phase 3.8 — Card Data Freshness (Done, Session 13)
 
-**Key files for the next session:**
+| # | Task | Status |
+|---|---|---|
+| S13-1 | Era/set taxonomy generated from TCGdex (`npm run update-cards`) — adds Mega Evolution era, Black Bolt, White Flare, Detective Pikachu, and all other missing sets | Done S13 |
+| S13-2 | pokemontcg.io image fallback for cards TCGdex has no scan of (SVP promos etc.) | Done S13 |
+| S13-3 | JP mappings for new sets (me01–me03, SV11B/W, det1); Original-era keys fixed to TCGdex canonical IDs | Done S13 |
 
-| File | Role |
-|---|---|
-| `src/components/CardPicker.tsx` | Main component to fix (search logic, API calls) |
-| `src/components/CardPicker.module.css` | Styling |
-| `src/lib/marketplace/cardData.ts` | `ERA_DATA` (set IDs), `TRANSLATION_MAP`, `expandQuery()` |
-| `src/app/marketplace/new/page.tsx` | Create Listing page hosting the CardPicker |
+Implementation details in the "Session 13 Changes" section above. **Update procedure when a new set releases:** `npm run update-cards` → review the diff in `cardData.generated.json` → add new JP set IDs to `JA_SET_MAP` → commit via PR.
 
-**Database note:** Migrations 00013–00017 have not yet been applied to the remote Supabase database. The `looking_for_images`, `wants_*` flags, `country`, and `state` columns are missing from the live DB. Run the SQL block from the Session 11 "Migration note" section in Supabase Dashboard → SQL Editor before running `npx tsx scripts/seed.ts` again.
+**Database note:** Migrations 00013–00015 were made idempotent in Session 12 (PR #4) after a re-run of 00015 failed with "relation already exists". A combined idempotent SQL block covering 00013–00017 was provided in the Session 12 chat for the Supabase Dashboard → SQL Editor. If the live DB is still missing `wants_*`, `country`, or `state` columns (specific-country filtering or listing creation erroring), run that block — every statement is safe to re-run.
 
 ### Website Phase 4 — Post-Launch Improvements
 
