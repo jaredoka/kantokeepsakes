@@ -1,0 +1,129 @@
+/* Matches — have/want matching page (G2) */
+
+.main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-lg) var(--space-3xl);
+}
+
+.title {
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  color: var(--color-black);
+  margin: 0 0 var(--space-xs);
+}
+
+.subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+  margin: 0 0 var(--space-xl);
+}
+
+/* Empty states */
+.empty {
+  text-align: center;
+  padding: var(--space-3xl) var(--space-lg);
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius-lg);
+}
+
+.emptyText {
+  color: var(--color-gray-600);
+  font-size: var(--font-size-base);
+  margin: 0 0 var(--space-lg);
+}
+
+.primaryBtn {
+  display: inline-block;
+  padding: var(--space-sm) var(--space-xl);
+  background: var(--color-yellow);
+  color: var(--color-black);
+  border-radius: var(--border-radius);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  text-decoration: none;
+  transition: background-color var(--transition-fast);
+}
+
+.primaryBtn:hover {
+  background: var(--color-yellow-dark);
+  color: var(--color-white);
+}
+
+/* Per-listing sections */
+.section {
+  margin-bottom: var(--space-2xl);
+}
+
+.sectionHead {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--color-gray-700);
+  margin: 0 0 var(--space-md);
+}
+
+.sectionLink {
+  color: var(--color-black);
+  text-decoration: underline;
+  text-decoration-color: var(--color-yellow);
+  text-underline-offset: 3px;
+}
+
+.sectionLink:hover {
+  color: var(--color-yellow-dark);
+}
+
+.matchGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-lg);
+}
+
+/* One match: why-matched chips + the listing card */
+.matchCell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.matchInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  background: #fffdf0;
+  border: 1px solid var(--color-yellow-light);
+  border-radius: var(--border-radius);
+}
+
+.twoWayBadge {
+  align-self: flex-start;
+  padding: 2px 10px;
+  background: var(--color-yellow);
+  color: var(--color-black);
+  border-radius: var(--border-radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.chipGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.chipLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  margin-right: var(--space-xs);
+}
+
+.cardThumb {
+  height: 44px;
+  width: auto;
+  border-radius: 3px;
+  display: block;
+}
