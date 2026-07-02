@@ -1,4 +1,4 @@
-# Kanto Keepsakes — Session 13 Handoff
+# Kanto Keepsakes — Session 15 Handoff
 
 ## Project Overview
 
@@ -33,7 +33,9 @@ Known code-level implications (roadmap items, not yet executed): retiring the sh
 | `TURNSTILE_SECRET_KEY` | Turnstile server secret |
 | `CRON_SECRET` | Bearer token for `/api/cron/expire-listings` |
 | `SITE_PASSWORD` | Site-wide password gate (remove to go public) |
-| `POKEMON_TCG_API_KEY` | (Unused) Legacy pokemontcg.io key — codebase uses TCGdex (no key needed) |
+| `POKEMON_TCG_API_KEY` | pokemontcg.io key — used by `scripts/update-card-data.ts` (image-fallback set matching) |
+| `RESEND_API_KEY` | Resend API key for email notifications (G1). Unset = sends are logged and skipped |
+| `EMAIL_FROM` | From address for notification emails (default `Kanto Keepsakes <notifications@kantokeepsakes.com>`) |
 
 Copy from `.env.local.example` → `.env.local` if the file is missing.
 
@@ -533,6 +535,48 @@ The migration `00017_add_country_state.sql` must be run on the Supabase database
 
 ---
 
+## Session 15 Changes — G1 Email Notifications
+
+Roadmap item **G1** implemented: transactional notification emails via the **Resend** REST API (no SDK dependency), with per-user preferences. Everything fails soft — without `RESEND_API_KEY`, sends are logged and skipped, so dev and pre-configuration production behave normally.
+
+### New files
+
+- **`src/lib/email.ts`** — `sendEmail()` (Resend REST call) + `notifyUser(userId, kind, data)`. `notifyUser` uses the service-role admin client to read the recipient's profile prefs and resolve their email via `auth.admin.getUserById`, renders a simple branded HTML template, and never throws. Missing pref columns (pre-migration) default to enabled. Banned users are skipped.
+- **`supabase/migrations/00018_notification_prefs.sql`** — adds `notify_offers`, `notify_messages`, `notify_trades` booleans (default true) to `profiles`. Idempotent. **Must be run in Supabase SQL Editor before pref toggles persist** (emails work pre-migration; toggling prefs off does not).
+
+### Notification triggers (all fire-and-forget via `after()` from next/server)
+
+| Event | Route | Recipient | Kind |
+|---|---|---|---|
+| New offer | `POST /api/offers` | Listing owner | `offer_received` |
+| Offer accepted/declined | `PATCH /api/offers/[id]` | Offerer | `offer_accepted` / `offer_declined` |
+| New message | `POST /api/conversations/[id]/messages` | Other participant | `new_message` — **only for the first unread message** from that sender (reading the chat re-arms it), so active chats don't email per message |
+| One side completed trade | `POST /api/trade-completions` | Other party | `trade_partner_completed` |
+| Both sides completed | `POST /api/trade-completions` | Both parties | `trade_ready_to_rate` |
+| Rating received | `POST /api/trade-confirmations` | Rated user | `rating_received` |
+
+Pref gating: offer kinds → `notify_offers`, message → `notify_messages`, trade/rating kinds → `notify_trades`.
+
+### Preferences UI
+
+`ProfileEditForm` (own profile → Edit Profile) gained an "Email notifications" fieldset with three checkboxes. `PATCH /api/profile` accepts `notifyOffers`/`notifyMessages`/`notifyTrades`; the form only sends prefs that changed so username/bio saves keep working until migration 00018 is applied. `Profile` type gained the three optional fields.
+
+### Not covered (intentional)
+
+- Offerers whose pending offers get auto-declined when another offer is accepted are not emailed (noise). Disputes don't email the other party (admin handles via reports). Both are easy follow-ups if wanted.
+
+### Activation checklist (production)
+
+1. Run `00018_notification_prefs.sql` in Supabase SQL Editor.
+2. Create a Resend account, verify the `kantokeepsakes.com` domain (DNS records at Cloudflare), create an API key.
+3. Add `RESEND_API_KEY` (and optionally `EMAIL_FROM`) to Vercel env + redeploy.
+
+### Verification (S15)
+
+Playwright against dev (no API key → log-and-skip mode): seed user ash made an offer on another user's listing → server logged the skipped `offer_received` email to the owner's real address with prefs resolved; first chat message → logged `new_message` email; second message in the same burst → correctly **no** email (throttle); profile Edit form renders the three checkboxes. Typecheck + lint clean. Note: the run left one test offer and two "please ignore" messages on a seed listing in the shared DB.
+
+---
+
 ## Session 13 Changes — Card Data Freshness + Image Fallback
 
 Goal: latest eras/sets in the CardPicker, and images for every card that has one anywhere. User was AFK for the clarifying questions, so the recommended options were implemented: generator script, pokemontcg.io fallback, no TCG Pocket, name tiles for vintage JP.
@@ -712,7 +756,7 @@ The work that turns the current site into the worldwide trading board described 
 
 | # | Task | Why it matters globally | Notes |
 |---|---|---|---|
-| G1 | Email notifications (offers, messages, trade confirmations) | Traders in different timezones can't rely on being online together | Was W19. Resend or SendGrid; new API helper; per-user notification prefs |
+| G1 | Email notifications (offers, messages, trade confirmations) | Traders in different timezones can't rely on being online together | **Done S15** — Resend + `src/lib/email.ts` + prefs (migration 00018). Needs RESEND_API_KEY + domain verification to activate |
 | G2 | Have/Want matching ("find trades for me") | The killer feature of golden-era trading sites | Match listings whose haves ∩ your wants (card names/sets from CardPicker data); needs card identity stored on listings, not just image URLs |
 | G3 | Counteroffers + short negotiation thread | Accept/decline alone kills trades a counter would save | Extend `offers` with parent_offer_id / status `countered` |
 | G4 | Listing comment threads | Public community vetting, CSGOLounge-style | New `listing_comments` table + RLS; moderation hooks into existing reports |

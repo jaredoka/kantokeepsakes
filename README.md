@@ -52,6 +52,7 @@ The original Brunei retail catalog (category browsing, cart with WhatsApp checko
 - **Offers** — make offers on WTS listings, offer to sell on WTB listings, accept/decline with auto-decline of other pending offers
 - **Real-time messaging** — instant chat between traders using Supabase Realtime, contextual timestamps (today/yesterday/date)
 - **Live notifications** — unread message count in header badge updates in real-time via Supabase Realtime channel
+- **Email notifications** — offers, offer outcomes, first unread message, trade completions, and ratings, sent via Resend with per-user preference toggles on the profile page
 - **Trade confirmations** — two-step flow: both parties confirm trade completion, then rate each other (1-5 stars), reputation system with trader badges
 - **User profiles** — public profile with listing history, sold archive, inline bio/username editing
 - **Saved listings** — bookmark/watchlist functionality
@@ -199,7 +200,9 @@ All tables have Row Level Security (RLS) enabled.
    TURNSTILE_SECRET_KEY=your_turnstile_secret_key
    CRON_SECRET=your_cron_secret
    SITE_PASSWORD=your_staging_password   # Remove to make the site public
-   POKEMON_TCG_API_KEY=your_api_key     # Unused — codebase uses TCGdex (no key needed)
+   POKEMON_TCG_API_KEY=your_api_key     # Used by scripts/update-card-data.ts (image fallback matching)
+   RESEND_API_KEY=your_resend_key       # Email notifications; unset = sends logged and skipped
+   EMAIL_FROM="Kanto Keepsakes <notifications@kantokeepsakes.com>"
    ```
 
 4. **Run database migrations:** Apply the SQL files in `supabase/migrations/` to your Supabase project.
@@ -417,7 +420,7 @@ The remaining work to serve Pokemon TCG hobbyists worldwide, in rough priority o
 
 | # | Task | Why it matters globally |
 |---|------|------------------------|
-| G1 | Email notifications (offers, messages, trade confirmations) | Traders in different timezones can't rely on being online together |
+| G1 | ~~Email notifications~~ **Done** — Resend-backed emails for offers, messages, and trade updates with per-user preference toggles | Traders in different timezones can't rely on being online together |
 | G2 | Have/Want matching ("find trades for me") | The killer feature of golden-era trading sites — surface listings whose haves match your wants and vice versa |
 | G3 | Counteroffers with a short negotiation thread | Accept/decline alone kills trades that a counter would save |
 | G4 | Listing comment threads | Public community vetting of trades, CSGOLounge-style |

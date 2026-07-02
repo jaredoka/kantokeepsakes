@@ -164,6 +164,9 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
             <ProfileEditForm
               currentUsername={profile.username}
               currentBio={profile.bio}
+              currentNotifyOffers={profile.notify_offers ?? true}
+              currentNotifyMessages={profile.notify_messages ?? true}
+              currentNotifyTrades={profile.notify_trades ?? true}
             />
           )}
         </div>

@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateOfferMessage } from "@/lib/marketplace/validation";
+import { notifyUser } from "@/lib/email";
 
 // POST — create a new offer on a listing
 export async function POST(request: NextRequest) {
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
   // Get the listing
   const { data: listing } = await supabase
     .from("listings")
-    .select("id, user_id, status")
+    .select("id, user_id, status, title")
     .eq("id", listingId)
     .single();
 
@@ -128,6 +129,20 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+
+  // Email the listing owner (after the response is sent)
+  after(async () => {
+    const { data: offerer } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .single();
+    await notifyUser(listing.user_id, "offer_received", {
+      fromUsername: offerer?.username,
+      listingTitle: listing.title,
+      listingId: listing.id,
+    });
+  });
 
   return NextResponse.json({ id: newOffer.id }, { status: 201 });
 }
