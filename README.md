@@ -53,7 +53,7 @@ An open, worldwide trading board where the platform provides **discovery, negoti
 - **Email notifications** — offers, offer outcomes, counteroffers, first unread message, trade completions, and ratings, sent via Resend with per-user preference toggles on the profile page
 - **Trade confirmations** — two-step flow: both parties confirm trade completion, then rate each other (1-5 stars), reputation system with trader badges
 - **User profiles** — public profile with listing history, sold archive, inline bio/username editing
-- **Saved listings** — bookmark/watchlist functionality
+- **Saved listings** — bookmark/watchlist (mobile app; website UI planned)
 - **Listing comments** — public comment threads on listings for community vetting; authors can delete their own comments, listing owners cannot silence others, admins moderate
 - **Moderation** — report users/listings, admin panel for banning users and resolving reports
 - **Auth gate** — marketplace pages redirect unauthenticated users to login with `?next=` parameter to return them to the original page after login/signup
@@ -431,9 +431,16 @@ The remaining work to serve Pokemon TCG hobbyists worldwide, in rough priority o
 | G7 | Public launch — remove `SITE_PASSWORD` only when both the website and the mobile app are ready | Joint launch after a closed beta (TestFlight + Play internal) |
 
 The platform deliberately builds **no** payment, escrow, pricing, shipping, or gambling features — traders handle settlement and the exchange themselves.
-### Mobile App (Planned — React Native / Expo)
+### Mobile App (React Native / Expo — `mobile/`)
 
-One TypeScript codebase shipping to **both** the App Store and Play Store (owner decisions D6–D9, Session 21). Hybrid architecture: supabase-js direct reads + Realtime on the client, validated writes through the existing API routes with Bearer tokens. V1 is the lean trading core (auth, browse, listing detail with offer threads, create listing, chat, push notifications), followed by parity fast-follows (Matches, comments, saved, profiles). A closed beta (TestFlight + Play internal) with the Brunei/SEA community precedes the joint public launch (G7). Backend prep first: Bearer-token auth helper, Turnstile bypass for token auth, a new /api/matches endpoint, Expo push infrastructure, and the App Store-required account deletion + user blocking. Full plan in the handoff document.
+One TypeScript codebase shipping to **both** the App Store and Play Store (owner decisions D6–D9, Session 21). Hybrid architecture: supabase-js direct reads + Realtime on the client, validated writes through the existing API routes with Bearer tokens.
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| M0 | Backend prep — Bearer auth helper, Turnstile bypass, /api/matches, push infra, account deletion, blocks | Done (S22) |
+| M1 | Lean trading core — auth, browse with filters, listing detail with offer threads, create listing (RN CardPicker), realtime chat, my listings, push registration, compliance | Done (S23–S26) |
+| M2 | Parity fast-follows — Matches with matched-card thumbnails, comments, saved listings, public profiles, profile edit + notification prefs, trade completion/ratings, infinite scroll + chat pagination | Done (S27) |
+| M3 | Closed beta (TestFlight + Play internal) → joint public launch with the website (G7) | Next |
 
 ---
 

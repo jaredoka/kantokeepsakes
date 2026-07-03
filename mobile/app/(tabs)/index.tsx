@@ -24,6 +24,9 @@ export default function BrowseScreen() {
   const [countryOpen, setCountryOpen] = useState(false);
   const [listings, setListings] = useState<ListingRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -47,11 +50,14 @@ export default function BrowseScreen() {
       });
   }, []);
 
+  const PAGE_SIZE = 30;
+
   const load = useCallback(
     async (
       listingType: "WTS" | "WTB",
       searchTerm: string,
-      countryFilter: string | null
+      countryFilter: string | null,
+      offset: number
     ) => {
       let q = supabase
         .from("listings")
@@ -62,24 +68,39 @@ export default function BrowseScreen() {
         .eq("type", listingType);
       if (searchTerm) q = q.ilike("title", `%${searchTerm}%`);
       if (countryFilter) q = q.eq("country", countryFilter);
-      const { data } = await q
+      const { data, error } = await q
         .order("bumped_at", { ascending: false })
-        .limit(30);
-      setListings((data as unknown as ListingRow[]) || []);
+        .range(offset, offset + PAGE_SIZE - 1);
+      if (error) {
+        setLoadError("Failed to load listings. Check your connection.");
+        if (offset === 0) setListings([]);
+        return;
+      }
+      const rows = (data as unknown as ListingRow[]) || [];
+      setLoadError("");
+      setListings((prev) => (offset === 0 ? rows : [...prev, ...rows]));
+      setHasMore(rows.length === PAGE_SIZE);
     },
     []
   );
 
   useEffect(() => {
     setLoading(true);
-    load(type, query, country).finally(() => setLoading(false));
+    load(type, query, country, 0).finally(() => setLoading(false));
   }, [type, query, country, load]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await load(type, query, country);
+    await load(type, query, country, 0);
     setRefreshing(false);
   }, [type, query, country, load]);
+
+  const onEndReached = useCallback(async () => {
+    if (loadingMore || !hasMore || loading) return;
+    setLoadingMore(true);
+    await load(type, query, country, listings.length);
+    setLoadingMore(false);
+  }, [loadingMore, hasMore, loading, load, type, query, country, listings.length]);
 
   return (
     <View style={styles.container}>
@@ -130,6 +151,20 @@ export default function BrowseScreen() {
 
       {loading ? (
         <Text style={styles.status}>Loading...</Text>
+      ) : loadError && listings.length === 0 ? (
+        <View style={styles.errorWrap}>
+          <Text style={styles.status}>{loadError}</Text>
+          <Pressable
+            style={styles.retryBtn}
+            onPress={() => {
+              setLoading(true);
+              load(type, query, country, 0).finally(() => setLoading(false));
+            }}
+            testID="browse-retry"
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </Pressable>
+        </View>
       ) : listings.length === 0 ? (
         <Text style={styles.status}>
           {query || country
@@ -154,6 +189,13 @@ export default function BrowseScreen() {
           contentContainerStyle={styles.list}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            loadingMore ? (
+              <Text style={styles.footerStatus}>Loading more...</Text>
+            ) : null
           }
         />
       )}
@@ -257,6 +299,23 @@ const styles = StyleSheet.create({
   countryChipText: { fontSize: 13, fontWeight: "600", color: colors.gray600 },
   countryChipTextActive: { color: colors.black },
   status: { textAlign: "center", marginTop: 40, color: colors.gray500 },
+  errorWrap: { alignItems: "center" },
+  retryBtn: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: colors.gray300,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: colors.white,
+  },
+  retryText: { fontWeight: "700", fontSize: 13, color: colors.gray700 },
+  footerStatus: {
+    textAlign: "center",
+    paddingVertical: 12,
+    color: colors.gray500,
+    fontSize: 13,
+  },
   list: { paddingHorizontal: 12, paddingBottom: 24 },
   modalBackdrop: {
     flex: 1,

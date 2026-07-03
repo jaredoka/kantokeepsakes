@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse, after } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/supabase/api-auth";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { notifyUser } from "@/lib/email";
+
+const supabaseAdmin = createAdminClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 // POST — complete or dispute a trade
 export async function POST(request: NextRequest) {
@@ -185,7 +190,10 @@ export async function POST(request: NextRequest) {
 
     if (count && count >= 2) {
       bothCompleted = true;
-      await supabase
+      // Admin client: when the second completer is the offerer, RLS would
+      // silently no-op the update on the owner's listing (latent since S8 —
+      // half of all trades stayed "active" until both parties rated)
+      await supabaseAdmin
         .from("listings")
         .update({ status: "sold" })
         .eq("id", listingId);
@@ -223,7 +231,9 @@ export async function POST(request: NextRequest) {
 
 // GET — get trade completions for a listing
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
+  // Bearer-aware so mobile clients read with user context (cookie flows
+  // behave identically; the table is publicly readable either way)
+  const { supabase } = await getAuthUser(request);
   const url = new URL(request.url);
   const listingId = url.searchParams.get("listingId");
 

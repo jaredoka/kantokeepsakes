@@ -57,6 +57,30 @@ export default function RootLayout() {
             headerTitleStyle: { fontWeight: "800" },
           }}
         />
+        <Stack.Screen
+          name="saved"
+          options={{
+            headerShown: true,
+            title: "Saved Listings",
+            headerTitleStyle: { fontWeight: "800" },
+          }}
+        />
+        <Stack.Screen
+          name="edit-profile"
+          options={{
+            headerShown: true,
+            title: "Edit Profile",
+            headerTitleStyle: { fontWeight: "800" },
+          }}
+        />
+        <Stack.Screen
+          name="user/[username]"
+          options={{
+            headerShown: true,
+            title: "Trader Profile",
+            headerTitleStyle: { fontWeight: "800" },
+          }}
+        />
       </Stack>
     </SessionProvider>
   );

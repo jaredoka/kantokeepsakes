@@ -59,6 +59,8 @@ export default function ChatScreen() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [hasMoreOlder, setHasMoreOlder] = useState(false);
 
   // Load conversation meta + messages (GET also marks them read server-side)
   useEffect(() => {
@@ -91,6 +93,7 @@ export default function ChatScreen() {
       }
       setMeta(row);
       setMessages(msgsRes.ok && msgsRes.data ? msgsRes.data : []);
+      setHasMoreOlder(!!(msgsRes.ok && msgsRes.data && msgsRes.data.length === 50));
       if (!msgsRes.ok) setLoadError(msgsRes.error || "Failed to load messages.");
     }
 
@@ -148,6 +151,33 @@ export default function ChatScreen() {
       supabase.removeChannel(channel);
     };
   }, [conversationId, userId]);
+
+  // Older-message pagination (M2-5): the list is inverted, so onEndReached
+  // fires at the visual top. Cursor = oldest loaded message's created_at.
+  const loadingOlderRef = useRef(false);
+  const loadOlder = useCallback(async () => {
+    if (loadingOlderRef.current || !hasMoreOlder) return;
+    if (!messages || messages.length === 0) return;
+    const oldest = messages[messages.length - 1];
+    loadingOlderRef.current = true;
+    setLoadingOlder(true);
+    const res = await apiFetch<Message[]>(
+      `/api/conversations/${conversationId}/messages?limit=50&before=${encodeURIComponent(oldest.created_at)}`
+    );
+    if (res.ok && res.data) {
+      const older = res.data;
+      setHasMoreOlder(older.length === 50);
+      if (older.length > 0) {
+        setMessages((cur) => {
+          if (!cur) return older;
+          const seen = new Set(cur.map((m) => m.id));
+          return [...cur, ...older.filter((m) => !seen.has(m.id))];
+        });
+      }
+    }
+    loadingOlderRef.current = false;
+    setLoadingOlder(false);
+  }, [conversationId, hasMoreOlder, messages]);
 
   // Ref guard: a fast double-tap can fire onPress twice before the
   // `sending` state re-renders the disabled button.
@@ -225,6 +255,13 @@ export default function ChatScreen() {
         // Inverted keeps the newest message pinned to the bottom; skip it
         // when empty so the empty state isn't rendered upside down.
         inverted={messages.length > 0}
+        onEndReached={loadOlder}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={
+          loadingOlder ? (
+            <Text style={styles.olderStatus}>Loading older messages...</Text>
+          ) : null
+        }
         ListEmptyComponent={
           <Text style={styles.status}>
             {loadError
@@ -291,6 +328,12 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   status: { textAlign: "center", marginTop: 40, color: colors.gray500 },
+  olderStatus: {
+    textAlign: "center",
+    paddingVertical: 8,
+    color: colors.gray400,
+    fontSize: 12,
+  },
   listingBar: {
     backgroundColor: colors.cream,
     borderBottomWidth: 1,

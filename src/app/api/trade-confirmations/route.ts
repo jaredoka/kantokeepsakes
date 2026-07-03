@@ -204,17 +204,14 @@ export async function POST(request: NextRequest) {
 // GET — get confirmations for a listing or user
 // For listing queries: implements double-blind reveal logic
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
+  // Bearer-aware: mobile clients need user context for the double-blind
+  // own-rating reveal below (cookie flows behave identically)
+  const { user, supabase } = await getAuthUser(request);
   const url = new URL(request.url);
   const listingId = url.searchParams.get("listingId");
   const userId = url.searchParams.get("userId");
 
   if (listingId) {
-    // Get the current user (for double-blind logic)
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
     const { data, error } = await supabase
       .from("trade_confirmations")
       .select(
