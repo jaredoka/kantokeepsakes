@@ -69,6 +69,58 @@ interface CommentRow {
   profiles: { username: string; completed_trades: number } | null;
 }
 
+interface CompletionRow {
+  id: string;
+  user_id: string;
+  status: "completed" | "disputed" | "auto_completed";
+  created_at: string;
+}
+
+interface ConfirmationRow {
+  id: string;
+  confirmer_id: string;
+  rating: number | null;
+  comment: string | null;
+  created_at: string;
+  revealed: boolean;
+  confirmer: { username: string } | null;
+}
+
+const MAX_COMMENT_LENGTH = 500;
+
+/** Tappable (or read-only) 1–5 star row. */
+function StarRow({
+  value,
+  onChange,
+  size = 24,
+}: {
+  value: number;
+  onChange?: (v: number) => void;
+  size?: number;
+}) {
+  return (
+    <View style={styles.starRow}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Pressable
+          key={n}
+          onPress={onChange ? () => onChange(n) : undefined}
+          disabled={!onChange}
+          testID={onChange ? `star-${n}` : undefined}
+        >
+          <Text
+            style={{
+              fontSize: size,
+              color: n <= value ? colors.yellowDark : colors.gray300,
+            }}
+          >
+            ★
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 // Mirrors REPORT_REASONS in src/lib/marketplace/types.ts
 const REPORT_REASONS: { value: string; label: string }[] = [
   { value: "scam", label: "Scam" },
@@ -129,7 +181,26 @@ export default function ListingDetailScreen() {
   const [notFound, setNotFound] = useState(false);
   const [offers, setOffers] = useState<OfferRow[]>([]);
   const [comments, setComments] = useState<CommentRow[]>([]);
+  const [commentsAvailable, setCommentsAvailable] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  const [commentText, setCommentText] = useState("");
+  const [commentBusy, setCommentBusy] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(
+    null
+  );
+
+  const [completions, setCompletions] = useState<CompletionRow[]>([]);
+  const [confirmations, setConfirmations] = useState<ConfirmationRow[]>([]);
+  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [disputeText, setDisputeText] = useState("");
+  const [ratingValue, setRatingValue] = useState(0);
+  const [ratingComment, setRatingComment] = useState("");
+  const [ratingDone, setRatingDone] = useState(false);
+
+  // null = unknown or table missing (pre-migration 00025) — button hidden
+  const [saved, setSaved] = useState<boolean | null>(null);
+  const [saveBusy, setSaveBusy] = useState(false);
 
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState<string | null>(null);
@@ -146,25 +217,49 @@ export default function ListingDetailScreen() {
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    const [{ data: row }, offersRes, commentsRes] = await Promise.all([
-      supabase
-        .from("listings")
-        .select(
-          "id, user_id, type, title, description, images, looking_for_images, country, state, status, created_at, price, currency, wants_cash, wants_singles, wants_graded, wants_sealed, wants_offers, profiles!listings_user_id_fkey(username, reputation_score, completed_trades)"
-        )
-        .eq("id", id)
-        .single(),
-      apiFetch<OfferRow[]>(`/api/offers?listingId=${id}`),
-      apiFetch<CommentRow[]>(`/api/listings/${id}/comments`),
-    ]);
+    const [{ data: row }, offersRes, commentsRes, { data: savedRow, error: savedErr }] =
+      await Promise.all([
+        supabase
+          .from("listings")
+          .select(
+            "id, user_id, type, title, description, images, looking_for_images, country, state, status, created_at, price, currency, wants_cash, wants_singles, wants_graded, wants_sealed, wants_offers, profiles!listings_user_id_fkey(username, reputation_score, completed_trades)"
+          )
+          .eq("id", id)
+          .single(),
+        apiFetch<OfferRow[]>(`/api/offers?listingId=${id}`),
+        apiFetch<CommentRow[]>(`/api/listings/${id}/comments`),
+        // RLS scopes saved_listings to own rows; errors mean the table is
+        // missing (pre-migration 00025) and the save button stays hidden
+        supabase
+          .from("saved_listings")
+          .select("listing_id")
+          .eq("listing_id", id)
+          .maybeSingle(),
+      ]);
     if (!row || (row as unknown as ListingDetail).status === "removed") {
       setNotFound(true);
     } else {
       setListing(row as unknown as ListingDetail);
     }
-    setOffers(offersRes.ok && offersRes.data ? offersRes.data : []);
+    const offerRows = offersRes.ok && offersRes.data ? offersRes.data : [];
+    setOffers(offerRows);
     // 503 until migration 00020 — the comments card just stays hidden
     setComments(commentsRes.ok && commentsRes.data ? commentsRes.data : []);
+    setCommentsAvailable(commentsRes.ok);
+    setSaved(savedErr ? null : !!savedRow);
+
+    // Trade status + ratings only matter once an offer is accepted
+    if (offerRows.some((o) => o.status === "accepted")) {
+      const [complRes, confRes] = await Promise.all([
+        apiFetch<CompletionRow[]>(`/api/trade-completions?listingId=${id}`),
+        apiFetch<ConfirmationRow[]>(`/api/trade-confirmations?listingId=${id}`),
+      ]);
+      setCompletions(complRes.ok && complRes.data ? complRes.data : []);
+      setConfirmations(confRes.ok && confRes.data ? confRes.data : []);
+    } else {
+      setCompletions([]);
+      setConfirmations([]);
+    }
   }, [id]);
 
   useEffect(() => {
@@ -198,6 +293,23 @@ export default function ListingDetailScreen() {
   const isActive = listing.status === "active";
   const threads = buildThreads(offers);
   const hasAccepted = offers.some((o) => o.status === "accepted");
+
+  // Trade completion / rating state (mirrors website TradeCompletion +
+  // TradeConfirmation). offerer_id stays the non-owner party on every turn.
+  const myUserId = session?.user.id;
+  const acceptedOffer = offers.find((o) => o.status === "accepted") || null;
+  const isParty =
+    isOwner || (!!acceptedOffer && acceptedOffer.offerer_id === myUserId);
+  const myCompletion = completions.find((c) => c.user_id === myUserId);
+  const otherCompletion = completions.find((c) => c.user_id !== myUserId);
+  const bothCompleted =
+    completions.filter(
+      (c) => c.status === "completed" || c.status === "auto_completed"
+    ).length >= 2;
+  const hasDispute = completions.some((c) => c.status === "disputed");
+  const myConfirmation = confirmations.find(
+    (c) => c.confirmer_id === myUserId
+  );
 
   const wantPills: string[] = [];
   if (listing.wants_cash || listing.price !== null) wantPills.push("Cash");
@@ -286,6 +398,108 @@ export default function ListingDetailScreen() {
     setBusy(false);
   }
 
+  async function toggleSave() {
+    if (!listing || !myUserId || saved === null) return;
+    setSaveBusy(true);
+    if (saved) {
+      const { error: err } = await supabase
+        .from("saved_listings")
+        .delete()
+        .eq("user_id", myUserId)
+        .eq("listing_id", listing.id);
+      if (!err) setSaved(false);
+    } else {
+      const { error: err } = await supabase
+        .from("saved_listings")
+        .insert({ user_id: myUserId, listing_id: listing.id });
+      if (!err) setSaved(true);
+    }
+    setSaveBusy(false);
+  }
+
+  async function postComment() {
+    if (!listing) return;
+    const body = commentText.trim();
+    if (!body) return;
+    setCommentBusy(true);
+    setError("");
+    const res = await apiFetch<CommentRow>(`/api/listings/${listing.id}/comments`, {
+      method: "POST",
+      body: { body },
+    });
+    if (res.ok && res.data) {
+      setComments((prev) => [...prev, res.data as CommentRow]);
+      setCommentText("");
+    } else {
+      setError(res.error || "Failed to post comment.");
+    }
+    setCommentBusy(false);
+  }
+
+  async function deleteComment(commentId: string) {
+    setCommentBusy(true);
+    setError("");
+    const res = await apiFetch(`/api/comments/${commentId}`, {
+      method: "DELETE",
+    });
+    if (res.ok) {
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } else {
+      setError(res.error || "Failed to delete comment.");
+    }
+    setDeletingCommentId(null);
+    setCommentBusy(false);
+  }
+
+  async function tradeAction(action: "complete" | "dispute") {
+    if (!listing) return;
+    setBusy(true);
+    setError("");
+    const res = await apiFetch("/api/trade-completions", {
+      method: "POST",
+      body: {
+        listingId: listing.id,
+        action,
+        description:
+          action === "dispute" ? disputeText.trim() || undefined : undefined,
+      },
+    });
+    if (res.ok) {
+      setDisputeOpen(false);
+      setDisputeText("");
+      await load();
+    } else {
+      setError(res.error || "Failed to submit.");
+    }
+    setBusy(false);
+  }
+
+  async function submitRating() {
+    if (!listing || ratingValue === 0) return;
+    setBusy(true);
+    setError("");
+    const res = await apiFetch("/api/trade-confirmations", {
+      method: "POST",
+      body: {
+        listingId: listing.id,
+        rating: ratingValue,
+        comment: ratingComment.trim() || undefined,
+      },
+    });
+    if (res.ok || res.status === 409) {
+      setRatingDone(true);
+      await load();
+    } else {
+      setError(res.error || "Failed to submit rating.");
+    }
+    setBusy(false);
+  }
+
+  function openProfile(username: string | undefined) {
+    if (!username) return;
+    router.push({ pathname: "/user/[username]", params: { username } });
+  }
+
   async function openConversation() {
     if (!listing) return;
     setBusy(true);
@@ -345,19 +559,35 @@ export default function ListingDetailScreen() {
           )}
         </View>
         <Text style={styles.title}>{listing.title}</Text>
-        <Text style={styles.seller}>
-          {listing.profiles?.username || "Unknown"}
-          <Text style={styles.sellerTrades}>
-            {" "}· {listing.profiles?.completed_trades ?? 0} trades
-            {/* reputation_score is stored x10 (see SellerCard.tsx) */}
-            {listing.profiles && listing.profiles.reputation_score > 0
-              ? ` · ★ ${(listing.profiles.reputation_score / 10).toFixed(1)}`
-              : ""}
+        <Pressable
+          onPress={() => openProfile(listing.profiles?.username)}
+          testID="seller-profile"
+        >
+          <Text style={styles.seller}>
+            {listing.profiles?.username || "Unknown"}
+            <Text style={styles.sellerTrades}>
+              {" "}· {listing.profiles?.completed_trades ?? 0} trades
+              {/* reputation_score is stored x10 (see SellerCard.tsx) */}
+              {listing.profiles && listing.profiles.reputation_score > 0
+                ? ` · ★ ${(listing.profiles.reputation_score / 10).toFixed(1)}`
+                : ""}
+            </Text>
           </Text>
-        </Text>
+        </Pressable>
 
         {!isOwner && (
           <View style={styles.modRow}>
+            {saved !== null && (
+              <Pressable
+                onPress={toggleSave}
+                disabled={saveBusy}
+                testID="save-listing"
+              >
+                <Text style={[styles.modLink, saved && styles.savedLink]}>
+                  {saved ? "★ Saved" : "☆ Save"}
+                </Text>
+              </Pressable>
+            )}
             {reportDone ? (
               <Text style={styles.modDone}>Report submitted. Thank you.</Text>
             ) : (
@@ -716,21 +946,262 @@ export default function ListingDetailScreen() {
         )}
       </View>
 
-      {comments.length > 0 && (
+      {/* Trade status — mirrors website TradeCompletion (parties only) */}
+      {acceptedOffer && isParty && (
+        <View style={styles.card} testID="trade-status">
+          <Text style={styles.sectionLabel}>TRADE STATUS</Text>
+          {hasDispute ? (
+            <View style={styles.disputeBanner}>
+              <Text style={styles.disputeBannerText}>
+                A trade dispute has been filed and is under admin review.
+              </Text>
+            </View>
+          ) : bothCompleted ? (
+            <View style={styles.completeBanner}>
+              <Text style={styles.completeBannerText}>
+                Both parties confirmed this trade. You can now rate each other
+                below.
+              </Text>
+            </View>
+          ) : myCompletion ? (
+            <Text style={styles.tradeHint}>
+              You have completed this trade. Waiting for the other party to
+              confirm (auto-completes in ~3 days).
+            </Text>
+          ) : (
+            <>
+              <Text style={styles.tradeHint}>
+                {otherCompletion
+                  ? "The other party has completed this trade. Please confirm or dispute."
+                  : "An offer has been accepted. Once the trade is done, confirm below."}
+              </Text>
+              <View style={styles.actionRow}>
+                <Pressable
+                  style={[styles.primaryBtn, busy && styles.btnDisabled]}
+                  onPress={() => tradeAction("complete")}
+                  disabled={busy}
+                  testID="complete-trade"
+                >
+                  <Text style={styles.primaryBtnText}>
+                    {busy ? "..." : "Complete Trade"}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={styles.secondaryBtn}
+                  onPress={() => setDisputeOpen((v) => !v)}
+                  disabled={busy}
+                  testID="dispute-trade"
+                >
+                  <Text style={styles.secondaryBtnText}>Dispute</Text>
+                </Pressable>
+              </View>
+              {disputeOpen && (
+                <>
+                  <TextInput
+                    style={[styles.textArea, { marginTop: 8 }]}
+                    value={disputeText}
+                    onChangeText={setDisputeText}
+                    placeholder="Explain why you are disputing this trade (optional)"
+                    placeholderTextColor={colors.gray400}
+                    multiline
+                    maxLength={1000}
+                  />
+                  <View style={styles.actionRow}>
+                    <Pressable
+                      style={[styles.dangerBtn, busy && styles.btnDisabled]}
+                      onPress={() => tradeAction("dispute")}
+                      disabled={busy}
+                      testID="dispute-submit"
+                    >
+                      <Text style={styles.dangerBtnText}>
+                        {busy ? "..." : "Submit Dispute"}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.secondaryBtn}
+                      onPress={() => {
+                        setDisputeOpen(false);
+                        setDisputeText("");
+                      }}
+                      disabled={busy}
+                    >
+                      <Text style={styles.secondaryBtnText}>Cancel</Text>
+                    </Pressable>
+                  </View>
+                </>
+              )}
+            </>
+          )}
+        </View>
+      )}
+
+      {/* Ratings — mirrors website TradeConfirmation (double-blind) */}
+      {acceptedOffer && (bothCompleted || confirmations.length > 0) && (
+        <View style={styles.card} testID="trade-ratings">
+          <Text style={styles.sectionLabel}>
+            {bothCompleted ? "RATE THIS TRADE" : "TRADE RATINGS"}
+          </Text>
+
+          {isParty &&
+            bothCompleted &&
+            !hasDispute &&
+            !myConfirmation &&
+            !ratingDone && (
+              <>
+                <Text style={styles.tradeHint}>
+                  {isOwner ? "Rate the buyer:" : "Rate the seller:"}
+                </Text>
+                <StarRow value={ratingValue} onChange={setRatingValue} />
+                <TextInput
+                  style={[styles.textArea, { marginTop: 8 }]}
+                  value={ratingComment}
+                  onChangeText={setRatingComment}
+                  placeholder="Optional comment (max 500 characters)"
+                  placeholderTextColor={colors.gray400}
+                  multiline
+                  maxLength={500}
+                  testID="rating-comment"
+                />
+                <Pressable
+                  style={[
+                    styles.primaryBtn,
+                    (busy || ratingValue === 0) && styles.btnDisabled,
+                  ]}
+                  onPress={submitRating}
+                  disabled={busy || ratingValue === 0}
+                  testID="rating-submit"
+                >
+                  <Text style={styles.primaryBtnText}>
+                    {busy ? "..." : "Submit Rating"}
+                  </Text>
+                </Pressable>
+              </>
+            )}
+
+          {ratingDone && !myConfirmation && (
+            <Text style={styles.modDone}>
+              Rating submitted! It will be visible once both parties have
+              rated (or after 14 days).
+            </Text>
+          )}
+
+          {confirmations.length === 0 && !bothCompleted && (
+            <Text style={styles.emptyText}>
+              Ratings will be available after both parties complete the trade.
+            </Text>
+          )}
+
+          {confirmations.map((c) => (
+            <View key={c.id} style={styles.review}>
+              {c.revealed ? (
+                <>
+                  <View style={styles.reviewHeader}>
+                    <Text style={styles.commentMeta}>
+                      {c.confirmer?.username || "Unknown"}
+                    </Text>
+                    <StarRow value={c.rating || 0} size={14} />
+                    <Text style={styles.sellerTrades}>
+                      {formatTimeAgo(c.created_at)}
+                    </Text>
+                  </View>
+                  {!!c.comment && (
+                    <Text style={styles.commentBody}>{c.comment}</Text>
+                  )}
+                </>
+              ) : (
+                <Text style={styles.emptyText}>
+                  Rating hidden — visible once both parties rate or after 14
+                  days.
+                </Text>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Comments — hidden entirely pre-migration 00020 (GET returns 503) */}
+      {commentsAvailable && (
         <View style={styles.card}>
           <Text style={styles.sectionLabel}>COMMENTS ({comments.length})</Text>
+          {comments.length === 0 && (
+            <Text style={styles.emptyText}>
+              No comments yet. Ask a question or vouch for the trader.
+            </Text>
+          )}
           {comments.map((c) => (
             <View key={c.id} style={styles.comment}>
-              <Text style={styles.commentMeta}>
-                {c.profiles?.username || "Unknown"}
-                <Text style={styles.sellerTrades}>
-                  {" "}· {c.profiles?.completed_trades ?? 0} trades ·{" "}
-                  {formatTimeAgo(c.created_at)}
-                </Text>
-              </Text>
+              <View style={styles.commentHeader}>
+                <Pressable
+                  onPress={() => openProfile(c.profiles?.username)}
+                  style={styles.commentAuthor}
+                >
+                  <Text style={styles.commentMeta} numberOfLines={1}>
+                    {c.profiles?.username || "Unknown"}
+                    <Text style={styles.sellerTrades}>
+                      {" "}· {c.profiles?.completed_trades ?? 0} trades ·{" "}
+                      {formatTimeAgo(c.created_at)}
+                    </Text>
+                  </Text>
+                </Pressable>
+                {c.user_id === myUserId &&
+                  (deletingCommentId === c.id ? (
+                    <View style={styles.commentDeleteRow}>
+                      <Pressable
+                        onPress={() => deleteComment(c.id)}
+                        disabled={commentBusy}
+                        testID={`comment-delete-confirm-${c.id}`}
+                      >
+                        <Text style={styles.commentDeleteConfirm}>Delete?</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => setDeletingCommentId(null)}
+                        disabled={commentBusy}
+                      >
+                        <Text style={styles.modLink}>Cancel</Text>
+                      </Pressable>
+                    </View>
+                  ) : (
+                    <Pressable
+                      onPress={() => setDeletingCommentId(c.id)}
+                      testID={`comment-delete-${c.id}`}
+                    >
+                      <Text style={styles.commentDelete}>×</Text>
+                    </Pressable>
+                  ))}
+              </View>
               <Text style={styles.commentBody}>{c.body}</Text>
             </View>
           ))}
+
+          <TextInput
+            style={[styles.textArea, { marginTop: 8 }]}
+            value={commentText}
+            onChangeText={setCommentText}
+            placeholder="Add a public comment..."
+            placeholderTextColor={colors.gray400}
+            multiline
+            maxLength={MAX_COMMENT_LENGTH}
+            testID="comment-input"
+          />
+          <View style={styles.commentFooter}>
+            <Text style={styles.charCount}>
+              {commentText.length}/{MAX_COMMENT_LENGTH}
+            </Text>
+            <Pressable
+              style={[
+                styles.primaryBtn,
+                styles.commentPostBtn,
+                (commentBusy || !commentText.trim()) && styles.btnDisabled,
+              ]}
+              onPress={postComment}
+              disabled={commentBusy || !commentText.trim()}
+              testID="comment-submit"
+            >
+              <Text style={styles.primaryBtnText}>
+                {commentBusy ? "..." : "Post"}
+              </Text>
+            </Pressable>
+          </View>
         </View>
       )}
     </ScrollView>
@@ -914,5 +1385,67 @@ const styles = StyleSheet.create({
     color: colors.gray700,
     lineHeight: 18,
     marginTop: 2,
+  },
+  commentHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  commentAuthor: { flex: 1 },
+  commentDelete: {
+    fontSize: 18,
+    color: colors.gray400,
+    fontWeight: "700",
+    paddingHorizontal: 4,
+  },
+  commentDeleteRow: { flexDirection: "row", gap: 10, alignItems: "center" },
+  commentDeleteConfirm: { fontSize: 12, fontWeight: "700", color: colors.red },
+  commentFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  commentPostBtn: { flexGrow: 0, paddingHorizontal: 20 },
+  charCount: { fontSize: 11, color: colors.gray400 },
+  savedLink: { color: colors.yellowDark },
+  starRow: { flexDirection: "row", gap: 2, marginVertical: 4 },
+  tradeHint: {
+    fontSize: 13,
+    color: colors.gray700,
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  completeBanner: {
+    backgroundColor: "#dcfce7",
+    borderRadius: 8,
+    padding: 10,
+  },
+  completeBannerText: { color: "#166534", fontSize: 13, fontWeight: "600" },
+  disputeBanner: {
+    backgroundColor: "#fef2f2",
+    borderRadius: 8,
+    padding: 10,
+  },
+  disputeBannerText: { color: colors.red, fontSize: 13, fontWeight: "600" },
+  dangerBtn: {
+    backgroundColor: colors.red,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    flexGrow: 1,
+  },
+  dangerBtnText: { color: colors.white, fontWeight: "800", fontSize: 13 },
+  review: {
+    borderTopWidth: 1,
+    borderTopColor: colors.gray100,
+    paddingVertical: 8,
+  },
+  reviewHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
   },
 });

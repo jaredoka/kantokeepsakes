@@ -8,7 +8,7 @@ Started as a Brunei-focused retail site; per owner decision (D1) the shop is **r
 
 Stack: **Next.js 16.2.7** · **React 19** · **TypeScript** · **Supabase** (Postgres + Auth + Storage + Realtime) · **Tailwind v4** · **CSS Modules**
 
-**Current status (S26):** Website Phase 5 is complete. **Mobile Phase M1 (lean trading core) is code-complete**: all M1 rows are done once PR #17 (create-listing, open) and the S26 PR (forgot-password, browse filters, my-listings, push registration, account deletion, block/report) merge. All migrations through 00024 are applied (owner ran 00022–00024 in S25). Remaining before beta (M3): merge those PRs, create the EAS project + set `extra.eas.projectId` in `mobile/app.json` (push tokens no-op without it), add `https://kantokeepsakes.com/reset-password` to Supabase Auth → URL Configuration → Redirect URLs, and do a dev build for real push testing (Expo Go on Android can't receive remote push). G7 (public launch — remove `SITE_PASSWORD`) stays gated until website + app launch together (D5). Next: Phase M2 parity fast-follows.
+**Current status (S27):** Website Phase 5 and Mobile Phases M1 + **M2 (parity fast-follows, S27)** are complete. Migrations applied through 00024 — **00025 (saved_listings) and 00026 (sold listings publicly viewable) still need running in the SQL Editor**; until then the mobile save button/saved screen hide themselves, and the offerer cannot view or rate a listing after it flips to sold (see the S27 latent-bug notes). Remaining before beta (M3): run 00025/00026, create the EAS project + set `extra.eas.projectId` in `mobile/app.json` (push tokens no-op without it), add `https://kantokeepsakes.com/reset-password` to Supabase Auth → URL Configuration → Redirect URLs, and do a dev build for real push testing (Expo Go on Android can't receive remote push). G7 (public launch — remove `SITE_PASSWORD`) stays gated until website + app launch together (D5). Next: Phase M3 beta prep.
 
 ### Product decision log (Session 14 — resolved by owner)
 
@@ -134,7 +134,7 @@ Branch protection on `main` has been configured in GitHub UI (require PR before 
 | User profile page (public) | Done | `src/app/marketplace/user/[username]/page.tsx` |
 | Profile edit (bio + username) | Done S5 | `ProfileEditForm.tsx` + `PATCH /api/profile` |
 | Sold-listing archive on profile | Done | Same page, `getSoldListings()` |
-| Saved listings / watchlist | Done | `SaveButton.tsx`, `/marketplace/saved`, `saved_listings` table |
+| Saved listings / watchlist | **Mobile only (S27)** | This row falsely claimed a website implementation for many sessions — no SaveButton/page ever existed. Table created in migration 00025; mobile save button + Saved screen shipped S27; website UI is still an open follow-up |
 | Have/Want matching (Matches page) | Done S16 | `/marketplace/matches`, `matching.ts` — card identity from image URLs, two-way badges |
 | Listing comments (community vetting) | Done S18 | `ListingComments.tsx`, `/api/listings/[id]/comments`, migration 00020 |
 | Country display (flags on cards + detail) | Done S20 | `ListingCard.tsx`, detail status row, `countryFlag()` |
@@ -544,6 +544,37 @@ No changes needed. The API route already constructs titles as `[H] ... [W] ...` 
 ### Migration note
 
 The migration `00017_add_country_state.sql` must be run on the Supabase database before the country filter will work. Until then, "All Countries" (no filter) works correctly; selecting a specific country triggers a "column listings.country does not exist" error from Supabase.
+
+---
+
+## Session 27 Changes — Phase M2: parity fast-follows (complete)
+
+All five M2 rows done in one PR (`feature/mobile-m2-parity`), plus two latent website trade-flow bugs found and fixed along the way.
+
+### Mobile (all in `mobile/`)
+
+- **M2-1 Matches parity** — the Matches tab now renders the per-direction matched-card thumbnails the API was already returning ("They have · you want" / "They want · you have" rows, yellow-bordered 32×45 thumbs, +N overflow), a proper ⇄ Two-way badge, and an error state with Retry.
+- **M2-2 Comments** — listing detail now has a full comments card (was read-only, hidden when empty): composer with 0/500 counter (`POST /api/listings/[id]/comments`), delete-own with inline two-tap confirm (`DELETE /api/comments/[id]`), comment authors link to public profiles. Card still hides itself entirely pre-migration-00020 (GET 503).
+- **M2-3 Saved / profiles / prefs** —
+  - **`saved_listings` never existed anywhere** — the feature table had claimed "Done (SaveButton.tsx, /marketplace/saved)" since the early sessions, but like forgot-password before S26, no commit ever contained it. **Migration `00025_saved_listings.sql`** creates the table (user_id+listing_id PK, owner-only RLS). Mobile: ☆ Save/★ Saved toggle on listing detail (direct SDK writes, RLS-scoped) + Saved screen (Profile → Saved Listings) with status chips for sold/expired items and Remove. Both hide/degrade gracefully until 00025 runs. **The website still has no save UI** — follow-up candidate (new W-item).
+  - **Public profile screen** `app/user/[username].tsx` — avatar, tier badge (`reputationTier` ported to `lib/format.ts` with `formatAccountAge`), trades/rating, joined line, bio, block/unblock with inline confirm, active listings, reviews via `GET /api/trade-confirmations?userId=` (server-side double-blind redaction). Reached from listing detail seller line, comment authors, and Profile → View Public Profile.
+  - **Edit Profile screen** `app/edit-profile.tsx` — username/bio + the three notification-pref switches, `PATCH /api/profile` sending only changed prefs (mirrors the website form). Profile tab refetches on focus so a username edit shows immediately.
+- **M2-4 Trade completion + ratings** on listing detail — mirrors the website's `TradeCompletion`/`TradeConfirmation`: trade-status card for the two parties once an offer is accepted (Complete Trade / Dispute with optional description; waiting + urgent-confirm + both-completed + dispute-under-review states), then the double-blind rating card (tappable 1–5 `StarRow`, optional 500-char comment, `POST /api/trade-confirmations`, 409 treated as already-rated; "Rating hidden" rows until both rate or 14 days pass). Completions/confirmations are fetched only when an accepted offer exists.
+- **M2-5 List polish** — Browse: real pagination (`.range()`, 30/page, `onEndReached` infinite scroll, "Loading more..." footer) + error state with Retry (the query error was previously swallowed). Chat: **older-message pagination** via the messages API's `before` cursor (inverted list, `onEndReached` at the visual top, ref-guarded). Matches: Retry button. Saved/blocked/my-listings/inbox already had pull-to-refresh.
+
+### Website fixes (same PR)
+
+- **Latent bug #1 — the sold flip silently no-oped for half of all trades.** `POST /api/trade-completions` marked the listing sold with the *user's* client; when the second completer was the offerer, RLS (owner-only UPDATE) matched 0 rows and the listing stayed active. Fixed with the admin client (same pattern as S17's auto-decline).
+- **Latent bug #2 — sold listings are invisible to everyone but the owner.** The 00003 SELECT policy is `status = 'active' or auth.uid() = user_id`, so the moment a listing flips to sold the offerer loses the listing page entirely — they can never see "rate this trade" and `POST /api/trade-confirmations` 404s for them (it reads the listing with the user's client). The two bugs masked each other: ratings only ever fully worked when the sold flip failed. **Migration `00026_sold_listings_visible.sql`** widens SELECT to `status in ('active','sold')` — sold listings are already linked from public profile archives, so nothing new is exposed. **Run 00025 + 00026 together.**
+- `GET /api/trade-completions` and `GET /api/trade-confirmations` switched from the cookie-only client to `getAuthUser` so Bearer (mobile) callers get user context — required for the double-blind "show my own rating" reveal. Cookie behavior unchanged.
+- Suspected drift: the 00010 `on_trade_confirmation_mark_sold` trigger did **not** fire in the S27 E2E (listing stayed active after both ratings when re-activated mid-test) — likely never applied, like `is_admin` before S18. Harmless now that the API flips sold at completion time; worth including 00010 if the migration folder is ever re-run.
+
+### Verification (S27)
+
+Typecheck clean in both projects; lint unchanged from main (same pre-existing `set-state-in-effect`/alt-text debt, no new rule hits). **36/37 Playwright checks** (Expo web + local API + live Supabase, misty/ash): comment post/delete-own with confirm, offer→accept→both-complete→sold (admin-flip verified in DB), double-blind rate both ways with reveal, reputation recalc, public profile with tier/reviews/block link, edit-profile bio+pref persisted via PATCH and verified in DB, saved screen + save button graceful pre-00025, matches/browse error-free, chat cursor pagination across a 60-message fixture (50 initial, older loaded on scroll). The 1 fail is the 00010 trigger drift note above. Fixtures fully cleaned; ash/misty profiles restored to baseline byte-for-byte.
+- **E2E gotchas (this machine):** Playwright `text=` is case-insensitive substring — `text=REVIEWS` also matches "No reviews yet" (assert `text=REVIEWS (`); `locator.count()` doesn't auto-wait, so post-action assertions need `waitForSelector`/`appears()`; the listing screen loads completions in a second stage after offers, so trade-status text assertions must wait.
+
+**Next (M3):** run migrations 00025/00026 → TestFlight + Play internal beta prep (EAS project, dev build for push, store assets, privacy labels).
 
 ---
 
@@ -1025,15 +1056,15 @@ Architecture stays **hybrid** (unchanged in spirit from the original Option A): 
 | M1-7 | My listings (bump, relist, edit basics) | **Done S26** — my-listings screen + edit-basics screen |
 | M1-8 | **Push notifications** for offers/counters/messages/trade updates + account deletion + block (compliance set) | **Done S26** — client registration wired (needs an EAS projectId to mint tokens, see S26 notes); account deletion + block/report + blocked-users all in-app |
 
-### Phase M2 — Parity fast-follows
+### Phase M2 — Parity fast-follows (complete, S27)
 
-| # | Task |
-|---|---|
-| M2-1 | Matches screen (`/api/matches`) |
-| M2-2 | Post comments + delete own |
-| M2-3 | Saved listings, profile view/edit, notification prefs |
-| M2-4 | Trade completion + ratings flows |
-| M2-5 | Pull-to-refresh, infinite scroll, offline/error states |
+| # | Task | Status |
+|---|---|---|
+| M2-1 | Matches screen (`/api/matches`) | **Done S27** — basic screen S23; matched-card thumbnails, two-way badge, retry S27 |
+| M2-2 | Post comments + delete own | **Done S27** |
+| M2-3 | Saved listings, profile view/edit, notification prefs | **Done S27** — needs migration 00025; website save UI still missing (follow-up) |
+| M2-4 | Trade completion + ratings flows | **Done S27** — needs migration 00026 for the offerer's post-sold rating step |
+| M2-5 | Pull-to-refresh, infinite scroll, offline/error states | **Done S27** — browse infinite scroll, chat older-message cursor pagination, error/retry states |
 
 ### Phase M3 — Beta → joint public launch (G7)
 

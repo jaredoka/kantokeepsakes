@@ -15,6 +15,29 @@ export function formatTimeAgo(dateStr: string): string {
   return `${Math.floor(diffDays / 30)}mo ago`;
 }
 
+/** Reputation tier from completed trades — mirrors reputation.ts. */
+export function reputationTier(completedTrades: number): string {
+  if (completedTrades >= 25) return "Veteran Trader";
+  if (completedTrades >= 10) return "Trusted Trader";
+  if (completedTrades >= 1) return "Trader";
+  return "New Trader";
+}
+
+/** Account age line — mirrors the website's formatAccountAge. */
+export function formatAccountAge(createdAt: string): string {
+  const days = Math.floor(
+    (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24)
+  );
+  if (days < 1) return "Joined today";
+  if (days === 1) return "Joined 1 day ago";
+  if (days < 30) return `Joined ${days} days ago`;
+  const months = Math.floor(days / 30);
+  if (months === 1) return "Joined 1 month ago";
+  if (months < 12) return `Joined ${months} months ago`;
+  const years = Math.floor(months / 12);
+  return years === 1 ? "Joined 1 year ago" : `Joined ${years} years ago`;
+}
+
 /** Chat timestamps — mirrors the website chat page's formatMessageTime. */
 export function formatMessageTime(isoString: string): string {
   const date = new Date(isoString);

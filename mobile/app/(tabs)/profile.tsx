@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { apiFetch } from "../../lib/api";
 import { useSession } from "../../context/session";
@@ -29,15 +29,18 @@ export default function ProfileScreen() {
   const [deleteError, setDeleteError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (!session) return;
-    supabase
-      .from("profiles")
-      .select("username, completed_trades, reputation_score")
-      .eq("id", session.user.id)
-      .single()
-      .then(({ data }) => setProfile(data));
-  }, [session]);
+  // Refetch on focus so username edits (Edit Profile screen) show up
+  useFocusEffect(
+    useCallback(() => {
+      if (!session) return;
+      supabase
+        .from("profiles")
+        .select("username, completed_trades, reputation_score")
+        .eq("id", session.user.id)
+        .single()
+        .then(({ data }) => setProfile(data));
+    }, [session])
+  );
 
   async function logout() {
     setBusy(true);
@@ -90,6 +93,37 @@ export default function ProfileScreen() {
           testID="menu-my-listings"
         >
           <Text style={styles.menuRowText}>My Listings</Text>
+          <Text style={styles.menuRowChevron}>›</Text>
+        </Pressable>
+        <Pressable
+          style={styles.menuRow}
+          onPress={() => router.push("/saved")}
+          testID="menu-saved"
+        >
+          <Text style={styles.menuRowText}>Saved Listings</Text>
+          <Text style={styles.menuRowChevron}>›</Text>
+        </Pressable>
+        <Pressable
+          style={styles.menuRow}
+          onPress={() => router.push("/edit-profile")}
+          testID="menu-edit-profile"
+        >
+          <Text style={styles.menuRowText}>Edit Profile</Text>
+          <Text style={styles.menuRowChevron}>›</Text>
+        </Pressable>
+        <Pressable
+          style={styles.menuRow}
+          onPress={() => {
+            // Plain guard, not `!.` (React Compiler hazard)
+            if (!profile) return;
+            router.push({
+              pathname: "/user/[username]",
+              params: { username: profile.username },
+            });
+          }}
+          testID="menu-public-profile"
+        >
+          <Text style={styles.menuRowText}>View Public Profile</Text>
           <Text style={styles.menuRowChevron}>›</Text>
         </Pressable>
         <Pressable
