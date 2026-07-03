@@ -30,11 +30,19 @@ export default function InboxScreen() {
   const { session } = useSession();
   const router = useRouter();
   const [convos, setConvos] = useState<ConversationItem[] | null>(null);
+  const [loadError, setLoadError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     const res = await apiFetch<ConversationItem[]>("/api/conversations");
-    setConvos(res.ok && res.data ? res.data : []);
+    if (res.ok && res.data) {
+      setConvos(res.data);
+      setLoadError("");
+    } else {
+      // Keep whatever list we already have; a failed refresh must not
+      // masquerade as an empty inbox.
+      setLoadError(res.error || "Failed to load conversations.");
+    }
   }, []);
 
   // Reload whenever the tab regains focus — read/unread state changes
@@ -55,7 +63,7 @@ export default function InboxScreen() {
   return (
     <View style={styles.container}>
       {convos === null ? (
-        <Text style={styles.status}>Loading...</Text>
+        <Text style={styles.status}>{loadError || "Loading..."}</Text>
       ) : convos.length === 0 ? (
         <Text style={styles.status}>No conversations yet.</Text>
       ) : (

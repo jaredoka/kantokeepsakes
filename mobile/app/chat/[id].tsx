@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -38,6 +38,12 @@ interface ConvoMeta {
   listings: { id: string; title: string; type: string } | null;
   p1: { username: string } | null;
   p2: { username: string } | null;
+}
+
+function prependUnique(prev: Message[] | null, msg: Message): Message[] {
+  if (!prev) return [msg];
+  if (prev.some((m) => m.id === msg.id)) return prev;
+  return [msg, ...prev];
 }
 
 export default function ChatScreen() {
@@ -110,11 +116,7 @@ export default function ChatScreen() {
         },
         (payload) => {
           const newMsg = payload.new as Message;
-          setMessages((prev) => {
-            if (!prev) return [newMsg];
-            if (prev.some((m) => m.id === newMsg.id)) return prev;
-            return [newMsg, ...prev];
-          });
+          setMessages((prev) => prependUnique(prev, newMsg));
           // Mark the other party's message read (same as the website chat)
           if (newMsg.sender_id !== userId) {
             supabase
@@ -125,16 +127,35 @@ export default function ChatScreen() {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        // A message inserted after the initial GET but before the channel
+        // went live would otherwise be lost until the screen reopens —
+        // refetch once the subscription is actually delivering.
+        if (status !== "SUBSCRIBED") return;
+        apiFetch<Message[]>(
+          `/api/conversations/${conversationId}/messages?limit=50`
+        ).then((res) => {
+          if (!res.ok || !res.data) return;
+          const fresh = res.data;
+          const freshIds = new Set(fresh.map((m) => m.id));
+          setMessages((prev) =>
+            prev ? [...fresh, ...prev.filter((m) => !freshIds.has(m.id))] : fresh
+          );
+        });
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [conversationId, userId]);
 
+  // Ref guard: a fast double-tap can fire onPress twice before the
+  // `sending` state re-renders the disabled button.
+  const sendingRef = useRef(false);
   const send = useCallback(async () => {
     const body = input.trim();
-    if (!body || sending) return;
+    if (!body || sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true);
     setSendError("");
     const res = await apiFetch<Message>(
@@ -143,17 +164,14 @@ export default function ChatScreen() {
     );
     if (res.ok && res.data) {
       const msg = res.data;
-      setMessages((prev) => {
-        if (!prev) return [msg];
-        if (prev.some((m) => m.id === msg.id)) return prev;
-        return [msg, ...prev];
-      });
+      setMessages((prev) => prependUnique(prev, msg));
       setInput("");
     } else {
       setSendError(res.error || "Failed to send message.");
     }
+    sendingRef.current = false;
     setSending(false);
-  }, [conversationId, input, sending]);
+  }, [conversationId, input]);
 
   const openListing = useCallback(() => {
     if (!meta) return;
@@ -209,7 +227,9 @@ export default function ChatScreen() {
         inverted={messages.length > 0}
         ListEmptyComponent={
           <Text style={styles.status}>
-            No messages yet. Start the conversation!
+            {loadError
+              ? "Couldn't load messages."
+              : "No messages yet. Start the conversation!"}
           </Text>
         }
         renderItem={({ item }) => {
@@ -237,7 +257,9 @@ export default function ChatScreen() {
         }}
       />
 
-      {!!sendError && <Text style={styles.error}>{sendError}</Text>}
+      {!!(sendError || loadError) && (
+        <Text style={styles.error}>{sendError || loadError}</Text>
+      )}
 
       <View style={styles.inputRow}>
         <TextInput
