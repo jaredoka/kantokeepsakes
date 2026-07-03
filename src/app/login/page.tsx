@@ -117,6 +117,12 @@ export default function LoginPage() {
         </form>
 
         <p className={styles.footer}>
+          <Link href="/forgot-password" className={styles.link}>
+            Forgot your password?
+          </Link>
+        </p>
+
+        <p className={styles.footer}>
           Don&apos;t have an account?{" "}
           <Link href={signupHref} className={styles.link}>
             Sign up
