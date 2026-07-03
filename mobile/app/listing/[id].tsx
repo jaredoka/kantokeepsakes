@@ -216,14 +216,15 @@ export default function ListingDetailScreen() {
   }
 
   async function openConversation() {
+    if (!listing) return;
     setBusy(true);
     setError("");
     const res = await apiFetch<{ id: string }>("/api/conversations", {
       method: "POST",
-      body: { listingId: listing!.id },
+      body: { listingId: listing.id },
     });
-    if (res.ok) {
-      router.push("/(tabs)/inbox");
+    if (res.ok && res.data) {
+      router.push({ pathname: "/chat/[id]", params: { id: res.data.id } });
     } else {
       setError(res.error || "Failed to open conversation.");
     }
