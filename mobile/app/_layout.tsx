@@ -17,6 +17,14 @@ export default function RootLayout() {
             headerTitleStyle: { fontWeight: "800" },
           }}
         />
+        <Stack.Screen
+          name="chat/[id]"
+          options={{
+            headerShown: true,
+            title: "Chat",
+            headerTitleStyle: { fontWeight: "800" },
+          }}
+        />
       </Stack>
     </SessionProvider>
   );

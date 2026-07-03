@@ -8,7 +8,7 @@ Started as a Brunei-focused retail site; per owner decision (D1) the shop is **r
 
 Stack: **Next.js 16.2.7** · **React 19** · **TypeScript** · **Supabase** (Postgres + Auth + Storage + Realtime) · **Tailwind v4** · **CSS Modules**
 
-**Current status (S21):** Website Phase 5 is complete — G1 email notifications, G2 have/want matching, G3 counteroffers, G4 listing comments, G5 shop retired, G6 country UX. G7 (public launch — remove `SITE_PASSWORD`) is gated until the mobile app is ready (D5). **Next milestone: the mobile app (React Native/Expo, both stores — see Mobile App Roadmap, decisions D6–D9).** Phase M0 backend prep is done (S22); migrations applied through 00021 — **00022 (push_tokens) and 00023 (blocks) still need running**.
+**Current status (S21):** Website Phase 5 is complete — G1 email notifications, G2 have/want matching, G3 counteroffers, G4 listing comments, G5 shop retired, G6 country UX. G7 (public launch — remove `SITE_PASSWORD`) is gated until the mobile app is ready (D5). **Next milestone: the mobile app (React Native/Expo, both stores — see Mobile App Roadmap, decisions D6–D9).** Phase M0 backend prep is done (S22); migrations applied through 00021 — **00022 (push_tokens), 00023 (blocks), and 00024 (realtime publication — fixes chat realtime on both website and mobile) still need running**.
 
 ### Product decision log (Session 14 — resolved by owner)
 
@@ -544,6 +544,19 @@ No changes needed. The API route already constructs titles as `[H] ... [W] ...` 
 ### Migration note
 
 The migration `00017_add_country_state.sql` must be run on the Supabase database before the country filter will work. Until then, "All Countries" (no filter) works correctly; selecting a specific country triggers a "column listings.country does not exist" error from Supabase.
+
+---
+
+## Session 25 Changes — M1 continuation: inbox + realtime chat (M1-6)
+
+- **Mobile chat screen** — `mobile/app/chat/[id].tsx` (root-stack route, auth-guarded, dynamic header title = other participant's username): conversation meta via direct SDK read (participant check client-side mirrors the website), messages via `GET /api/conversations/[id]/messages?limit=50` (which also marks them read server-side), send via `POST` on the same route, Supabase Realtime subscription on `messages:{id}` INSERT (marks incoming read, same as the website chat). Inverted FlatList keeps the newest message at the bottom (`inverted` is skipped when empty so the empty state isn't upside down); tappable "Re: {listing title}" bar navigates to the listing. `formatMessageTime` added to `mobile/lib/format.ts`.
+- **Inbox upgraded** — now calls `GET /api/conversations` (same as the website) for last-message previews and unread counts: rows show avatar, username, time-ago, yellow unread badge, "Re: listing" line, preview; tapping opens the chat. Reloads on tab focus (`useFocusEffect`) and supports pull-to-refresh.
+- **Listing detail** — Message Seller/Buyer now lands directly in the new chat screen (`POST /api/conversations` returns `{ id }`) instead of jumping to the Inbox tab. Also replaced the `listing!.id` non-null assertion with a guard (React Compiler hazard, same fix as PR #17).
+- **Realtime was never actually on — migration `00024_realtime_messages.sql`** (idempotent, **run in SQL Editor**): no table was ever added to the `supabase_realtime` publication, so **every `postgres_changes` subscription — website chat, website header unread badge, and the new mobile chat — has been silently receiving zero events**. Verified with standalone supabase-js probes: subscriptions report SUBSCRIBED but no INSERT events arrive even with the service-role key. The UIs masked it (sends append from the POST response; screens fetch on open). 00024 adds `public.messages` to the publication; RLS still scopes events to conversation participants. Until it runs, mobile + website chat behave as before (messages appear on open/reload).
+- **Verified E2E** (Expo web + Playwright, misty/ash): Message Seller → lands in chat; empty state; send renders own bubble; ash's inbox row shows preview + unread badge "1" + time-ago; inbox → chat shows the message with misty's name in the header; reply renders; deep-link reload of `/chat/[id]` loads the thread; "Re:" bar → listing detail. Realtime delivery correctly identified as blocked pre-00024 (probe + in-app). Test messages and the test conversation deleted from the DB.
+- **E2E tooling note (this machine):** no Playwright package is installed globally, but browser binaries live in `%LOCALAPPDATA%\ms-playwright`. Install `playwright-core` in a scratch dir and pass `executablePath` to `.../chromium_headless_shell-1228/.../chrome-headless-shell.exe`. On Expo web, inactive tab screens stay mounted — scope text selectors (`.last()`) or match by `data-testid`.
+
+**Next (M1):** my-listings (bump/relist/edit), push-notification registration (M1-8, expo-notifications installed, needs migration 00022), forgot-password screen, in-app account deletion + block (M1-8 compliance).
 
 ---
 
