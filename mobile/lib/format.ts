@@ -14,3 +14,34 @@ export function formatTimeAgo(dateStr: string): string {
 
   return `${Math.floor(diffDays / 30)}mo ago`;
 }
+
+/** Chat timestamps — mirrors the website chat page's formatMessageTime. */
+export function formatMessageTime(isoString: string): string {
+  const date = new Date(isoString);
+  const now = new Date();
+  const time = date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  const isToday =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+
+  if (isToday) return time;
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    date.getFullYear() === yesterday.getFullYear() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getDate() === yesterday.getDate();
+
+  if (isYesterday) return `Yesterday ${time}`;
+
+  return (
+    date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
+    ` ${time}`
+  );
+}

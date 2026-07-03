@@ -8,29 +8,37 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { Link, router } from "expo-router";
+import { Link } from "expo-router";
 import { supabase } from "../../lib/supabase";
+import { API_URL } from "../../lib/api";
 import { colors } from "../../lib/theme";
 
-export default function LoginScreen() {
+export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  async function handleLogin() {
-    setError("");
-    setBusy(true);
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-    setBusy(false);
-    if (signInError) {
-      setError(signInError.message);
+  async function handleSend() {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setError("Email is required.");
       return;
     }
-    router.replace("/(tabs)");
+    setError("");
+    setBusy(true);
+    // The reset link lands on the website's /reset-password page, where the
+    // user picks a new password and can then log back in here.
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+      trimmed,
+      { redirectTo: `${API_URL}/reset-password` }
+    );
+    setBusy(false);
+    if (resetError) {
+      setError(resetError.message);
+      return;
+    }
+    setSent(true);
   }
 
   return (
@@ -43,50 +51,49 @@ export default function LoginScreen() {
           Kanto <Text style={styles.logoAccent}>Keepsakes</Text>
         </Text>
         <Text style={styles.subtitle}>
-          Trade Pok&eacute;mon cards with hobbyists around the world
+          Enter your email and we&apos;ll send you a password reset link
         </Text>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor={colors.gray400}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          autoComplete="email"
-          value={email}
-          onChangeText={setEmail}
-          testID="login-email"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor={colors.gray400}
-          secureTextEntry
-          autoComplete="password"
-          value={password}
-          onChangeText={setPassword}
-          testID="login-password"
-        />
-
-        <Pressable
-          style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
-          onPress={handleLogin}
-          disabled={busy}
-          testID="login-submit"
-        >
-          <Text style={styles.primaryBtnText}>
-            {busy ? "Logging in..." : "Log in"}
+        {sent ? (
+          <Text style={styles.success} testID="forgot-sent">
+            If an account exists for {email.trim()}, a reset link is on its
+            way. Check your inbox (and spam folder), then log in with your new
+            password.
           </Text>
-        </Pressable>
+        ) : (
+          <>
+            {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <Link href="/(auth)/forgot-password" style={styles.link}>
-          Forgot your password?
-        </Link>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor={colors.gray400}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoComplete="email"
+              value={email}
+              onChangeText={setEmail}
+              testID="forgot-email"
+            />
 
-        <Link href="/(auth)/signup" style={styles.link}>
-          New here? Create an account
+            <Pressable
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                pressed && styles.pressed,
+              ]}
+              onPress={handleSend}
+              disabled={busy}
+              testID="forgot-submit"
+            >
+              <Text style={styles.primaryBtnText}>
+                {busy ? "Sending..." : "Send reset link"}
+              </Text>
+            </Pressable>
+          </>
+        )}
+
+        <Link href="/(auth)/login" style={styles.link}>
+          Back to login
         </Link>
       </View>
     </KeyboardAvoidingView>
@@ -120,6 +127,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 6,
     marginBottom: 20,
+  },
+  success: {
+    fontSize: 14,
+    color: colors.gray700,
+    textAlign: "center",
+    lineHeight: 20,
   },
   error: {
     color: colors.red,

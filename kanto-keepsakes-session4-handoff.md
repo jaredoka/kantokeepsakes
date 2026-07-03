@@ -8,7 +8,7 @@ Started as a Brunei-focused retail site; per owner decision (D1) the shop is **r
 
 Stack: **Next.js 16.2.7** · **React 19** · **TypeScript** · **Supabase** (Postgres + Auth + Storage + Realtime) · **Tailwind v4** · **CSS Modules**
 
-**Current status (S21):** Website Phase 5 is complete — G1 email notifications, G2 have/want matching, G3 counteroffers, G4 listing comments, G5 shop retired, G6 country UX. G7 (public launch — remove `SITE_PASSWORD`) is gated until the mobile app is ready (D5). **Next milestone: the mobile app (React Native/Expo, both stores — see Mobile App Roadmap, decisions D6–D9).** Phase M0 backend prep is done (S22); migrations applied through 00021 — **00022 (push_tokens) and 00023 (blocks) still need running**.
+**Current status (S26):** Website Phase 5 is complete. **Mobile Phase M1 (lean trading core) is code-complete**: all M1 rows are done once PR #17 (create-listing, open) and the S26 PR (forgot-password, browse filters, my-listings, push registration, account deletion, block/report) merge. All migrations through 00024 are applied (owner ran 00022–00024 in S25). Remaining before beta (M3): merge those PRs, create the EAS project + set `extra.eas.projectId` in `mobile/app.json` (push tokens no-op without it), add `https://kantokeepsakes.com/reset-password` to Supabase Auth → URL Configuration → Redirect URLs, and do a dev build for real push testing (Expo Go on Android can't receive remote push). G7 (public launch — remove `SITE_PASSWORD`) stays gated until website + app launch together (D5). Next: Phase M2 parity fast-follows.
 
 ### Product decision log (Session 14 — resolved by owner)
 
@@ -94,9 +94,9 @@ Branch protection on `main` has been configured in GitHub UI (require PR before 
 | Sign up (+ Turnstile) | Done | `src/app/signup/page.tsx`, `src/app/api/signup/route.ts` |
 | Log in | Done | `src/app/login/page.tsx` |
 | Log out | Done | `src/components/Header.tsx` |
-| Forgot password | Done | `src/app/forgot-password/page.tsx` |
-| Reset password | Done | `src/app/reset-password/page.tsx` |
-| Auth callback (email confirm / reset) | Done | `src/app/auth/callback/route.ts` |
+| Forgot password | Done **S26** | `src/app/forgot-password/page.tsx` — this table falsely claimed the page existed for many sessions; it was first created in S26 |
+| Reset password | Done **S26** | `src/app/reset-password/page.tsx` — same; handles recovery-link hash tokens client-side |
+| ~~Auth callback (email confirm / reset)~~ | Never existed | `src/app/auth/callback/route.ts` is not in the repo and is not needed — recovery links land on `/reset-password` directly (implicit-flow hash tokens) |
 | Marketplace auth gate (redirect to login) | Done | `src/app/marketplace/layout.tsx` |
 | `?next=` redirect after login | Done S4 | `src/proxy.ts`, `src/app/marketplace/layout.tsx`, `src/app/login/page.tsx` |
 | `?next=` redirect after signup | Done S5 | `src/app/signup/page.tsx` |
@@ -547,6 +547,50 @@ The migration `00017_add_country_state.sql` must be run on the Supabase database
 
 ---
 
+## Session 26 Changes — M1 completion: forgot-password, browse filters, my-listings, push, compliance
+
+Completes every remaining M1 item on top of the merged chat PR (#18). One PR, branched from main (independent of the still-open create-listing PR #17; expect a trivial conflict in the Browse tab if #17 adds its "+ Post" header button).
+
+### Website: password recovery actually exists now
+
+- **The Auth feature table had claimed `/forgot-password`, `/reset-password`, and `auth/callback` were "Done" since the early sessions — none of them ever existed in any commit.** The login page had no reset path at all. S26 created `src/app/forgot-password/page.tsx` (sends `resetPasswordForEmail` with `redirectTo` = `{origin}/reset-password`) and `src/app/reset-password/page.tsx` (client page: `detectSessionInUrl` consumes the recovery-link hash tokens, then `updateUser({ password })`; shows invalid/expired-link state otherwise), plus a "Forgot your password?" link on `/login`. Both reuse the login page's CSS module.
+- **Cross-client by design:** the mobile app's forgot screen points its `redirectTo` at the website's `/reset-password`. This works because the mobile supabase-js client uses the implicit flow — the recovery link verifies server-side at Supabase and lands with tokens in the URL hash, no PKCE verifier needed on the landing page.
+- **Activation (owner):** add `https://kantokeepsakes.com/reset-password` (and any preview/localhost URLs used for testing) to Supabase Dashboard → Auth → URL Configuration → Redirect URLs, or reset links will fall back to the Site URL.
+- **Gotcha discovered:** GoTrue rejects `resetPasswordForEmail` for `@example.com` / `.test` addresses ("Email address … is invalid"), so the seed accounts can't receive reset emails; E2E used the owner's real address (a few reset emails landed in jaredoka@gmail.com — ignore them).
+
+### Mobile (all in `mobile/`)
+
+- **Forgot-password screen (M1-2 done)** — `app/(auth)/forgot-password.tsx`, linked from login. `lib/api.ts` now exports `API_URL`.
+- **Browse search + country filter (M1-3 done)** — debounced (350 ms) title `.ilike` search plus a country chip that opens a modal listing only countries that actually have active listings (deduped from a 1000-row `country` select — deliberately not the static 195-country list, which lives in PR #17's cardData copy).
+- **My Listings (M1-7 done)** — `app/my-listings.tsx` (root-stack, reached from a new Profile menu): own listings incl. sold/expired with status badges; per-row Bump (24h-cooldown error surfaced inline), Relist (expired only), Edit, and Delete with inline confirm (RN `Alert` is a no-op on react-native-web, so all confirms are inline UI — keep doing this). **Edit basics** — `app/listing/edit/[id].tsx`: parses the `[H]/[W]` title back into the two 40-char fields, live preview, remove card thumbnails (no adding — that needs CardPicker from PR #17), want-pref chips, description; `PATCH /api/listings/[id]` with the full body the validator expects (send `currency: listing.currency || "BND"` — currency is required by `validateListing`).
+- **Push registration (M1-8)** — `lib/push.ts`: `registerPushToken()` (Android channel → permissions → `getExpoPushTokenAsync({ projectId })` → `POST /api/push-tokens`; token cached in AsyncStorage) and `unregisterPushToken()` (DELETE on logout/account deletion). Called from the session provider on sign-in. **Fails soft in every environment that can't do push**: web (early return; `expo-notifications` is loaded via dynamic import so Expo web never bundles-executes it), emulators, Expo Go on Android (SDK 53+ removed remote push), and — currently — everywhere, because `app.json` has no `extra.eas.projectId` yet. Creating the EAS project and adding that field is what turns push on end-to-end; server-side send was already done in B4.
+- **Account deletion (M1-8, App Store 5.1.1(v))** — Profile danger zone: type `DELETE` to enable the button → `DELETE /api/account` → sign-out. Wrong text is a no-op.
+- **Block + report + comments on listing detail (M1-4/M1-8)** — for non-owners: Report (reason chips mirroring `REPORT_REASONS` + optional details → `POST /api/reports`) and Block user (inline confirm → `POST /api/blocks`). Read-only comments card (`GET /api/listings/[id]/comments`; hidden when empty or pre-migration-503). `app/blocked-users.tsx` (Profile → Blocked Users) lists blocks with Unblock.
+- **Profile tab rebuilt** — avatar/stats header, menu rows (My Listings, Blocked Users), logout (unregisters push token first), danger zone.
+
+### Verification (S26)
+
+Typecheck clean in both projects (`npm run lint` fails on `main` already — pre-existing `react-hooks/set-state-in-effect` across the codebase; nothing new added). **31/31 Playwright checks** against Expo web + local API + live Supabase, including the full password-reset loop closed end-to-end (throwaway user: website reset → `updateUser` → mobile login with the new password → in-app account deletion → auth user verified gone server-side), block → blocked-users row → unblock, report submit, search/country filters, bump cooldown error, edit-description persist + restore. DB side effects: one seed listing of ash's got bumped (expiry extended — harmless); the E2E report row was deleted; blocks/throwaway users cleaned up.
+- **E2E tooling (this machine):** full `playwright` npm package works with the cached `%LOCALAPPDATA%\ms-playwright` chromium (v1228). The staging gate can be pre-solved by injecting the `site-auth` cookie = `base64("kk-site-auth:" + SITE_PASSWORD)`. RN-web `Pressable disabled` sets no DOM attribute — assert behavior, not `isDisabled()`.
+
+**Next:** merge PR #17 + the S26 PR → M1 done → Phase M2 (matches screen exists; post comments, saved, profile edit, notification prefs, trade completion/ratings, pagination/pull-to-refresh polish) and M3 beta prep (EAS project + dev build, store assets).
+
+---
+
+## Session 25 Changes — M1 continuation: inbox + realtime chat (M1-6)
+
+- **Mobile chat screen** — `mobile/app/chat/[id].tsx` (root-stack route, auth-guarded, dynamic header title = other participant's username): conversation meta via direct SDK read (participant check client-side mirrors the website), messages via `GET /api/conversations/[id]/messages?limit=50` (which also marks them read server-side), send via `POST` on the same route, Supabase Realtime subscription on `messages:{id}` INSERT (marks incoming read, same as the website chat). Inverted FlatList keeps the newest message at the bottom (`inverted` is skipped when empty so the empty state isn't upside down); tappable "Re: {listing title}" bar navigates to the listing. `formatMessageTime` added to `mobile/lib/format.ts`.
+- **Inbox upgraded** — now calls `GET /api/conversations` (same as the website) for last-message previews and unread counts: rows show avatar, username, time-ago, yellow unread badge, "Re: listing" line, preview; tapping opens the chat. Reloads on tab focus (`useFocusEffect`) and supports pull-to-refresh.
+- **Listing detail** — Message Seller/Buyer now lands directly in the new chat screen (`POST /api/conversations` returns `{ id }`) instead of jumping to the Inbox tab. Also replaced the `listing!.id` non-null assertion with a guard (React Compiler hazard, same fix as PR #17).
+- **Realtime was never actually on — migration `00024_realtime_messages.sql`** (idempotent): no table was ever added to the `supabase_realtime` publication, so **every `postgres_changes` subscription — website chat, website header unread badge, and the new mobile chat — had been silently receiving zero events**. Verified with standalone supabase-js probes: subscriptions report SUBSCRIBED but no INSERT events arrive even with the service-role key. The UIs masked it (sends append from the POST response; screens fetch on open). 00024 adds `public.messages` to the publication; RLS still scopes events to conversation participants. **Owner ran 00022/00023/00024 in S25 and live delivery was re-verified E2E (message appears on the other party's open chat screen with no reload).**
+- **Review fixes (S25, same PR):** messages-load failure no longer renders as a fake "No messages yet" (error is surfaced); double-tap on Send can't double-post (ref guard); a failed inbox refresh keeps the previous list instead of wiping to a fake empty state; the chat refetches once when the realtime channel reports SUBSCRIBED, closing the initial-fetch→subscription gap (also self-heals after reconnects). Known accepted costs (parity with the website, follow-up candidates): `GET /api/conversations` has no limit and does 2 queries per conversation (N+1) and the mobile inbox calls it on every tab focus; chat loads only the latest 50 messages with no pagination UI (M2-5); mark-as-read logic lives in both the server GET and the client realtime handler — centralizing it server-side is an M2 cleanup candidate, as is a shared mobile types module for the conversation shapes.
+- **Verified E2E** (Expo web + Playwright, misty/ash): Message Seller → lands in chat; empty state; send renders own bubble; ash's inbox row shows preview + unread badge "1" + time-ago; inbox → chat shows the message with misty's name in the header; reply renders; deep-link reload of `/chat/[id]` loads the thread; "Re:" bar → listing detail. Realtime delivery correctly identified as blocked pre-00024 (probe + in-app). Test messages and the test conversation deleted from the DB.
+- **E2E tooling note (this machine):** no Playwright package is installed globally, but browser binaries live in `%LOCALAPPDATA%\ms-playwright`. Install `playwright-core` in a scratch dir and pass `executablePath` to `.../chromium_headless_shell-1228/.../chrome-headless-shell.exe`. On Expo web, inactive tab screens stay mounted — scope text selectors (`.last()`) or match by `data-testid`.
+
+**Next (M1):** my-listings (bump/relist/edit), push-notification registration (M1-8, expo-notifications installed, needs migration 00022), forgot-password screen, in-app account deletion + block (M1-8 compliance).
+
+---
+
 ## Session 24 Changes — M1 continuation: listing detail + offer threads
 
 - **Fixed PR #16's failing Vercel build** — two independent causes:
@@ -973,13 +1017,13 @@ Architecture stays **hybrid** (unchanged in spirit from the original Option A): 
 | # | Task | Data source |
 |---|---|---|
 | M1-1 | Expo project setup (TS, expo-router), Supabase client + session persistence | **Done S23** — SDK 57/RN 0.86; AsyncStorage (not SecureStore: sessions exceed its 2 KB limit, per the official Supabase RN guide) |
-| M1-2 | Auth: login, signup (`POST /api/signup` + `x-mobile-client`), session provider, logout | **Done S23** (forgot-password screen pending) |
-| M1-3 | Browse WTS/WTB with filters + search + country | **Started S23** — WTS/WTB toggle + listing cards live; filters/search/country pending |
-| M1-4 | Listing detail: haves/wants, seller card, offer threads (accept/decline/counter), comments read, report | SDK reads + existing APIs |
-| M1-5 | Create listing: 5-section form incl. RN CardPicker (era/set/search reusing cardData + TCGdex/pokemontcg.io) | `POST /api/listings` |
-| M1-6 | Inbox + realtime chat | SDK + Realtime + messages API |
-| M1-7 | My listings (bump, relist, edit basics) | Existing APIs |
-| M1-8 | **Push notifications** for offers/counters/messages/trade updates + account deletion + block (compliance set) | B4/B5/B6 |
+| M1-2 | Auth: login, signup (`POST /api/signup` + `x-mobile-client`), session provider, logout | **Done S23**; forgot-password screen **done S26** |
+| M1-3 | Browse WTS/WTB with filters + search + country | **Done** — WTS/WTB toggle + cards S23; debounced title search + country filter **S26** |
+| M1-4 | Listing detail: haves/wants, seller card, offer threads (accept/decline/counter), comments read, report | **Done** — detail + offer threads S24; comments read, report, block **S26** |
+| M1-5 | Create listing: 5-section form incl. RN CardPicker (era/set/search reusing cardData + TCGdex/pokemontcg.io) | **Done S24** — PR #17, still open at time of writing |
+| M1-6 | Inbox + realtime chat | **Done S25** — required migration 00024 (realtime publication) |
+| M1-7 | My listings (bump, relist, edit basics) | **Done S26** — my-listings screen + edit-basics screen |
+| M1-8 | **Push notifications** for offers/counters/messages/trade updates + account deletion + block (compliance set) | **Done S26** — client registration wired (needs an EAS projectId to mint tokens, see S26 notes); account deletion + block/report + blocked-users all in-app |
 
 ### Phase M2 — Parity fast-follows
 

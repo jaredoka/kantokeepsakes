@@ -61,6 +61,24 @@ interface Thread {
   latest: OfferRow;
 }
 
+interface CommentRow {
+  id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+  profiles: { username: string; completed_trades: number } | null;
+}
+
+// Mirrors REPORT_REASONS in src/lib/marketplace/types.ts
+const REPORT_REASONS: { value: string; label: string }[] = [
+  { value: "scam", label: "Scam" },
+  { value: "spam", label: "Spam" },
+  { value: "harassment", label: "Harassment" },
+  { value: "inappropriate", label: "Inappropriate" },
+  { value: "trade_dispute", label: "Trade dispute" },
+  { value: "other", label: "Other" },
+];
+
 /** A turn is owner-authored iff author_id is set and differs from the
  *  offerer (offerer_id stays the non-owner party on every turn). */
 function authoredByOwner(o: OfferRow): boolean {
@@ -110,7 +128,15 @@ export default function ListingDetailScreen() {
   const [listing, setListing] = useState<ListingDetail | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [offers, setOffers] = useState<OfferRow[]>([]);
+  const [comments, setComments] = useState<CommentRow[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<string | null>(null);
+  const [reportText, setReportText] = useState("");
+  const [reportDone, setReportDone] = useState(false);
+  const [blockConfirm, setBlockConfirm] = useState(false);
+  const [blockedDone, setBlockedDone] = useState(false);
 
   const [offerFormOpen, setOfferFormOpen] = useState(false);
   const [offerText, setOfferText] = useState("");
@@ -120,7 +146,7 @@ export default function ListingDetailScreen() {
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    const [{ data: row }, offersRes] = await Promise.all([
+    const [{ data: row }, offersRes, commentsRes] = await Promise.all([
       supabase
         .from("listings")
         .select(
@@ -129,6 +155,7 @@ export default function ListingDetailScreen() {
         .eq("id", id)
         .single(),
       apiFetch<OfferRow[]>(`/api/offers?listingId=${id}`),
+      apiFetch<CommentRow[]>(`/api/listings/${id}/comments`),
     ]);
     if (!row || (row as unknown as ListingDetail).status === "removed") {
       setNotFound(true);
@@ -136,6 +163,8 @@ export default function ListingDetailScreen() {
       setListing(row as unknown as ListingDetail);
     }
     setOffers(offersRes.ok && offersRes.data ? offersRes.data : []);
+    // 503 until migration 00020 — the comments card just stays hidden
+    setComments(commentsRes.ok && commentsRes.data ? commentsRes.data : []);
   }, [id]);
 
   useEffect(() => {
@@ -216,6 +245,47 @@ export default function ListingDetailScreen() {
     setBusy(false);
   }
 
+  async function submitReport() {
+    if (!listing || !reportReason) return;
+    setBusy(true);
+    setError("");
+    const res = await apiFetch("/api/reports", {
+      method: "POST",
+      body: {
+        reportedUserId: listing.user_id,
+        listingId: listing.id,
+        reason: reportReason,
+        description: reportText.trim() || undefined,
+      },
+    });
+    if (res.ok) {
+      setReportOpen(false);
+      setReportReason(null);
+      setReportText("");
+      setReportDone(true);
+    } else {
+      setError(res.error || "Failed to submit report.");
+    }
+    setBusy(false);
+  }
+
+  async function blockUser() {
+    if (!listing) return;
+    setBusy(true);
+    setError("");
+    const res = await apiFetch("/api/blocks", {
+      method: "POST",
+      body: { userId: listing.user_id },
+    });
+    if (res.ok) {
+      setBlockConfirm(false);
+      setBlockedDone(true);
+    } else {
+      setError(res.error || "Failed to block user.");
+    }
+    setBusy(false);
+  }
+
   async function openConversation() {
     if (!listing) return;
     setBusy(true);
@@ -224,8 +294,8 @@ export default function ListingDetailScreen() {
       method: "POST",
       body: { listingId: listing.id },
     });
-    if (res.ok) {
-      router.push("/(tabs)/inbox");
+    if (res.ok && res.data) {
+      router.push({ pathname: "/chat/[id]", params: { id: res.data.id } });
     } else {
       setError(res.error || "Failed to open conversation.");
     }
@@ -285,6 +355,131 @@ export default function ListingDetailScreen() {
               : ""}
           </Text>
         </Text>
+
+        {!isOwner && (
+          <View style={styles.modRow}>
+            {reportDone ? (
+              <Text style={styles.modDone}>Report submitted. Thank you.</Text>
+            ) : (
+              <Pressable
+                onPress={() => {
+                  setReportOpen((v) => !v);
+                  setBlockConfirm(false);
+                  setError("");
+                }}
+                testID="report-listing"
+              >
+                <Text style={styles.modLink}>Report</Text>
+              </Pressable>
+            )}
+            {blockedDone ? (
+              <Text style={styles.modDone}>
+                User blocked. Manage in Profile → Blocked Users.
+              </Text>
+            ) : (
+              <Pressable
+                onPress={() => {
+                  setBlockConfirm((v) => !v);
+                  setReportOpen(false);
+                  setError("");
+                }}
+                testID="block-user"
+              >
+                <Text style={styles.modLink}>Block user</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+
+        {reportOpen && (
+          <View style={styles.modPanel}>
+            <Text style={styles.modPanelTitle}>Why are you reporting this?</Text>
+            <View style={styles.reasonRow}>
+              {REPORT_REASONS.map((r) => (
+                <Pressable
+                  key={r.value}
+                  style={[
+                    styles.reasonChip,
+                    reportReason === r.value && styles.reasonChipActive,
+                  ]}
+                  onPress={() => setReportReason(r.value)}
+                  testID={`reason-${r.value}`}
+                >
+                  <Text
+                    style={[
+                      styles.reasonChipText,
+                      reportReason === r.value && styles.reasonChipTextActive,
+                    ]}
+                  >
+                    {r.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <TextInput
+              style={styles.textArea}
+              value={reportText}
+              onChangeText={setReportText}
+              placeholder="Details (optional)"
+              placeholderTextColor={colors.gray400}
+              multiline
+              maxLength={1000}
+            />
+            <View style={styles.actionRow}>
+              <Pressable
+                style={[
+                  styles.primaryBtn,
+                  (busy || !reportReason) && styles.btnDisabled,
+                ]}
+                onPress={submitReport}
+                disabled={busy || !reportReason}
+                testID="report-submit"
+              >
+                <Text style={styles.primaryBtnText}>
+                  {busy ? "..." : "Submit report"}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={styles.secondaryBtn}
+                onPress={() => setReportOpen(false)}
+                disabled={busy}
+              >
+                <Text style={styles.secondaryBtnText}>Cancel</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        {blockConfirm && (
+          <View style={styles.modPanel}>
+            <Text style={styles.modPanelTitle}>
+              Block {listing.profiles?.username || "this user"}?
+            </Text>
+            <Text style={styles.modPanelText}>
+              They won&apos;t be able to message you, make offers, or comment
+              on your listings. You can unblock them from your profile.
+            </Text>
+            <View style={styles.actionRow}>
+              <Pressable
+                style={[styles.primaryBtn, busy && styles.btnDisabled]}
+                onPress={blockUser}
+                disabled={busy}
+                testID="block-confirm"
+              >
+                <Text style={styles.primaryBtnText}>
+                  {busy ? "..." : "Block"}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={styles.secondaryBtn}
+                onPress={() => setBlockConfirm(false)}
+                disabled={busy}
+              >
+                <Text style={styles.secondaryBtnText}>Cancel</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
       </View>
 
       {listing.images.length > 0 && (
@@ -520,6 +715,24 @@ export default function ListingDetailScreen() {
           })
         )}
       </View>
+
+      {comments.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.sectionLabel}>COMMENTS ({comments.length})</Text>
+          {comments.map((c) => (
+            <View key={c.id} style={styles.comment}>
+              <Text style={styles.commentMeta}>
+                {c.profiles?.username || "Unknown"}
+                <Text style={styles.sellerTrades}>
+                  {" "}· {c.profiles?.completed_trades ?? 0} trades ·{" "}
+                  {formatTimeAgo(c.created_at)}
+                </Text>
+              </Text>
+              <Text style={styles.commentBody}>{c.body}</Text>
+            </View>
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -640,4 +853,66 @@ const styles = StyleSheet.create({
   turnMeta: { fontSize: 11, color: colors.gray500, marginBottom: 2 },
   turnMessage: { fontSize: 13, color: colors.gray700, lineHeight: 18 },
   waitingHint: { fontSize: 12, color: colors.gray500, fontStyle: "italic" },
+  modRow: {
+    flexDirection: "row",
+    gap: 16,
+    marginTop: 8,
+    flexWrap: "wrap",
+  },
+  modLink: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.gray500,
+    textDecorationLine: "underline",
+  },
+  modDone: { fontSize: 12, color: colors.green, fontWeight: "600" },
+  modPanel: {
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.gray200,
+    paddingTop: 10,
+  },
+  modPanelTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.black,
+    marginBottom: 6,
+  },
+  modPanelText: {
+    fontSize: 12,
+    color: colors.gray600,
+    lineHeight: 17,
+    marginBottom: 8,
+  },
+  reasonRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 8,
+  },
+  reasonChip: {
+    borderWidth: 1,
+    borderColor: colors.gray300,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  reasonChipActive: {
+    borderColor: colors.yellowDark,
+    backgroundColor: colors.yellowLight,
+  },
+  reasonChipText: { fontSize: 12, fontWeight: "600", color: colors.gray600 },
+  reasonChipTextActive: { color: colors.black },
+  comment: {
+    borderTopWidth: 1,
+    borderTopColor: colors.gray100,
+    paddingVertical: 8,
+  },
+  commentMeta: { fontSize: 12, fontWeight: "700", color: colors.black },
+  commentBody: {
+    fontSize: 13,
+    color: colors.gray700,
+    lineHeight: 18,
+    marginTop: 2,
+  },
 });

@@ -7,6 +7,7 @@ import {
 } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { registerPushToken } from "../lib/push";
 
 interface SessionContextValue {
   session: Session | null;
@@ -34,6 +35,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  // Register for push whenever a user is signed in (M1-8). Fire-and-forget;
+  // registerPushToken fails soft on web / Expo Go / denied permission.
+  const userId = session?.user.id ?? null;
+  useEffect(() => {
+    if (!userId) return;
+    registerPushToken();
+  }, [userId]);
 
   return (
     <SessionContext.Provider value={{ session, loading }}>

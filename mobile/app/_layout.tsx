@@ -25,6 +25,38 @@ export default function RootLayout() {
             headerTitleStyle: { fontWeight: "800" },
           }}
         />
+        <Stack.Screen
+          name="chat/[id]"
+          options={{
+            headerShown: true,
+            title: "Chat",
+            headerTitleStyle: { fontWeight: "800" },
+          }}
+        />
+        <Stack.Screen
+          name="listing/edit/[id]"
+          options={{
+            headerShown: true,
+            title: "Edit Listing",
+            headerTitleStyle: { fontWeight: "800" },
+          }}
+        />
+        <Stack.Screen
+          name="my-listings"
+          options={{
+            headerShown: true,
+            title: "My Listings",
+            headerTitleStyle: { fontWeight: "800" },
+          }}
+        />
+        <Stack.Screen
+          name="blocked-users"
+          options={{
+            headerShown: true,
+            title: "Blocked Users",
+            headerTitleStyle: { fontWeight: "800" },
+          }}
+        />
       </Stack>
     </SessionProvider>
   );

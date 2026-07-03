@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "https://kantokeepsakes.com";
+export const API_URL =
+  process.env.EXPO_PUBLIC_API_URL || "https://kantokeepsakes.com";
 
 /**
  * Call a website API route with the current session's Bearer token.
