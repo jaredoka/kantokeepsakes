@@ -18,6 +18,14 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
+          name="listing/new"
+          options={{
+            headerShown: true,
+            title: "New Listing",
+            headerTitleStyle: { fontWeight: "800" },
+          }}
+        />
+        <Stack.Screen
           name="chat/[id]"
           options={{
             headerShown: true,

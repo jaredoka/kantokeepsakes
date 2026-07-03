@@ -207,11 +207,12 @@ export default function ListingDetailScreen() {
   if (listing.wants_sealed) wantPills.push("Any Sealed");
 
   async function submitOffer() {
+    if (!listing) return;
     setBusy(true);
     setError("");
     const res = await apiFetch<{ id: string }>("/api/offers", {
       method: "POST",
-      body: { listingId: listing!.id, message: offerText.trim() },
+      body: { listingId: listing.id, message: offerText.trim() },
     });
     if (res.ok) {
       setOfferFormOpen(false);
@@ -349,8 +350,9 @@ export default function ListingDetailScreen() {
           <Text style={styles.sellerTrades}>
             {" "}· {listing.profiles?.completed_trades ?? 0} trades
             {/* reputation_score is stored x10 (see SellerCard.tsx) */}
-            {(listing.profiles?.reputation_score ?? 0) > 0 &&
-              ` · ★ ${(listing.profiles!.reputation_score / 10).toFixed(1)}`}
+            {listing.profiles && listing.profiles.reputation_score > 0
+              ? ` · ★ ${(listing.profiles.reputation_score / 10).toFixed(1)}`
+              : ""}
           </Text>
         </Text>
 
