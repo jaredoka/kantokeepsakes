@@ -11,7 +11,7 @@ const UPLOAD_WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers);
-  const { success: withinLimit } = rateLimit(
+  const { success: withinLimit } = await rateLimit(
     `upload:${ip}`,
     UPLOAD_LIMIT,
     UPLOAD_WINDOW_MS

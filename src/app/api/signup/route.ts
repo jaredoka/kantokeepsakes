@@ -14,7 +14,7 @@ const supabaseAdmin = createClient(
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers);
 
-  const { success: withinLimit } = rateLimit(
+  const { success: withinLimit } = await rateLimit(
     `signup:${ip}`,
     SIGNUP_LIMIT,
     SIGNUP_WINDOW_MS
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     !!mobileKey && request.headers.get("x-mobile-client") === mobileKey;
 
   if (isMobileClient) {
-    const { success: mobileWithinLimit } = rateLimit(
+    const { success: mobileWithinLimit } = await rateLimit(
       `signup-mobile:${ip}`,
       2,
       SIGNUP_WINDOW_MS

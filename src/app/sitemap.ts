@@ -12,6 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/safe-trading`, changeFrequency: "monthly", priority: 0.3 },
     { url: `${BASE_URL}/terms`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${BASE_URL}/privacy`, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${BASE_URL}/delete-account`, changeFrequency: "yearly", priority: 0.2 },
   ];
 
   // Fetch active listings for dynamic pages

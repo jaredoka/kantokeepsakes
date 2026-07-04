@@ -11,7 +11,7 @@ const CREATE_WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers);
-  const { success: withinLimit } = rateLimit(
+  const { success: withinLimit } = await rateLimit(
     `create-listing:${ip}`,
     CREATE_LIMIT,
     CREATE_WINDOW_MS
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
   // Validate Turnstile — skipped for Bearer-authenticated (mobile) requests,
   // which get a stricter per-user rate limit instead (B2)
   if (via === "bearer") {
-    const { success: mobileWithinLimit } = rateLimit(
+    const { success: mobileWithinLimit } = await rateLimit(
       `listing-mobile:${user.id}`,
       5,
       60 * 60 * 1000

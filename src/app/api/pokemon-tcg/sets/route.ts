@@ -8,7 +8,7 @@ const TCGDEX_BASE = "https://api.tcgdex.net/v2";
 
 export async function GET(request: NextRequest) {
   const ip = getClientIp(request.headers);
-  const { success } = rateLimit(
+  const { success } = await rateLimit(
     `pokemon-tcg-sets:${ip}`,
     SEARCH_LIMIT,
     SEARCH_WINDOW_MS
