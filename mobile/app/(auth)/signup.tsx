@@ -7,6 +7,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Linking,
 } from "react-native";
 import { Link, router } from "expo-router";
 import { supabase } from "../../lib/supabase";
@@ -114,6 +115,24 @@ export default function SignupScreen() {
           </Text>
         </Pressable>
 
+        <Text style={styles.legal}>
+          By signing up you agree to the{" "}
+          <Text
+            style={styles.legalLink}
+            onPress={() => Linking.openURL(`${API_URL}/terms`)}
+          >
+            Terms of Service
+          </Text>{" "}
+          and{" "}
+          <Text
+            style={styles.legalLink}
+            onPress={() => Linking.openURL(`${API_URL}/privacy`)}
+          >
+            Privacy Policy
+          </Text>
+          .
+        </Text>
+
         <Link href="/(auth)/login" style={styles.link}>
           Already have an account? Log in
         </Link>
@@ -179,6 +198,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: colors.gray600,
     fontSize: 13,
+    textDecorationLine: "underline",
+  },
+  legal: {
+    marginTop: 12,
+    textAlign: "center",
+    color: colors.gray500,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  legalLink: {
+    color: colors.gray600,
     textDecorationLine: "underline",
   },
 });

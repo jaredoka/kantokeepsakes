@@ -98,6 +98,7 @@ src/
     reset-password/                 # Password reset
     auth/callback/                  # Supabase auth redirect handler
     terms/ privacy/ safe-trading/   # Legal + guide pages
+    delete-account/                 # Account deletion instructions (Play requirement)
     admin/                          # Admin panel (ban, reports)
     api/
       signup/route.ts               # Registration with Turnstile + rate limit
@@ -156,7 +157,10 @@ scripts/
   update-card-data.ts               # Regenerates cardData.generated.json from TCGdex
   seed.ts                           # Seeds test users + listings
 supabase/migrations/                # SQL migrations for all tables (idempotent, safe to re-run)
-data/products.json                  # Product catalog data
+docs/
+  m3-beta-runbook.md                # Owner runbook: EAS, push, TestFlight, Play internal
+  store-submission.md               # Store listing copy + privacy/data-safety/age-rating answers
+  app-user-guide.md                 # End-user guide: install (TestFlight/Play) + how to use the app
 ```
 
 ---
@@ -205,6 +209,9 @@ All tables have Row Level Security (RLS) enabled.
    POKEMON_TCG_API_KEY=your_api_key     # Used by scripts/update-card-data.ts (image fallback matching)
    RESEND_API_KEY=your_resend_key       # Email notifications; unset = sends logged and skipped
    EMAIL_FROM="Kanto Keepsakes <notifications@kantokeepsakes.com>"
+   MOBILE_CLIENT_KEY=your_mobile_key    # Mobile signup Turnstile bypass; unset = mobile signup disabled
+   UPSTASH_REDIS_REST_URL=your_upstash_url     # Shared rate limiting (B7); unset = in-memory fallback
+   UPSTASH_REDIS_REST_TOKEN=your_upstash_token
    ```
 
 4. **Run database migrations:** Apply the SQL files in `supabase/migrations/` to your Supabase project.
@@ -440,7 +447,8 @@ One TypeScript codebase shipping to **both** the App Store and Play Store (owner
 | M0 | Backend prep — Bearer auth helper, Turnstile bypass, /api/matches, push infra, account deletion, blocks | Done (S22) |
 | M1 | Lean trading core — auth, browse with filters, listing detail with offer threads, create listing (RN CardPicker), realtime chat, my listings, push registration, compliance | Done (S23–S26) |
 | M2 | Parity fast-follows — Matches with matched-card thumbnails, comments, saved listings, public profiles, profile edit + notification prefs, trade completion/ratings, infinite scroll + chat pagination | Done (S27) |
-| M3 | Closed beta (TestFlight + Play internal) → joint public launch with the website (G7) | Next |
+| M3 | Closed beta prep — EAS build config, push notification setup, Redis rate limiting (B7), legal/compliance pages, store submission pack, beta runbook + user guide (`docs/`) | Repo-side done (S28); owner steps in `docs/m3-beta-runbook.md` |
+| G7 | Joint public launch — remove `SITE_PASSWORD`, both store listings live | Gated (owner decision D5) |
 
 ---
 

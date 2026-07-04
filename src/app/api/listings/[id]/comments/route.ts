@@ -47,7 +47,7 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { success: withinLimit } = rateLimit(
+  const { success: withinLimit } = await rateLimit(
     `comment:${user.id}:${ip}`,
     COMMENT_LIMIT,
     COMMENT_WINDOW_MS

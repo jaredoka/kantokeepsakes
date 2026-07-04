@@ -5,3 +5,20 @@
   color: var(--color-gray-500);
   font-size: var(--font-size-sm);
 }
+
+.links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.links a {
+  color: var(--color-gray-500);
+  transition: color var(--transition-fast);
+}
+
+.links a:hover {
+  color: var(--color-gray-900);
+}

@@ -1,4 +1,4 @@
-# Kanto Keepsakes — Session 24 Handoff
+# Kanto Keepsakes — Session 28 Handoff
 
 ## Project Overview
 
@@ -8,7 +8,7 @@ Started as a Brunei-focused retail site; per owner decision (D1) the shop is **r
 
 Stack: **Next.js 16.2.7** · **React 19** · **TypeScript** · **Supabase** (Postgres + Auth + Storage + Realtime) · **Tailwind v4** · **CSS Modules**
 
-**Current status (S27):** Website Phase 5 and Mobile Phases M1 + **M2 (parity fast-follows, S27)** are complete. Migrations applied through 00024 — **00025 (saved_listings) and 00026 (sold listings publicly viewable) still need running in the SQL Editor**; until then the mobile save button/saved screen hide themselves, and the offerer cannot view or rate a listing after it flips to sold (see the S27 latent-bug notes). Remaining before beta (M3): run 00025/00026, create the EAS project + set `extra.eas.projectId` in `mobile/app.json` (push tokens no-op without it), add `https://kantokeepsakes.com/reset-password` to Supabase Auth → URL Configuration → Redirect URLs, and do a dev build for real push testing (Expo Go on Android can't receive remote push). G7 (public launch — remove `SITE_PASSWORD`) stays gated until website + app launch together (D5). Next: Phase M3 beta prep.
+**Current status (S28):** Website Phase 5 and Mobile Phases M1 + M2 are complete, and **M3 beta prep is done repo-side** (S28). Migrations **00025/00026 are confirmed applied** to the live DB (probed directly in S28). S28 shipped: B7 Redis rate limiting (Upstash REST + in-memory fallback), the legal/compliance pages `/terms` `/privacy` `/safe-trading` `/delete-account` (**these had never existed** despite years of "Done" rows), password-gate exemptions for those pages + `/contact` + `/reset-password` (store reviewers need the policy URLs; mobile recovery links land on reset-password), `mobile/eas.json` + notifications plugin config + signup ToS line, and the docs pack (`docs/m3-beta-runbook.md`, `docs/store-submission.md`, `docs/app-user-guide.md`). **Remaining M3 steps are owner-credential-gated** — follow `docs/m3-beta-runbook.md` top to bottom: Supabase redirect URL, Upstash env in Vercel, `eas init` (projectId turns push on) + EAS env vars, dev build push test, TestFlight + Play internal setup. G7 (public launch — remove `SITE_PASSWORD`) stays gated until website + app launch together (D5).
 
 ### Product decision log (Session 14 — resolved by owner)
 
@@ -39,6 +39,8 @@ Known code-level implications: ~~retiring the shop~~ (**done S19**); `currency` 
 | `RESEND_API_KEY` | Resend API key for email notifications (G1). Unset = sends are logged and skipped |
 | `EMAIL_FROM` | From address for notification emails (default `Kanto Keepsakes <notifications@kantokeepsakes.com>`) |
 | `MOBILE_CLIENT_KEY` | Shared key embedded in the mobile app; signup requests carrying it skip Turnstile (B2). Unset = mobile signup path disabled |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST endpoint for shared rate limiting (B7). Unset = in-memory fallback |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash REST token (pairs with the URL) |
 
 Copy from `.env.local.example` → `.env.local` if the file is missing.
 
@@ -164,9 +166,11 @@ Branch protection on `main` has been configured in GitHub UI (require PR before 
 ### Other
 | Feature | Status | Files |
 |---|---|---|
-| Terms of Service | Done | `src/app/terms/page.tsx` |
-| Privacy Policy | Done | `src/app/privacy/page.tsx` |
-| Safe Trading Guide | Done | `src/app/safe-trading/page.tsx` |
+| Terms of Service | Done **S28** | `src/app/terms/page.tsx` — this table falsely claimed the page existed since the early sessions; first created in S28 |
+| Privacy Policy | Done **S28** | `src/app/privacy/page.tsx` — same false-Done history |
+| Safe Trading Guide | Done **S28** | `src/app/safe-trading/page.tsx` — same false-Done history |
+| Account deletion instructions page | Done S28 | `src/app/delete-account/page.tsx` — Play data-safety "account deletion URL" requirement |
+| Footer legal links | Done S28 | `src/components/Footer.tsx` — About / Safe Trading / Terms / Privacy / Contact |
 | About page | Done S7 | `src/app/about/page.tsx` |
 | Contact page | Done S7 | `src/app/contact/page.tsx` |
 | Custom 404 page | Done S7 | `src/app/not-found.tsx` |
@@ -544,6 +548,43 @@ No changes needed. The API route already constructs titles as `[H] ... [W] ...` 
 ### Migration note
 
 The migration `00017_add_country_state.sql` must be run on the Supabase database before the country filter will work. Until then, "All Countries" (no filter) works correctly; selecting a specific country triggers a "column listings.country does not exist" error from Supabase.
+
+---
+
+## Session 28 Changes — Phase M3 beta prep (repo-side complete)
+
+Everything M3 needs that doesn't require owner credentials, in one PR (`feature/m3-beta-prep`). The remaining owner steps are scripted in **`docs/m3-beta-runbook.md`** — follow it top to bottom to reach TestFlight + Play internal.
+
+### Live-DB findings (probed directly, read-only + one cleaned fixture)
+
+- **00025 and 00026 are applied** — `saved_listings` and `push_tokens` exist; 00026 verified by inserting a sold fixture listing via service role and confirming anon could read it (fixture deleted). The S27 "run 00025/00026" blocker is cleared; mobile save/saved and the offerer's post-sold rating step are live.
+- Listings inserts via PostgREST need `type: 'WTS'` (uppercase enum) and a `category` (not-null, no default) — trips up seed/probe scripts.
+
+### Website
+
+- **B7 Redis rate limiting** — `src/lib/rate-limit.ts` rewritten: when `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` are set, limits run through the Upstash REST pipeline (`INCR` + `PEXPIRE NX` fixed window, 2s timeout, no SDK — same REST-only pattern as `email.ts`); unset or erroring → the old in-memory Map (fail-soft, logged). `rateLimit()` is now **async** — all 10 call sites gained `await`. Verified E2E on a dev server: in-memory path 20×200→429, Redis path through a local mock Upstash 20×200→429, and kill-the-mock fail-soft (request still 200, `[rate-limit] Redis unavailable` logged once). Activation = create Upstash DB + 2 Vercel env vars (runbook step 2).
+- **The legal pages never existed.** `/terms`, `/privacy`, `/safe-trading` had "Done" feature-table rows since the early sessions but **no commit ever contained them** (same pattern as forgot-password/saved-listings) — while the sitemap, home page, and contact page all linked them (404s). S28 created all three plus **`/delete-account`** (Google Play requires a public account-deletion URL), all reusing the about page's CSS module. Footer now links them.
+- **Password-gate exemptions** (`src/proxy.ts`) — `PUBLIC_PATHS = [/privacy, /terms, /safe-trading, /delete-account, /contact, /reset-password]` bypass the `SITE_PASSWORD` gate. Two real blockers fixed: store review requires reachable policy URLs, and **mobile beta users' password-recovery links land on `/reset-password`, which the gate was blocking**. Verified: `/` and `/marketplace` still 401, all six paths 200.
+- `/delete-account` added to the sitemap.
+
+### Mobile
+
+- **`mobile/eas.json`** created — development (dev client) / preview (APK) / production (autoIncrement, remote appVersionSource) profiles wired to EAS environments; app env vars go in via `eas env:create` (they are NOT read from `mobile/.env` on EAS builds — commands in the runbook).
+- **`app.json`**: `expo-notifications` plugin added (`./assets/images/notification-icon.png` — a 96×96 all-white icon generated from the monochrome adaptive icon's alpha channel with sharp — brand-gold `#c49010` tint, `defaultChannel: "default"` matching the channel `lib/push.ts` creates) and iOS `ITSAppUsesNonExemptEncryption: false` (skips the export-compliance question per TestFlight upload). Validated with `npx expo config`.
+- **Signup ToS line** — `app/(auth)/signup.tsx` now shows "By signing up you agree to the Terms of Service and Privacy Policy" linking to the website pages (App Store UGC guideline 1.2 expects in-app terms agreement).
+- **`mobile/.env.example` created** — the S23 handoff claimed it existed; it never did (another false claim).
+
+### Docs (new `docs/` folder)
+
+- **`m3-beta-runbook.md`** — ordered owner runbook: Supabase redirect URL → Upstash + Vercel env (incl. the "set `MOBILE_CLIENT_KEY` when the app ships" reminder) → `eas init` + EAS env vars → Android dev build + real push E2E → TestFlight → Play internal (first .aab is a manual upload) → running the beta. G7 steps deliberately excluded.
+- **`store-submission.md`** — paste-ready store listing copy, keywords, screenshot checklist, Apple privacy nutrition label + Play data-safety answers matching what the app actually collects, age-rating questionnaire guidance, App Store 1.2 UGC compliance mapping, and App Review notes (including the demo-account requirement).
+- **`app-user-guide.md`** — end-user how-to for Android + iOS: beta installation (TestFlight / Play opt-in), account setup, all four tabs, the full trade lifecycle (post → offer/counter → chat → complete → double-blind rate), safety habits, and FAQ.
+
+### Verification (S28)
+
+Typecheck clean in both projects; eslint clean on all changed website files. Dev-server E2E: password-gate matrix (6 public paths 200, gated paths 401), all four new pages render with real content + footer links, rate limiter verified in all three modes (see above). `expo config` parses the new app.json. DB fixture from the 00026 probe deleted; no other live-data side effects.
+
+**Next:** owner runs `docs/m3-beta-runbook.md` (credentials-gated M3 steps), then beta feedback iteration (M3-3) → G7 joint public launch decision.
 
 ---
 
@@ -1068,12 +1109,12 @@ Architecture stays **hybrid** (unchanged in spirit from the original Option A): 
 
 ### Phase M3 — Beta → joint public launch (G7)
 
-| # | Task |
-|---|---|
-| M3-1 | TestFlight + Play internal beta with the Brunei/SEA community (password gate stays up) |
-| M3-2 | Store submission prep: screenshots, privacy labels/data-safety forms, UGC moderation contact, age rating |
-| M3-3 | Iterate on beta feedback; scale prep (B7 if not done) |
-| M3-4 | **G7: joint public launch** — remove `SITE_PASSWORD`, both store listings live |
+| # | Task | Status |
+|---|---|---|
+| M3-1 | TestFlight + Play internal beta with the Brunei/SEA community (password gate stays up) | **Repo-side done S28** (eas.json, push config, gate exemptions); owner steps in `docs/m3-beta-runbook.md` |
+| M3-2 | Store submission prep: screenshots, privacy labels/data-safety forms, UGC moderation contact, age rating | **Done S28** — `docs/store-submission.md` + legal pages + signup ToS line; screenshots need the beta build |
+| M3-3 | Iterate on beta feedback; scale prep (B7 if not done) | **B7 done S28** (Upstash env activates it); feedback iteration awaits the beta |
+| M3-4 | **G7: joint public launch** — remove `SITE_PASSWORD`, both store listings live | Gated on owner decision (D5) — deliberately not started |
 ### Screen-to-Website Mapping (still valid; add Matches, Comments, Counteroffers screens)
 
 | iOS Screen | Website Page | Data Source |

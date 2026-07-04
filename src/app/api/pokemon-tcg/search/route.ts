@@ -110,7 +110,7 @@ async function fetchSetCards(
 
 export async function GET(request: NextRequest) {
   const ip = getClientIp(request.headers);
-  const { success } = rateLimit(
+  const { success } = await rateLimit(
     `pokemon-tcg-search:${ip}`,
     SEARCH_LIMIT,
     SEARCH_WINDOW_MS

@@ -98,6 +98,19 @@ function handlePasswordGate(request: NextRequest): NextResponse | null {
   // Let API routes through — they have their own auth (cron secret, user tokens, etc.)
   if (pathname.startsWith("/api/")) return null;
 
+  // Public even while staging-gated: legal/compliance pages the app stores
+  // require to be reachable (privacy policy, terms, account deletion), and
+  // /reset-password — mobile beta users' recovery links land there.
+  const PUBLIC_PATHS = [
+    "/privacy",
+    "/terms",
+    "/safe-trading",
+    "/delete-account",
+    "/contact",
+    "/reset-password",
+  ];
+  if (PUBLIC_PATHS.includes(pathname)) return null;
+
   // Handle password form submission
   if (pathname === "/_site-auth" && request.method === "POST") {
     return null; // Handled separately since we need to await formData
