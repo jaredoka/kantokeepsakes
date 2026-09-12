@@ -6,7 +6,7 @@
   "description": "Kanto Keepsakes shop - static HTML/CSS/JS with WhatsApp checkout.",
   "scripts": {
     "test": "vitest run",
-    "serve": "python -m http.server 8080"
+    "serve": "python -m http.server 8080 --directory public"
   },
   "devDependencies": {
     "vitest": "^3"

@@ -49,14 +49,14 @@ database, no API, no payment gateway.
 ## How it works
 
 ```
-index.html - pages/*.html     markup only - no inline business logic
-css/styles.css                design tokens at the top, then components
-js/config.js                  company WhatsApp number, currency, storage key
-js/money.js                   BND formatting - the only place money is formatted
-js/cart.js                    cart state, totals, order message, checkout URL
-js/products.js                catalogue filtering, product cards, empty shop
-js/app.js                     header menu and cart count
-data/products.js              THE CATALOGUE - the only file edited to list stock
+public/index.html - public/pages/*.html   markup only - no inline business logic
+public/css/styles.css                     design tokens at the top, then components
+public/js/config.js                       company WhatsApp number, currency, storage key
+public/js/money.js                        BND formatting - the only place money is formatted
+public/js/cart.js                         cart state, totals, order message, checkout URL
+public/js/products.js                     catalogue filtering, product cards, empty shop
+public/js/app.js                          header menu and cart count
+public/data/products.js                   THE CATALOGUE - the only file edited to list stock
 ```
 
 Every page loads one `<script type="module">` that calls the functions it needs. The catalogue is
@@ -67,11 +67,11 @@ The cart is the only state and it lives in `localStorage`, which is why there is
 
 ```bash
 npm install      # only needed for the tests
-npm run serve    # http://localhost:8080
+npm run serve    # http://localhost:8080 (serves public/)
 ```
 
-Opening `index.html` from the file system will not work - the scripts are ES modules, which browsers
-refuse to load over `file://`.
+Opening `public/index.html` from the file system will not work - the scripts are ES modules, which
+browsers refuse to load over `file://`.
 
 ## Tests
 
@@ -85,9 +85,9 @@ right number).
 
 ## Adding a product
 
-1. Put the photo in `images/products/`, named after the product's `id` - lowercase, dashes, resized
+1. Put the photo in `public/images/products/`, named after the product's `id` - lowercase, dashes, resized
    to ~1200 px on the long edge and under 400 KB.
-2. Add an entry to `PRODUCTS` in `data/products.js`. The field list and a copyable example are in the
+2. Add an entry to `PRODUCTS` in `public/data/products.js`. The field list and a copyable example are in the
    comment at the top of that file.
 3. `npm test`, then commit and push. Cloudflare Pages deploys `main` automatically.
 
@@ -100,11 +100,11 @@ right number).
 ## Project structure
 
 ```
-index.html  pages/  css/  js/  data/  images/     the shop
+public/                                            the website - this directory is what deploys
 tests/                                             nineteen tests, one dependency
-docs/DECISIONS.md  docs/screenshots/               why it is built this way
+docs/DECISIONS.md  docs/screenshots/                why it is built this way
 .github/workflows/ci.yml                           tests on every push
-_headers  robots.txt  sitemap.xml                   hosting, security and SEO
+wrangler.jsonc                                     deploy config: upload public/, 404.html on a miss
 ```
 
 ## Next

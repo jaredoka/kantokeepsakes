@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatPrice } from '../js/money.js';
+import { formatPrice } from '../public/js/money.js';
 
 describe('formatPrice', () => {
   it('renders BND with two decimals', () => {

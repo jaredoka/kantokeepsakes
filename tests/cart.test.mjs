@@ -22,7 +22,7 @@ const {
   getCart,
   maxQuantity,
   removeItem,
-} = await import('../js/cart.js');
+} = await import('../public/js/cart.js');
 
 const slab = {
   id: 'jp-sealed-001',

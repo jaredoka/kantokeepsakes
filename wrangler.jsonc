@@ -1,0 +1,10 @@
+{
+  // Cloudflare Workers - static assets only. No build step, no Worker script:
+  // Wrangler uploads everything in public/ and Cloudflare serves it.
+  "name": "kantokeepsakes",
+  "compatibility_date": "2026-09-13",
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "404-page"
+  }
+}

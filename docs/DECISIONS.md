@@ -27,7 +27,7 @@ money. That is a deliberate boundary, not an omission.
 
 ## 3. The catalogue is a JavaScript module, not JSON + fetch
 
-**Decision:** products live in `data/products.js` as `export const PRODUCTS = [...]`.
+**Decision:** products live in `public/data/products.js` as `export const PRODUCTS = [...]`.
 **Why:** the page already needs the data at load time. Fetching a JSON file adds an HTTP request, an
 async state, a loading state, a cache flag and an error path that no one will ever see.
 **Rejected:** `fetch('products.json')`; a headless CMS; a database.
@@ -53,14 +53,18 @@ assertion that the markup matches itself.
 **Rejected:** jsdom + Testing Library + five spec files (~250 lines) for twelve static pages.
 **Consequence:** a rendering regression is caught by eye, not by CI. Accepted.
 
-## 6. Hosting on Cloudflare Pages, DNS at Cloudflare
+## 6. Hosting on Cloudflare, DNS at Cloudflare
 
-**Decision:** the repo is connected to Cloudflare Pages; the custom domain is added there.
-**Why:** DNS is already at Cloudflare, so Pages writes its own record rather than requiring
-per-project A/CNAME values typed in by hand; the account, the security-headers file and the workflow
-are the same as the other site this business runs.
+**Decision:** the site deploys to Cloudflare as a **Worker with static assets** (`wrangler.jsonc`),
+connected to the GitHub repo. The custom domain is attached to it.
+**Why:** DNS is already at Cloudflare, so the host writes its own DNS record rather than requiring
+per-project A/CNAME values typed in by hand; `_headers` works; and the account is the same as the
+other site this business runs. Cloudflare's current "create project" flow produces a Worker, and
+Workers static assets is where the product is going - Pages is the older path with the same result.
 **Rejected:** Vercel (the previous host, and a fine one for a Next.js app), Netlify, GitHub Pages.
-**Consequence:** the host is a commodity choice; this one minimises moving parts.
+**Consequence:** the host is a commodity choice; this one minimises moving parts. The site lives in
+`public/` because the deploy uploads that directory - keeping it at the repo root made Wrangler
+upload `node_modules` too.
 
 ## 7. Release discipline: preview first, domain later
 
