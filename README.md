@@ -1,48 +1,77 @@
 # Kanto Keepsakes
 
-The Kanto Keepsakes shop - static HTML, CSS and vanilla JavaScript, sold in Brunei, priced in BND.
-**Checkout is a WhatsApp message to the company number `601136177105`.** Nothing is charged on the
-site, and there is no server, database, account or API anywhere in it.
+[![CI](https://github.com/jaredoka/kantokeepsakes/actions/workflows/ci.yml/badge.svg)](https://github.com/jaredoka/kantokeepsakes/actions/workflows/ci.yml)
+
+A static e-commerce site for a Pokemon TCG business in Brunei Darussalam - graded cards, singles and
+sealed product, priced in BND. Plain HTML, CSS and JavaScript. No framework, no build step, no
+database, no API, no payment gateway.
+
+> Built with AI-assisted development (Hermes Agent and Claude Code on Windows), the same workflow I
+> used for [Shrimp Enthusiast](https://github.com/jaredoka/shrimp-enthusiast). Every decision in
+> [`docs/DECISIONS.md`](docs/DECISIONS.md) is mine, including the ones about what not to build.
+
+## Live
+
+**https://kanto-keepsakes.pages.dev** - the custom domain moves over once the catalogue is stocked.
+
+## What this project demonstrates
+
+- **A tested money path.** The two things that can cost the shop real money - what a customer pays,
+  and the exact text of the order - are covered by unit tests that run on every push.
+- **Written decisions.** Eight entries in [`docs/DECISIONS.md`](docs/DECISIONS.md) recording what was
+  chosen, what was rejected, and the consequence of each - including why there is no payment gateway.
+- **Deleting code as part of the work.** Around 350 lines were removed before anything was added: a
+  CSV importer, a JSON+`fetch` catalogue, sub-navigation JavaScript, a sort dropdown, a duplicate
+  toast, and Google Fonts. Each duplicated something that already existed.
+- **Release discipline.** The shop publishes to a preview URL first; the domain, the old projects and
+  the data export are one deferred, gated release rather than a hurried cutover.
+
+## Features
+
+- **12 pages** - home, Japanese/English x sealed/singles/graded, accessories, preorder, cart, 404
+- **Catalogue** driven by one file (`data/products.js`), with per-product stock caps
+- **Cart** in `localStorage`: quantity controls, removal, BND totals, corrupt-storage guard
+- **Checkout** composes a numbered order and opens WhatsApp with it prefilled
+- **Empty states by design** - with no stock listed, every grid offers "ask me on WhatsApp" instead
+  of a dead page
+- **No third-party requests** - no fonts CDN, no analytics, no cookies
+- **Security headers** via Cloudflare Pages `_headers`
+- **SEO** - per-page titles and descriptions, `robots.txt`, `sitemap.xml`
+
+## Built With
+
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)
+![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=flat&logo=vitest&logoColor=white)
+![Cloudflare Pages](https://img.shields.io/badge/Cloudflare%20Pages-F38020?style=flat&logo=cloudflare&logoColor=white)
+
+## How it works
+
+```
+index.html - pages/*.html     markup only - no inline business logic
+css/styles.css                design tokens at the top, then components
+js/config.js                  company WhatsApp number, currency, storage key
+js/money.js                   BND formatting - the only place money is formatted
+js/cart.js                    cart state, totals, order message, checkout URL
+js/products.js                catalogue filtering, product cards, empty shop
+js/app.js                     header menu and cart count
+data/products.js              THE CATALOGUE - the only file edited to list stock
+```
+
+Every page loads one `<script type="module">` that calls the functions it needs. The catalogue is
+imported, not fetched, so nothing is asynchronous and the page cannot fail to load its own data.
+The cart is the only state and it lives in `localStorage`, which is why there is no backend.
 
 ## Running it locally
 
 ```bash
-npm install      # only for the tests
+npm install      # only needed for the tests
 npm run serve    # http://localhost:8080
 ```
 
-`npm run serve` uses Python's built-in web server. Opening `index.html` by double-clicking will
-**not** work: the scripts are ES modules, which browsers refuse to load over `file://`.
-
-## Adding a product
-
-1. **Photo.** Put the image in `images/products/`. Name it after the product's `id`, lowercase with
-   dashes: `pikachu-with-grey-felt-hat-psa10.jpg`.
-   - **Resize first.** Phone photos are 3-5 MB each; a page of those is unusable on mobile data.
-     Resize to about 1200 px on the long edge and aim for under 400 KB.
-   - A missing photo is not an error - the card shows a grey "No image" placeholder.
-2. **Catalogue entry.** Add an object to `PRODUCTS` in `data/products.js`. The field list, the
-   defaults and a copyable example are documented in the comment at the top of that same file.
-3. **Check and ship.**
-
-   ```bash
-   npm test
-   git add -A && git commit -m "catalog: add <product>" && git push
-   ```
-
-## Retiring a product
-
-Set `inStock: false` on its entry - it stays visible with an "Out of Stock" badge and cannot be
-added to the cart - or delete the entry entirely. Do it the same day something sells: graded slabs
-are one of one, so a stale entry can be ordered twice.
-
-## Photos that are too big
-
-```bash
-find images/products -size +400k
-```
-
-Anything it prints should be resized.
+Opening `index.html` from the file system will not work - the scripts are ES modules, which browsers
+refuse to load over `file://`.
 
 ## Tests
 
@@ -50,31 +79,40 @@ Anything it prints should be resized.
 npm test
 ```
 
-Two files, nineteen tests, one dependency, no browser environment: the cart maths, the stock caps,
-and the exact text of the WhatsApp order message. Nothing else is automated - the pages themselves
-are checked by opening them.
+Two files, nineteen tests, one dependency: BND formatting, and the cart (stock caps, quantity
+arithmetic, removal, totals, corrupt storage, the order message, and that checkout points at the
+right number).
 
-## Layout
+## Adding a product
+
+1. Put the photo in `images/products/`, named after the product's `id` - lowercase, dashes, resized
+   to ~1200 px on the long edge and under 400 KB.
+2. Add an entry to `PRODUCTS` in `data/products.js`. The field list and a copyable example are in the
+   comment at the top of that file.
+3. `npm test`, then commit and push. Cloudflare Pages deploys `main` automatically.
+
+## Screenshots
+
+| Home | Empty shop | Cart |
+|---|---|---|
+| ![Home](docs/screenshots/home.png) | ![Empty shop](docs/screenshots/empty-shop.png) | ![Cart](docs/screenshots/cart.png) |
+
+## Project structure
 
 ```
-index.html              home
-pages/*.html            11 pages: japanese/english x sealed/singles/graded, accessories, preorder, cart
-css/styles.css          all styling; CSS custom properties at the top
-js/config.js            company WhatsApp number, currency, storage key
-js/money.js             BND formatting
-js/cart.js              cart state, cart page, WhatsApp checkout
-js/products.js          catalogue filtering, product cards, empty-shop state
-js/app.js               header menu and cart count
-data/products.js        THE CATALOGUE - the only file to edit for products
-images/products/        product photos, named after the product id
-images/                 the logo
-404.html                not-found page
-tests/                  Vitest specs
+index.html  pages/  css/  js/  data/  images/     the shop
+tests/                                             nineteen tests, one dependency
+docs/DECISIONS.md  docs/screenshots/               why it is built this way
+.github/workflows/ci.yml                           tests on every push
+_headers  robots.txt  sitemap.xml                   hosting, security and SEO
 ```
 
-## Deliberate limitations
+## Next
 
-- No payment gateway, no accounts, no database, no order records - orders live in WhatsApp.
-- No build step: the files in this repository are the files visitors load.
-- No analytics, no cookies, no third-party requests at all (the fonts are a system stack).
-- The catalogue ships empty; every grid shows an "ask me on WhatsApp" state until it is stocked.
+Stocking the catalogue; a "how to buy" page explaining the WhatsApp -> bank transfer -> collect flow.
+Payments are deliberately out of scope - see decision 2.
+
+## Rights
+
+Code published as a portfolio reference. Product photography, the logo and written content are
+(c) Kanto Keepsakes and may not be reused.
