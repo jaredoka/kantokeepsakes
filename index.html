@@ -34,6 +34,13 @@
     <section class="hero">
       <h1>Welcome to Kanto Keepsakes</h1>
       <p>Your source for Pokemon TCG products in Brunei</p>
+      <p class="hero-note">
+        Stock is being added to the shop right now - Japanese and English sealed product, singles
+        and graded cards. Ask me on WhatsApp what is available today.
+      </p>
+      <a class="btn btn-primary" href="https://wa.me/601136177105" target="_blank" rel="noopener">
+        Ask on WhatsApp
+      </a>
     </section>
 
     <section class="categories container">
@@ -101,6 +108,11 @@
     <p>&copy; 2026 Kanto Keepsakes. All rights reserved.</p>
   </footer>
 
-  <script src="js/app.js"></script>
+  <script type="module">
+    import { initMenu, updateCartCount } from './js/app.js';
+
+    initMenu();
+    updateCartCount();
+  </script>
 </body>
 </html>
