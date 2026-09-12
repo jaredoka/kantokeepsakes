@@ -1,0 +1,9 @@
+# Normalise line endings in the repository to LF, keep them native in the working tree.
+* text=auto
+
+# Binary assets — never touch these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
