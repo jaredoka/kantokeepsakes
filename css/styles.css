@@ -827,3 +827,26 @@ body.nav-open {
 .btn-secondary:hover {
   background-color: var(--color-gray-100);
 }
+
+/* --- Empty-shop block and hero note (added 2026-09-13) --- */
+
+/* .hero p is more specific than a bare class, so match its specificity. */
+.hero p.hero-note {
+  max-width: 46rem;
+  margin: var(--space-md) auto var(--space-lg);
+  font-size: var(--font-size-base);
+  color: var(--color-gray-700);
+}
+
+.no-products p {
+  margin: 0 0 var(--space-sm);
+}
+
+.no-products .no-products-note {
+  color: var(--color-gray-500);
+  font-size: var(--font-size-sm);
+}
+
+.no-products .btn {
+  margin-top: var(--space-sm);
+}
