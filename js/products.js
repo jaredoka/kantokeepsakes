@@ -2,9 +2,9 @@
    Kanto Keepsakes - catalogue and product cards
    ============================================ */
 
-import { EMPTY_SHOP_INTRO, basePath, checkoutUrl } from './config.js';
+import { EMPTY_SHOP_INTRO, basePath } from './config.js';
 import { formatPrice } from './money.js';
-import { addToCart, updateCartCount } from './cart.js';
+import { addToCart, checkoutUrl, updateCartCount } from './cart.js';
 import { PRODUCTS } from '../data/products.js';
 
 export function filterProducts(products, { category, type, preorder } = {}) {
