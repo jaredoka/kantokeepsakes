@@ -1,57 +1,155 @@
 /* ============================================
-   Kanto Keepsakes — Cart Page Logic
+   Kanto Keepsakes - cart state, cart page, checkout
    ============================================ */
 
-const CART_KEY = 'kk-cart';
-const WHATSAPP_NUMBER = '601136177105';
+import { CART_KEY, DEFAULT_STOCK, ORDER_INTRO, WHATSAPP_NUMBER, basePath } from './config.js';
+import { formatPrice } from './money.js';
 
-document.addEventListener('DOMContentLoaded', () => {
-  renderCart();
-  bindCartEvents();
-});
+/* --- State ------------------------------------------------------------- */
 
-/* --- Get Cart from localStorage --- */
-function getCart() {
-  return JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+/** Never throws: a missing or corrupt cart reads as an empty one. */
+export function getCart() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
-/* --- Save Cart to localStorage --- */
-function saveCart(cart) {
+export function saveCart(cart) {
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
-  updateCartCount();
 }
 
-/* --- Render Cart Items --- */
-function renderCart() {
+/** How many of this product a customer may put in the cart. */
+export function maxQuantity(product) {
+  const declared = Number(product && product.stock);
+  if (Number.isFinite(declared) && declared >= 0) return Math.trunc(declared);
+  return product && product.inStock === false ? 0 : DEFAULT_STOCK;
+}
+
+/* --- Mutations --------------------------------------------------------- */
+
+export function addToCart(product) {
+  const limit = maxQuantity(product);
   const cart = getCart();
-  const itemsContainer = document.querySelector('.cart-items');
-  const emptyMessage = document.querySelector('.cart-empty');
-  const summary = document.querySelector('.cart-summary');
+  if (limit < 1) return cart;
 
-  if (!itemsContainer) return;
-
-  itemsContainer.innerHTML = '';
-
-  if (cart.length === 0) {
-    emptyMessage.style.display = 'block';
-    summary.style.display = 'none';
-    return;
+  const existing = cart.find((item) => item.id === product.id);
+  if (existing) {
+    existing.quantity = Math.min(existing.quantity + 1, limit);
+  } else {
+    cart.push({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      quantity: 1,
+    });
   }
 
-  emptyMessage.style.display = 'none';
-  summary.style.display = 'block';
+  saveCart(cart);
+  return cart;
+}
 
-  const basePath = '../';
+export function changeQuantity(id, delta) {
+  const cart = getCart();
+  const item = cart.find((i) => i.id === id);
+  if (!item) return cart;
+
+  const next = item.quantity + delta;
+  if (next <= 0) return removeItem(id);
+
+  item.quantity = next;
+  saveCart(cart);
+  return cart;
+}
+
+export function removeItem(id) {
+  const cart = getCart().filter((i) => i.id !== id);
+  saveCart(cart);
+  return cart;
+}
+
+export function clearCart() {
+  saveCart([]);
+  return [];
+}
+
+/* --- Derived ----------------------------------------------------------- */
+
+export function cartCount(cart = getCart()) {
+  return cart.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+export function cartTotal(cart = getCart()) {
+  return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+}
+
+/* --- Checkout ---------------------------------------------------------- */
+
+export function buildOrderMessage(cart = getCart()) {
+  const lines = cart.map(
+    (item, index) =>
+      `${index + 1}. ${item.name}\n` +
+      `   Qty: ${item.quantity} \u00d7 ${formatPrice(item.price)} = ` +
+      `${formatPrice(item.price * item.quantity)}`
+  );
+
+  return [
+    ORDER_INTRO,
+    '',
+    ...lines,
+    '',
+    `Total: ${formatPrice(cartTotal(cart))}`,
+    '',
+    'Thank you!',
+  ].join('\n');
+}
+
+export function checkoutUrl(message) {
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+}
+
+export function checkout() {
+  const cart = getCart();
+  if (cart.length === 0) return;
+  window.open(checkoutUrl(buildOrderMessage(cart)), '_blank');
+}
+
+/* --- DOM (cart page and header badge) ---------------------------------- */
+
+export function updateCartCount() {
+  const count = cartCount();
+  document.querySelectorAll('.cart-count').forEach((el) => {
+    el.textContent = String(count);
+    el.setAttribute('aria-label', `${count} items in cart`);
+  });
+}
+
+export function renderCart() {
+  const cart = getCart();
+  const items = document.querySelector('.cart-items');
+  const empty = document.querySelector('.cart-empty');
+  const summary = document.querySelector('.cart-summary');
+
+  if (!items) return;
+
+  items.innerHTML = '';
+  if (empty) empty.style.display = cart.length === 0 ? 'block' : 'none';
+  if (summary) summary.style.display = cart.length === 0 ? 'none' : 'block';
+  if (cart.length === 0) return;
+
+  const base = basePath();
 
   cart.forEach((item) => {
     const row = document.createElement('div');
     row.className = 'cart-item';
     row.dataset.id = item.id;
-
     row.innerHTML = `
       <div class="cart-item-image-wrapper">
         <img
-          src="${basePath}${item.image}"
+          src="${base}${item.image}"
           alt="${item.name}"
           class="cart-item-image"
           loading="lazy"
@@ -67,113 +165,52 @@ function renderCart() {
       </div>
       <div class="cart-item-details">
         <h3 class="cart-item-name">${item.name}</h3>
-        <p class="cart-item-price">$${item.price.toFixed(2)}</p>
+        <p class="cart-item-price">${formatPrice(item.price)}</p>
       </div>
       <div class="cart-item-controls">
         <div class="qty-control">
-          <button class="qty-btn qty-decrease" aria-label="Decrease quantity">−</button>
+          <button class="qty-btn qty-decrease" aria-label="Decrease quantity">\u2212</button>
           <span class="qty-value">${item.quantity}</span>
           <button class="qty-btn qty-increase" aria-label="Increase quantity">+</button>
         </div>
-        <p class="cart-item-subtotal">$${(item.price * item.quantity).toFixed(2)}</p>
+        <p class="cart-item-subtotal">${formatPrice(item.price * item.quantity)}</p>
         <button class="btn-remove" aria-label="Remove ${item.name} from cart">Remove</button>
       </div>
     `;
-
-    itemsContainer.appendChild(row);
+    items.appendChild(row);
   });
 
-  updateTotal();
-}
-
-/* --- Bind Cart Events (delegation) --- */
-function bindCartEvents() {
-  const itemsContainer = document.querySelector('.cart-items');
-  const checkoutBtn = document.querySelector('.btn-checkout');
-  const clearBtn = document.querySelector('.btn-clear-cart');
-
-  if (!itemsContainer) return;
-
-  itemsContainer.addEventListener('click', (e) => {
-    const row = e.target.closest('.cart-item');
-    if (!row) return;
-    const id = row.dataset.id;
-
-    if (e.target.closest('.qty-increase')) {
-      changeQuantity(id, 1);
-    } else if (e.target.closest('.qty-decrease')) {
-      changeQuantity(id, -1);
-    } else if (e.target.closest('.btn-remove')) {
-      removeItem(id);
-    }
-  });
-
-  if (checkoutBtn) {
-    checkoutBtn.addEventListener('click', checkout);
-  }
-
-  if (clearBtn) {
-    clearBtn.addEventListener('click', clearCart);
-  }
-}
-
-/* --- Change Item Quantity --- */
-function changeQuantity(id, delta) {
-  const cart = getCart();
-  const item = cart.find((i) => i.id === id);
-  if (!item) return;
-
-  item.quantity += delta;
-
-  if (item.quantity <= 0) {
-    removeItem(id);
-    return;
-  }
-
-  saveCart(cart);
-  renderCart();
-}
-
-/* --- Remove Item --- */
-function removeItem(id) {
-  let cart = getCart();
-  cart = cart.filter((i) => i.id !== id);
-  saveCart(cart);
-  renderCart();
-}
-
-/* --- Clear Cart --- */
-function clearCart() {
-  saveCart([]);
-  renderCart();
-}
-
-/* --- Update Total Price --- */
-function updateTotal() {
-  const cart = getCart();
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const totalEl = document.querySelector('.cart-total-price');
-  if (totalEl) {
-    totalEl.textContent = `$${total.toFixed(2)}`;
-  }
+  if (totalEl) totalEl.textContent = formatPrice(cartTotal());
 }
 
-/* --- Checkout via WhatsApp --- */
-function checkout() {
-  const cart = getCart();
-  if (cart.length === 0) return;
+export function initCartPage() {
+  renderCart();
 
-  let message = 'Hi! I would like to order the following items from Kanto Keepsakes:\n\n';
+  const items = document.querySelector('.cart-items');
+  if (items) {
+    items.addEventListener('click', (event) => {
+      const row = event.target.closest('.cart-item');
+      if (!row) return;
+      const id = row.dataset.id;
 
-  cart.forEach((item, index) => {
-    message += `${index + 1}. ${item.name}\n`;
-    message += `   Qty: ${item.quantity} × $${item.price.toFixed(2)} = $${(item.price * item.quantity).toFixed(2)}\n`;
-  });
+      if (event.target.closest('.qty-increase')) changeQuantity(id, 1);
+      else if (event.target.closest('.qty-decrease')) changeQuantity(id, -1);
+      else if (event.target.closest('.btn-remove')) removeItem(id);
+      else return;
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  message += `\nTotal: $${total.toFixed(2)}`;
-  message += '\n\nThank you!';
+      renderCart();
+    });
+  }
 
-  const encoded = encodeURIComponent(message);
-  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`, '_blank');
+  const checkoutBtn = document.querySelector('.btn-checkout');
+  if (checkoutBtn) checkoutBtn.addEventListener('click', checkout);
+
+  const clearBtn = document.querySelector('.btn-clear-cart');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      clearCart();
+      renderCart();
+    });
+  }
 }
