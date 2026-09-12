@@ -628,28 +628,6 @@ body.nav-open {
 }
 
 /* --- Cart Toast --- */
-.cart-toast {
-  position: fixed;
-  bottom: var(--space-xl);
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background-color: var(--color-gray-900);
-  color: var(--color-white);
-  padding: var(--space-sm) var(--space-lg);
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  opacity: 0;
-  transition: transform var(--transition-base), opacity var(--transition-base);
-  z-index: 200;
-  pointer-events: none;
-}
-
-.cart-toast--visible {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
 /* --- Page Header (category/product pages) --- */
 .page-header {
   padding: var(--space-xl) 0 var(--space-md);
