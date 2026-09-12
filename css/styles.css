@@ -641,6 +641,13 @@ body.nav-open {
   font-weight: 600;
 }
 
+/* The sub-navigation is anchors now, so it needs the button defaults back. */
+.subnav a.subnav-tab {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
 /* --- No Products Message --- */
 .no-products {
   grid-column: 1 / -1;
