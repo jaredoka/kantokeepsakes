@@ -1,0 +1,14 @@
+{
+  "name": "kantokeepsakes",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Kanto Keepsakes shop - static HTML/CSS/JS with WhatsApp checkout.",
+  "scripts": {
+    "test": "vitest run",
+    "serve": "python -m http.server 8080"
+  },
+  "devDependencies": {
+    "vitest": "^3"
+  }
+}
