@@ -12,7 +12,8 @@ database, no API, no payment gateway.
 
 ## Live
 
-**https://kanto-keepsakes.pages.dev** - the custom domain moves over once the catalogue is stocked.
+Hosted on **Cloudflare Pages** - build output directory `public`, no build step. `kantokeepsakes.com`
+is being moved from the old host to this project.
 
 ## What this project demonstrates
 
@@ -100,11 +101,10 @@ right number).
 ## Project structure
 
 ```
-public/                                            the website - this directory is what deploys
+public/                                            the website - this is the deploy directory
 tests/                                             nineteen tests, one dependency
 docs/DECISIONS.md  docs/screenshots/                why it is built this way
 .github/workflows/ci.yml                           tests on every push
-wrangler.jsonc                                     deploy config: upload public/, 404.html on a miss
 ```
 
 ## Next

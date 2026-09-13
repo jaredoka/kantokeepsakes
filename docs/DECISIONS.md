@@ -53,18 +53,20 @@ assertion that the markup matches itself.
 **Rejected:** jsdom + Testing Library + five spec files (~250 lines) for twelve static pages.
 **Consequence:** a rendering regression is caught by eye, not by CI. Accepted.
 
-## 6. Hosting on Cloudflare, DNS at Cloudflare
+## 6. Hosting on Cloudflare Pages
 
-**Decision:** the site deploys to Cloudflare as a **Worker with static assets** (`wrangler.jsonc`),
-connected to the GitHub repo. The custom domain is attached to it.
+**Decision:** the site deploys to **Cloudflare Pages** from this repo, with the build output
+directory set to `public` and no build command.
 **Why:** DNS is already at Cloudflare, so the host writes its own DNS record rather than requiring
-per-project A/CNAME values typed in by hand; `_headers` works; and the account is the same as the
-other site this business runs. Cloudflare's current "create project" flow produces a Worker, and
-Workers static assets is where the product is going - Pages is the older path with the same result.
-**Rejected:** Vercel (the previous host, and a fine one for a Next.js app), Netlify, GitHub Pages.
-**Consequence:** the host is a commodity choice; this one minimises moving parts. The site lives in
-`public/` because the deploy uploads that directory - keeping it at the repo root made Wrangler
-upload `node_modules` too.
+per-project A/CNAME values typed in by hand; `_headers` works; and this is the same setup as the
+other two sites the business runs, so there is one dashboard and one way of doing things.
+**Rejected:** Vercel (the previous host for the marketplace, and a fine one for a Next.js app, but it
+sends you hunting for DNS values), Netlify, GitHub Pages. Also Cloudflare Workers static assets -
+evaluated first because the dashboard offers it before Pages, and rejected: it asks for a *deploy
+command* rather than an output directory, and with no Wrangler config in the repo that command
+uploads the entire repository, `node_modules` included.
+**Consequence:** the site lives in `public/` because that is the directory the host uploads. Keeping
+the files at the repo root meant the deploy swept up `node_modules` as well.
 
 ## 7. Release discipline: preview first, domain later
 
@@ -74,6 +76,12 @@ the old, password-gated marketplace until the catalogue has products in it.
 nothing while it waits - nobody can reach it while its gate is on.
 **Consequence:** the domain move, the old projects' deletion and the data export are one deferred,
 gated release rather than a hurried cutover.
+
+**Update, 2026-09-13:** the domain moved first, with the catalogue still empty. That overrides the
+reasoning above deliberately - the domain belongs to the shop, and leaving it pointing at a
+password-gated placeholder serves nobody, while every grid on the new site already says stock is
+being added. The teardown of the old projects stays deferred until the shop is verified on the
+domain.
 
 ## 8. Deleting code is part of the work
 
